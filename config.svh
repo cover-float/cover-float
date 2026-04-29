@@ -40,7 +40,7 @@
 `define COVER_B22
 `define COVER_B23
 `define COVER_B24
-// `define COVER_B25
+`define COVER_B25
 // `define COVER_B26
 // `define COVER_B27
 `define COVER_B28
