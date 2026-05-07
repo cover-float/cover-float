@@ -1,0 +1,230 @@
+= B6 Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem:
+
+== B6: Tiny Rounding Intermediate Tasks
+
+Aharoni et al.
+
+=== Description
+This model tests intermediate results in the space between `-MinSubNorm` and `+MinSubNorm`. For each of the following ranges, we select 8 random test cases, one for every combination of the LSB, guard bit, and sticky bit.
+
+Test 1):: stem:[-"MinSubNorm" < "intermediate" < -"MinSubNorm"/2]
+
+Test 2):: stem:[-"MinSubNorm" / 2 <= "intermediate" < 0]
+
+Test 3):: stem:[0 < "intermediate" <= +"MinSubNorm" / 2]
+
+Test 4):: stem:[+"MinSubNorm" / 2 < "intermediate" < +"MinSubNorm"]
+
+*Number of tests:*
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* `All`
+
+== Implementation
+
+=== Definitions
+`min_exp`:: The minimum exponent for each precision, where the biased exponent value is 1.
+`lp/hp`:: As specified within the operations section, this test suite will be performing high to low precision converts. `hp` refers to the higher precision input operand for these operations, `lp` refers to the lower precision output of the conversion.
+`m_bits`:: The number of mantissa bits, dependent on the precision.
+`min_sn_exp`:: The smallest possible subnormal value based on the precision, 2^min_exp - m_bits.
+`min_sn`:: The smallest possible subnormal input, 2^(min_exp - m_bits)
+`hp_exp/lp_exp`:: The exponent value for `hp` and `lp` respectively.
+`lp_sn_exp`:: The exponent value corresponding to a subnormal value for `lp`. In any precision, this is 0 when represented as a biased exponent. In most tests, the mathematical operations will be expressed where `lp_sn_exp` is unbiased.
+`lsb_exp`:: The exponent value for the least significant bit.
+`lrs_int`:: The integer representation of the desired Isb, rounding, and guard bit values.
+
+== Operations
+=== One operand
+
+* FP_128 -> FP_64 | FP_128 -> FP_32 | FP_128 → FP_16 | FP_128 → BF_16
+* FP_64 -> FP_32 | FP_64 -> FP_16 | FP_64 -> FP_16|FP_64 -> BF_16
+* FP_32 -> FP_16 | FP_32 -> BF_16
+* FP_16 -> BF_16
+
+=== Two operands
+* Multiply
+* Divide
+
+=== Three operands
+* FMADD
+* FMSUB
+* FNMSUB
+* FNMADD
+
+=== Rounding Modes
+
+* Round Near Even
+* Round To Min Mag
+* Round To Min
+* Round To Max
+* Round Near Max Mag
+* Round To Odd
+
+=== General Implementation
+Each test presents a different requirement on the result. Based on this requirement, each script determines the desired output exponent, sign, and mantissa based on the following information:
+
+==== Determining lsb_exp
+
+[cols="2*"]
+|===
+| Test #  | `lsb_exp`
+
+| 1  | stem:["min_exp" - "m_bits"]
+| 2 | stem:["min_exp" - "m_bits" - 1]
+| 3  | stem:["min_exp" - "m_bits" - 1]
+| 4  | stem:["min_exp" - "m_bits"]
+|===
+
+==== Desired Sign
+
+[cols="2*"]
+|===
+| Test # | Sign
+
+| 1      | 1
+| 2      | 1
+| 3      | 0
+| 4      | 0
+|===
+
+==== Desired Exponent
+
+[cols="4*"]
+|===
+| Least Significant Bit  | Rounding Bit  | Sticky Bit | exp
+| 1 | * | *  | Isb_exp
+| 0  | 1  | *  | Isb_exp - 1
+| 0  | 0  | 1  | <= Isb_exp - 2
+|===
+
+The following is a binary representation of the 7 desired combinations of the lsb, rounding, and sticky bit. This example is with half precision where stem:["m_bits"=10]. * represents any random series of mantissa bits. 2.24
+
+==== Desired Mantissa
+
+[cols="5*"]
+|===
+| lrs_int | LSB | Rounding | Sticky | Intermediate Mantissa
+
+| 1 | 0 | 0 | 1 | 0000_0000_00 1*
+| 2 | 0 | 1 | 0 | 0000_0000_00 10
+| 3 | 0 | 1 | 1 | 0000_0000_00 1*
+| 4 | 1 | 0 | 0 | 0000_0000_01 00
+| 5 | 1 | 0 | 1 | 0000_0000_01 0*
+| 6 | 1 | 1 | 0 | 0000_0000_01 10
+| 7 | 1 | 1 | 1 | 0000_0000_01 1*
+
+|===
+
+== Specific Test Procedure
+Each test has different requirements on the output exponent, sign, and mantissa, as shown in <<General Implementation>>. Each test performing the same operation is developed using similar procedures, as outlined below:
+
+=== Operations: High to Low precision converts
+
+==== General Form
+High precision to low precision floating point converts take an input operand, `hp` and output the result, `lp`.
+
+==== Determining hp_sign
+The desired result's sign, `lp_sign` must match what is defined in <<Desired Sign>>. Performing a convert preserves the sign, so stem:["hp_sign" = "output_sign"].
+
+==== Determining hp_exp
+The desired result's exponent, `lp_exp` must match what is defined in <<Desired Exponent>>. Performing a convert preserves the exponent as long as the exponent is normal before and after the convert or subnormal before and after (provided that both `hp` and `lp` share the same `min_exp`). Otherwise, if a transition from normal to subnormal is made, which occurs when stem:["hp_min_exp" < "hp_exp" < "lp_min_exp"], conversions limit the exponent to `lp_min_exp`. Therefore, stem:["hp_min_exp" = max("output_exp", "lp_min_exp")]
+
+==== Determining hp_mantissa
+The desired result's mantissa, `lp_mantissa` must match what is defined in <<Desired Mantissa>>. As described in <<Determining hp_exp>>, `hp_exp` may represent a subnormal value in `hp`, meaning that the number of bits left to generate the desired mantissa pattern is not `m_bits`. The variable representing the actual number of bits left, `bits_left` is calculated as follows: stem:["bits_left" = "hp_m_bits" - max("hp_min_exp" - "input_exp", 0)]. Because it is impossible to go from subnormal in `hp` to normal in `lp`, I can fill the mantissa bits according to <<Desired Mantissa>>. If `hp_exp` is normal in `hp`, the first bit out of the LSB, rounding, and sticky bit will be satisfied after the conversion into `lp`. All bits of `hp_mantissa` will be determined based on the pattern of all following bits.
+
+=== Operations: Multiplication
+
+==== General Form
+Multiplication of floating point numbers `a` and `b` to get `c` takes the following form: stem:[(1."mantissa_a") * (1."mantissa_b") * 2^("a_exp" + "b_exp") * -1^("a_sign" oplus "b_sign") = "c_mantissa" * 2^"c_exp" * -1^"c_sign"]. Each test has a different requirement on `c` which dictates the possible values for the input values `a` and `b`.
+
+==== Determining the input signs
+
+The desired value for `c_sign` matches the desired sign as stated in <<Output Sign>>.  If `c_sign`=0, `a_sign` is randomly generated and stem:["b_sign" = "a_sign"]. If `c_sign` =1, `a_sign` and `c_sign` are randomly generated and stem:["b_sign" = ("a_sign" + 1) % 2].
+
+==== Determining the input exponents
+The desired value for `c_exp` matches the exponent as stated in <<Desired Exponent>>. The values `a_exp` and `b_exp` must satisfy the equation: stem:["a_exp"+"b_exp"="c_exp"]. To satisfy this equation, stem:["a_exp" = random("min_sn", "c_exp" - "min_sn")] such that the largest value `b_exp` can be is stem:["target" + "min_sn"]. Therefore, stem:["b_exp" = "c_exp" - "a_exp"].
+
+==== Determining the input mantissas
+The desired value for `c_mantissa` matches the mantissa as stated in <<Desired Mantissa>>. Choosing the appropriate values `a_mantissa` and `b_mantissa` will depend on `lrs_int`.  If `lrs_int` = 1, `a_mantissa` and `b_mantissa` are randomly generated within in the range stem:[[1, 2^"bits_left")]. To ensure that `c_mantissa` < 2 and no normalization shift is required, `a_mantissa` and `b_mantissa` are regenerated until the result satisfies the inequality: stem:["a_mantissa" * "b_mantissa" < 2^("a_mantissa_bits" + "b_mantissa_bits" - 1)]. If `lrs_int` = 3, 5, or 7, mantissa generation occurs until the required equality on the lsb and rounding bits are satisfied. If `lrs_int` = 2 or 4, `a_mantissa` or `b_mantissa` is randomly assigned a value in the range stem:[2^("bits left" -1)].  If `lrs_int` = 6, `a_mantissa` or `b_mantissa` is randomly incremented by stem:[2^("bits_left" - 2)].
+
+=== Operations: Division
+
+==== General Form
+
+Division of floating point numbers `a` and `b` resulting in the floating point value `c` take the following form: stem:["c_mantissa" * 2^"c_exp" * -1^"c_sign" = (1."mantissa_a") / (1."mantissa_b") * 2^("a_exp" - "b_exp") * -1^("a_sign" oplus "b_sign")].
+
+==== Determining the input signs
+Procedure identical to that listed in <<Determining the input signs>>.
+
+==== Determining the input exponent
+The desired value for `c_exp` matches the exponent as stated in <<Desired Exponent>>. To avoid normalization after division, stem:["a_mantissa" > "b_mantissa"]. Because floating point adds a hidden 1 to normalized values, this means that a cannot be subnormal when `b` is normal. To avoid this condition, `a_exp` and `b_exp` are restricted to normal exponents. To satisfy the equation that stem:["c_exp" = "a_exp" - "b_exp"], the possible range of `a_exp` is first determined. stem:["a_exp" = "random"(max("min_sn", "min_sn" + "c_exp"), min("max_exp", "max_exp" + "c_exp"))]. With `a_exp` determined, stem:["b_exp" = "a_exp" - "c_exp"].
+
+==== Determining the input mantissas
+The desired value for `c_mantissa` matches the mantissa as stated in <<Desired Mantissa>>. If `lrs_int` = 2 or `lrs_int` = 4 the only way to satisfy the requirement on `c_mantissa` is to ensure that the first bit in the mantissa is a 1 and all lower bits are 0. If `lrs_int` = 1, then `a_mantissa` and `b_mantissa` = stem:["random" [1, 2^"m_bits"-1)]. If `lrs_int` = 6, then stem:["a_mantissa" = 2^("m_bits" - 1)] and the first bit in `b_mantissa` is a 1 with all lower bits being 0. If `lrs_int` = 5, then the following inequality must be satisfied: stem:[1 < "a"/"b" <3/2] If `lrs_int` = 7, then the following inequality must be satisfied: stem:[3/2<"a"/"b"<2]. Because `a` and `b` have the same range of possible values inequality around `a`/`b` greater than or less than 3/2 this test simply creates two values, a larger and a smaller value to represent the possible representations of `a`/`b`. The smaller value is within the range: stem:[(1, (2* ((2^"bits_left") -1))/3))]. Based on the smaller value, the large value lies within the range: stem:[(3/2* "small value", (2^"bits_left") - 1)]. If `lrs_int` = 5, `a_mantissa` = the smaller value and `b_mantissa` = the larger value. If `lrs_int` = 7, `a_mantissa` = the larger value and `b_mantissa` = the smaller value.
+
+=== Operations: All fused multiply operations
+==== General Form
+Floating point FMA operations of the operands `a1`, `a2`, and `b` take the form:
+
+* FMADD: stem:["c" = ("a1" * "a2") + "b"]
+* FMSUB: stem:["c" = ("a1" * "a2") - "b"]
+* FNMSUB: stem:["c" =-("a1" * "a2") + "b"]
+* FNMADD: stem:["c" =-("a1" * "a2") - "b"]
+
+Each test has a different requirement on `c`, which determines the possible values for the inputs, `a1`, `a2`, and `b`.
+==== Determining input signs
+The value of `c_sign` matches the sign as stated in <<Desired Sign>>. Each FMA operation results in a different sign as a result of the multiplication and addition operation. Because the multiplication result can reach below `min_sn` but the addition operation is capped at `min_sn`, the sign of the addition dictates the sign of FMA operation. Therefore, based on the FMA operation being performed, the input sign of `b` is altered such that stem:["b_sign" = "c_sign"]. Because the smallest value of `b` is `min_sn`, and each test case seeks results below `min_sn`, the result of the multiplication must be the opposite of `b_sign`. Therefore, based on the FMA operation being performed, `a1_sign` and `a2_sign` are determined such that stem:[("a1_sign" oplus "a2_sign") oplus "multiplication sign" = ! "b_sign"]. Where multiplication sign represents 1 for FNMSUB and FNMADD and 0 for FMSUB and FMADD.
+
+==== Determining input exponent and mantissa
+
+The desired output sign and exponent, `c_sign` and `c_exp` match the values as stated in <<Desired Sign>> and <<Desired Exponent>> respectively. Within tests 1 and 3 where the magnitude of the FMA operation lies between `minSubNorm` and `minSubNorm`/2, stem:["b" = "minSubNorm" * 2]. For tests 2 and 4 where the magnitude of the FMA operation lies between 0 and `minSubNorm`/2, stem:["b" = "minSubNorm"]. As observed in <<Desired Mantissa>>, each test has a different desired lsb, rounding bit, and sticky bit pattern, which can be represented as lrs_int. Since the value of `b` is determined, the bit pattern of `b` can also be represented as an integer. Regardless of the test, the integer representation of `b`, `b_int` is 8. The signs of each multiplication operation, as shown in <<Determining input signs>> are an effective subtraction from the addition operation. We can use the desired output `lrs_int` and `b_int` to determine the desired bit pattern of the multiplication operation, `mul_int`. Using the equation: stem:["b_int" - "lrs_int" = "mul_int"], the desired bit pattern of the multiplication is determined. This value `mul_int` is then passed into the multiplication procedure as `lrs_int` and the results are stored as `a1` and `a2`.
+
+== Test Count Breakdown
+=== Number of Operations
+[cols="4,1", options="header"]
+|===
+| Operation Type | Count
+
+| One operand | 10
+| Two operands | 2
+| Three operands | 4
+| *Total* | *16*
+|===
+
+=== Configurations
+[cols="4,1", options="header"]
+|===
+| Parameter | Count
+
+| Number of precisions | 5
+| Rounding Modes | 6
+|===
+
+=== Vectors Generated per Test
+[cols="4,1", options="header"]
+|===
+| Test Boundary | Count
+
+| Test 1) latexmath:[-\mathit{MinSubNorm} < \mathit{intermediate} < -\frac{\mathit{MinSubNorm}}{2}] | 7
+| Test 2) latexmath:[-\frac{\mathit{MinSubNorm}}{2} \le \mathit{intermediate} < 0] | 7
+| Test 3) latexmath:[0 < \mathit{intermediate} \le +\frac{\mathit{MinSubNorm}}{2}] | 7
+| Test 4) latexmath:[+\frac{\mathit{MinSubNorm}}{2} < \mathit{intermediate} < +\mathit{MinSubNorm}] | 7
+| *Total* | *28*
+|===
+
+=== Summary
+[cols="4,1", options="header"]
+|===
+| Scenario | Count
+
+| 1 operand (10 × 6 × 28) | 1680
+| Multiple operands (6 × 5 × 6 × 28) | 5040
+| *Total Tests* | *6720*
+|===
+
+_*Differs from Aharoni test count_

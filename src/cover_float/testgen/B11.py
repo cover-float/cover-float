@@ -1,3 +1,18 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # B11
 
 # We need slightly modified rules to cover this completely,
@@ -8,14 +23,19 @@
 # the interesting shift ranges, so short and long shifts: [-3, 3], [nf, nf-3], and [-nf, -nf+3]
 
 import itertools
+import logging
 import random
 from pathlib import Path
-from typing import TextIO
+from typing import TextIO, cast
 
 import cover_float.common.constants as constants
+import cover_float.common.log as log
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.B9 import B9SignificandGenerator
+from cover_float.testgen.model import register_model
+
+logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B11"))
 
 B11_OPS = [constants.OP_ADD, constants.OP_SUB]
 
@@ -93,34 +113,31 @@ def uninteresting_tests(
             run_and_store_test_vector(tv, test_f, cover_f)
 
 
-def main() -> None:
-    with (
-        Path("tests/testvectors/B11_tv.txt").open("w") as test_f,
-        Path("tests/covervectors/B11_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in constants.FLOAT_FMTS:
-            seed = reproducible_hash(fmt + "b11")
-            random.seed(seed)
+@register_model("B11")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in constants.FLOAT_FMTS:
+        seed = reproducible_hash(fmt + "b11")
+        random.seed(seed)
 
-            print(f"Generating {fmt} Sigs & Shifts")
-            bins_path = Path(
-                "coverage",
-                "covergroups",
-                "bins_templates",
-                "generated",
-                f"B11_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
-            )
-            bins_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.status(f"Generating {fmt} Sigs & Shifts")
+        bins_path = Path(
+            "coverage",
+            "covergroups",
+            "bins_templates",
+            "generated",
+            f"B11_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
+        )
+        bins_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with bins_path.open("w") as generated_coverage:
-                sig_gen = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], "b11" + fmt)
-                sigs = [int(sig, 2) for sig in sig_gen.generate(generated_coverage)]
+        with bins_path.open("w") as generated_coverage:
+            sig_gen = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], "b11" + fmt)
+            sigs = [int(sig, 2) for sig in sig_gen.generate(generated_coverage)]
+
+            if constants.config.FULL_COVERAGE_TESTGEN:
                 interesting_shifts = interesting_shift_ranges(2, 2, fmt)
+            else:
+                interesting_shifts = interesting_shift_ranges(0, 0, fmt)
 
-                print(f"Generating {fmt} Tests")
-                interesting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)
-                uninteresting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)
-
-
-if __name__ == "__main__":
-    main()
+            logger.status(f"Generating {fmt} Tests")
+            interesting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)
+            uninteresting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)

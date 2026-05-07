@@ -1,0 +1,108 @@
+= B21 Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+== B21: Divide By Zero Exception
+
+Aharoni et al.
+
+=== Description
+This model will test the Divide By Zero exception flag. For the operations divide and remainder, a test case will be created for each of the possible combinations from the following table:
+
+[cols="2*"]
+|===
+| First Operand  | Second Operand
+
+| 0  | 0
+| Random non-zero number | Random non-zero number
+| Infinity | Infinity
+| NaN  | NaN
+|===
+
+*Number of tests:* 3 E 1
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* `Divide`, `Remainder`
+
+== Implementation
+
+=== Definitions
+`max_exp`:: the maximum exponent value based on precision
+`min_exp`:: the minimum normal exponent value based on precision
+`m_bits`:: the number of mantissa bits based on precision
+`a`:: operand 1
+`b`:: operand 2
+`a_exp`:: value of `a`’s exponent, range is generally restricted to [`min_exp`, `max_exp`]
+`b_exp`:: value of `b`’s exponent, range is generally restricted to [`min_exp`, `max_exp`]
+`a_mantissa`:: the value of `a`’s mantissa
+`b_mantissa`:: the value of `b`’s mantissa
+`m_bits_left`:: the number of mantissa bits left for an operand. If the operand’s exponent is subnormal, stem:["m_bits_left" = "min_exp" - "operand_exp"]. If the operand’s exponent is normal, stem:["m_bits_left" = "m_bits"].
+`max_mantissa`:: the largest possible value for the mantissa, stem:[(2^"bits_left") - 1]
+
+== Operations
+
+=== Two operands
+* Divide
+* Remainder
+
+=== Rounding Modes
+
+* Round Near Even
+* Round To Min Mag
+* Round To Min
+* Round To Max
+* Round Near Max Mag
+* Round To Odd
+
+=== General Implementation
+Each test presents a different requirement on the result. Based on this requirement, each script determines the desired output exponent, sign, and mantissa based on the following information:
+
+==== Input Values
+
+[cols="3*"]
+|===
+| Value | Biased Exponent  | Mantissa
+
+| Zero  | All zeros | All zeros
+| Random non-zero Number | latexmath:[ \ne 0] | latexmath:[\mathbb{R}]
+| Infinity  | All ones | All zeros
+| NaN  | All ones | latexmath:[ \ne 0]
+|===
+
+== Specific Test Procedure
+Each test has different requirements on the input, as shown in <<General Implementation>>.
+
+=== Operations: Division and Remainder
+
+==== General Form
+The floating point division of values `a` and `b` to get the result `c` follow the general form.
+Division: latexmath:[c\_mantissa * 2^{c\_exp} * -1^{c\_sign} = (1.mantissa\_a) / (1.mantissa\_b) * 2^{a\_exp - b\_exp} * -1^{a\_sign \oplus b\_sign}]
+Remainder: latexmath:[c\_mantissa * 2^{c\_exp} * -1^{c\_sign} = \left( (1.mantissa\_a) * 2^{a\_exp} * -1^{a\_sign} \right) \text{ rem } \left( (1.mantissa\_b) * 2^{b\_exp} * -1^{b\_sign} \right)]
+This test suite tests all 16 permuations on the listed values of `a` and `b` as observed in the "Value" category of <<Input Values>>
+
+==== Determining Input Sign
+Each input value listed in <<Input Values>> is can have any possible input value. Therefore, the input signs, `a_sign` and `b_sign` are randomly generated.
+
+==== Determining Input Exponent
+There are constraints on every exponent in <<Input Values>> except for a random non-zero number. Therefore, when a random non-zero value must be generated, latexmath:[exponent = random(min\_exp, max\_exp)].
+
+==== Determining Input Mantissa
+The inputs `a_mantissa` and `b_mantissa` will follow the requirements listed in <<Input Values>>. The input values without constraints on the mantissa are a random non-zero number and NaN. When, a random non-zero number or NaN value is generated, latexmath:[mantissa = random(1, 2^{m\_bits\_left} - 1)]
+
+== Test Count Breakdown
+.Test Count Breakdown
+[cols="3,1", options="header"]
+|===
+| Category | Total
+
+| Number of operations | 2
+| Number of precisions | 5
+| Rounding Modes | 5
+| Vectors generated per test | 16
+| *Summary* (2 × 5 × 5 × 16) | *800*
+|===
+
+_*Differs from Aharoni test count_

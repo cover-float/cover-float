@@ -1,12 +1,31 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # B29 (rwolk@g.hmc.edu)
 
+import logging
 import random
-from pathlib import Path
-from typing import TextIO
+from typing import TextIO, cast
 
 import cover_float.common.constants as constants
+import cover_float.common.log as log
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash, unpack_test_vector
 from cover_float.reference import run_test_vector, store_cover_vector
+from cover_float.testgen.model import register_model
+
+logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
 
 
 def generate_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
@@ -54,17 +73,10 @@ def generate_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             if computed_info == target:
                 store_cover_vector(results, test_f, cover_f)
             else:
-                print(f"B29 Generation Error: fmt={fmt}, and target={target}")
+                logger.exception(f"Failed to Generate for fmt={fmt} and target={target}")
 
 
-def main() -> None:
-    with (
-        Path("tests/testvectors/B29_tv.txt").open("w") as test_f,
-        Path("tests/covervectors/B29_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in constants.FLOAT_FMTS:
-            generate_tests(fmt, test_f, cover_f)
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B29")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in constants.FLOAT_FMTS:
+        generate_tests(fmt, test_f, cover_f)

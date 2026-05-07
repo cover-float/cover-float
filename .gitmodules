@@ -5,3 +5,6 @@
 [submodule "src/submodules/boost_multiprecision"]
 	path = src/submodules/boost_multiprecision
 	url = https://github.com/boostorg/multiprecision.git
+[submodule "src/submodules/unmodified_spike"]
+	path = src/submodules/unmodified_spike
+	url = https://github.com/riscv-software-src/riscv-isa-sim.git

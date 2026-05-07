@@ -1,3 +1,18 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 """
 Angela Zheng
 
@@ -13,7 +28,13 @@ Currently supports
 - Flags: 'x' if a flag is raised and '' if none
 """
 
-from typing import Any, Optional
+import logging
+import time
+from pathlib import Path
+from typing import Any, Optional, cast
+
+import cover_float.common.log as log
+from cover_float.reference import run_test_vector_unmodified, verify_test_vector
 
 FMT_SPECS: dict[str, dict[str, Any]] = {
     "00": {"name": "f16", "type": "float", "exp_bits": 5, "man_bits": 10, "bias": 15, "total_bits": 16},
@@ -268,3 +289,41 @@ def format_output(parsed: dict[str, Any]) -> str:
         base = f"{op} {rnd} {a} {b}"
 
     return f"{base} -> {parsed['result']} ({parsed['res_fmt_name']}){flags}"
+
+
+def auto_parse(model_name: str, output_dir: str) -> None:
+    logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger(model_name))
+
+    input_path = Path(output_dir) / "testvectors" / f"{model_name}_tv.txt"
+    output_path = Path(output_dir) / "readable" / f"{model_name}_parsed.txt"
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    with input_path.open("r") as infile, output_path.open("w") as outfile:
+        input_size = input_path.stat().st_size
+
+        last_update = time.monotonic()
+        update_size = 0
+
+        with logger.progress_bar("Post Processing", total=input_size) as bar:
+            for line in infile:
+                parsed = parse_test_vector(line)
+
+                if parsed:
+                    outfile.write(format_output(parsed) + "\n")
+                    count += 1
+
+                    if not verify_test_vector(line):
+                        logger.exception(
+                            f"Covervector Failed Verification: {line}, Expected: {run_test_vector_unmodified(line)}"
+                        )
+
+                now = time.monotonic()
+                update_size += len(line)
+                if now - last_update >= 0.1:
+                    bar.advance(update_size)
+                    last_update = now
+                    update_size = 0
+
+    logger.info(f"Parsed {count} {model_name} vectors to {output_path}")

@@ -13,27 +13,4 @@
 // either express or implied. See the License for the specific language governing permissions
 // and limitations under the License.
 
-import coverfloat_pkg::*;
-class coverfloat_coverage;
-
-    `INCLUDE_CGS
-
-    virtual coverfloat_interface CFI;
-
-    // constructor (initializes covergroups)
-    function new (virtual coverfloat_interface CFI);
-        this.CFI = CFI;
-
-        `INIT_CGS
-
-    endfunction
-
-
-    function void sample();
-
-        // Call sample functions
-        `SAMPLE_CGS
-
-    endfunction
-
-endclass
+// This file has intentionally been left blank. Fixes a missing config.h include in softfloat

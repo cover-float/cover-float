@@ -1,3 +1,18 @@
+// Copyright (C) 2025-26 Harvey Mudd College
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, any work distributed under the
+// License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+
 covergroup B19_cg (virtual coverfloat_interface CFI);
 
     option.per_instance = 0;
@@ -634,10 +649,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
         B19_F16__norm_x_subnorm:    cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_norm, F16_b_subnorm,
                                           /* a.EXP > b.EXP*/       F16_frac_compare,   F16_result_fmt;
 
-        B19_F16__subnorm_x_norm:    cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_norm, F16_b_subnorm,
+        B19_F16__subnorm_x_norm:    cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_subnorm, F16_b_norm,
                                           /* a.EXP < b.EXP*/       F16_frac_compare,   F16_result_fmt;
 
-        B19_F16__subnorm_x_subnorm: cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_norm, F16_b_subnorm,
+        B19_F16__subnorm_x_subnorm: cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_subnorm, F16_b_subnorm,
                                           F16_exp_compare,         F16_frac_compare,   F16_result_fmt;
 
         B19_F16__zero_x_norm:       cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_zero, F16_b_norm,
@@ -647,10 +662,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
                                           /* a.EXP > b.EXP*/       F16_frac_GTE,       F16_result_fmt;
 
         B19_F16__subnorm_x_zero:       cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_subnorm, F16_b_zero,
-                                          /* a.EXP < b.EXP*/       F16_frac_LT,       F16_result_fmt;
+                                          /* a.EXP < b.EXP*/       F16_frac_GTE,       F16_result_fmt;
 
         B19_F16__zero_x_subnorm:       cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_zero, F16_b_subnorm,
-                                          /* a.EXP > b.EXP*/       F16_frac_GT,       F16_result_fmt;
+                                          /* a.EXP > b.EXP*/       F16_frac_LTE,       F16_result_fmt;
 
         B19_F16__zero_x_zero:       cross FP_compare_ops, F16_operand_a_sign, F16_operand_b_sign, F16_a_zero, F16_b_zero,
                                           /* a.EXP = b.EXP*/    /* a.FRAC = b.FRAC*/   F16_result_fmt;
@@ -664,10 +679,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
         B19_BF16__norm_x_subnorm:    cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_norm, BF16_b_subnorm,
                                           /* a.EXP > b.EXP*/       BF16_frac_compare,   BF16_result_fmt;
 
-        B19_BF16__subnorm_x_norm:    cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_norm, BF16_b_subnorm,
+        B19_BF16__subnorm_x_norm:    cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_subnorm, BF16_b_norm,
                                           /* a.EXP < b.EXP*/       BF16_frac_compare,   BF16_result_fmt;
 
-        B19_BF16__subnorm_x_subnorm: cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_norm, BF16_b_subnorm,
+        B19_BF16__subnorm_x_subnorm: cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_subnorm, BF16_b_subnorm,
                                           BF16_exp_compare,         BF16_frac_compare,   BF16_result_fmt;
 
         B19_BF16__zero_x_norm:       cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_zero, BF16_b_norm,
@@ -677,10 +692,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
                                           /* a.EXP > b.EXP*/       BF16_frac_GTE,       BF16_result_fmt;
 
         B19_BF16__subnorm_x_zero:       cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_subnorm, BF16_b_zero,
-                                          /* a.EXP < b.EXP*/       BF16_frac_LT,       BF16_result_fmt;
+                                          /* a.EXP < b.EXP*/       BF16_frac_GTE,       BF16_result_fmt;
 
         B19_BF16__zero_x_subnorm:       cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_zero, BF16_b_subnorm,
-                                          /* a.EXP > b.EXP*/       BF16_frac_GT,       BF16_result_fmt;
+                                          /* a.EXP > b.EXP*/       BF16_frac_LTE,       BF16_result_fmt;
 
         B19_BF16__zero_x_zero:       cross FP_compare_ops, BF16_operand_a_sign, BF16_operand_b_sign, BF16_a_zero, BF16_b_zero,
                                           /* a.EXP = b.EXP*/    /* a.FRAC = b.FRAC*/   BF16_result_fmt;
@@ -694,10 +709,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
         B19_F32__norm_x_subnorm:    cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_norm, F32_b_subnorm,
                                           /* a.EXP > b.EXP*/       F32_frac_compare,   F32_result_fmt;
 
-        B19_F32__subnorm_x_norm:    cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_norm, F32_b_subnorm,
+        B19_F32__subnorm_x_norm:    cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_subnorm, F32_b_norm,
                                           /* a.EXP < b.EXP*/       F32_frac_compare,   F32_result_fmt;
 
-        B19_F32__subnorm_x_subnorm: cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_norm, F32_b_subnorm,
+        B19_F32__subnorm_x_subnorm: cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_subnorm, F32_b_subnorm,
                                           F32_exp_compare,         F32_frac_compare,   F32_result_fmt;
 
         B19_F32__zero_x_norm:       cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_zero, F32_b_norm,
@@ -707,10 +722,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
                                           /* a.EXP > b.EXP*/       F32_frac_GTE,       F32_result_fmt;
 
         B19_F32__subnorm_x_zero:       cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_subnorm, F32_b_zero,
-                                          /* a.EXP < b.EXP*/       F32_frac_LT,       F32_result_fmt;
+                                          /* a.EXP < b.EXP*/       F32_frac_GTE,       F32_result_fmt;
 
         B19_F32__zero_x_subnorm:       cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_zero, F32_b_subnorm,
-                                          /* a.EXP > b.EXP*/       F32_frac_GT,       F32_result_fmt;
+                                          /* a.EXP > b.EXP*/       F32_frac_LTE,       F32_result_fmt;
 
         B19_F32__zero_x_zero:       cross FP_compare_ops, F32_operand_a_sign, F32_operand_b_sign, F32_a_zero, F32_b_zero,
                                           /* a.EXP = b.EXP*/    /* a.FRAC = b.FRAC*/   F32_result_fmt;
@@ -724,10 +739,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
         B19_F64__norm_x_subnorm:    cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_norm, F64_b_subnorm,
                                           /* a.EXP > b.EXP*/       F64_frac_compare,   F64_result_fmt;
 
-        B19_F64__subnorm_x_norm:    cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_norm, F64_b_subnorm,
+        B19_F64__subnorm_x_norm:    cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_subnorm, F64_b_norm,
                                           /* a.EXP < b.EXP*/       F64_frac_compare,   F64_result_fmt;
 
-        B19_F64__subnorm_x_subnorm: cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_norm, F64_b_subnorm,
+        B19_F64__subnorm_x_subnorm: cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_subnorm, F64_b_subnorm,
                                           F64_exp_compare,         F64_frac_compare,   F64_result_fmt;
 
         B19_F64__zero_x_norm:       cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_zero, F64_b_norm,
@@ -737,10 +752,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
                                           /* a.EXP > b.EXP*/       F64_frac_GTE,       F64_result_fmt;
 
         B19_F64__subnorm_x_zero:       cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_subnorm, F64_b_zero,
-                                          /* a.EXP < b.EXP*/       F64_frac_LT,       F64_result_fmt;
+                                          /* a.EXP < b.EXP*/       F64_frac_GTE,       F64_result_fmt;
 
         B19_F64__zero_x_subnorm:       cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_zero, F64_b_subnorm,
-                                          /* a.EXP > b.EXP*/       F64_frac_GT,       F64_result_fmt;
+                                          /* a.EXP > b.EXP*/       F64_frac_LTE,       F64_result_fmt;
 
         B19_F64__zero_x_zero:       cross FP_compare_ops, F64_operand_a_sign, F64_operand_b_sign, F64_a_zero, F64_b_zero,
                                           /* a.EXP = b.EXP*/    /* a.FRAC = b.FRAC*/   F64_result_fmt;
@@ -754,10 +769,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
         B19_F128__norm_x_subnorm:    cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_norm, F128_b_subnorm,
                                           /* a.EXP > b.EXP*/       F128_frac_compare,   F128_result_fmt;
 
-        B19_F128__subnorm_x_norm:    cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_norm, F128_b_subnorm,
+        B19_F128__subnorm_x_norm:    cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_subnorm, F128_b_norm,
                                           /* a.EXP < b.EXP*/       F128_frac_compare,   F128_result_fmt;
 
-        B19_F128__subnorm_x_subnorm: cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_norm, F128_b_subnorm,
+        B19_F128__subnorm_x_subnorm: cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_subnorm, F128_b_subnorm,
                                           F128_exp_compare,         F128_frac_compare,   F128_result_fmt;
 
         B19_F128__zero_x_norm:       cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_zero, F128_b_norm,
@@ -767,10 +782,10 @@ covergroup B19_cg (virtual coverfloat_interface CFI);
                                           /* a.EXP > b.EXP*/       F128_frac_GTE,       F128_result_fmt;
 
         B19_F128__subnorm_x_zero:       cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_subnorm, F128_b_zero,
-                                          /* a.EXP < b.EXP*/       F128_frac_LT,        F128_result_fmt;
+                                          /* a.EXP < b.EXP*/       F128_frac_GTE,        F128_result_fmt;
 
         B19_F128__zero_x_subnorm:       cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_zero, F128_b_subnorm,
-                                          /* a.EXP > b.EXP*/       F128_frac_GT,       F128_result_fmt;
+                                          /* a.EXP > b.EXP*/       F128_frac_LTE,       F128_result_fmt;
 
         B19_F128__zero_x_zero:       cross FP_compare_ops, F128_operand_a_sign, F128_operand_b_sign, F128_a_zero, F128_b_zero,
                                           /* a.EXP = b.EXP*/    /* a.FRAC = b.FRAC*/   F128_result_fmt;

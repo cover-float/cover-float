@@ -1,3 +1,18 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 """
 Angela Zheng (angela20061015@gmail.com)
 
@@ -5,11 +20,12 @@ Created:         April 8, 2026
 Last Edited:     April 10, 2026
 """
 
+import logging
 import random
-from pathlib import Path
 from random import seed
-from typing import Callable
+from typing import Callable, TextIO, cast
 
+import cover_float.common.log as log
 from cover_float.common.constants import (
     BIAS,
     BIASED_EXP,
@@ -33,6 +49,9 @@ from cover_float.common.util import (
     reproducible_hash,
 )
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
+
+logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B2"))
 
 ZERO = "0" * 32
 
@@ -164,71 +183,64 @@ class Generator:
         return self.solve_exact(op, desired, builder)
 
 
-def main() -> None:
-    with (
-        Path("./tests/testvectors/B2_tv.txt").open("w") as test_f,
-        Path("./tests/covervectors/B2_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in FLOAT_FMTS:
-            gen = Generator(fmt)
+@register_model("B2")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in FLOAT_FMTS:
+        gen = Generator(fmt)
 
-            bases = {
-                "Zero": (0, 0),
-                "One": (0, (1 << (EXPONENT_BITS[fmt] - 1)) - 1),
-                "MinSub": (1, 0),
-                "MaxSub": ((1 << gen.m_bits) - 1, 0),
-                "MinNorm": (0, 1),
-                "MaxNorm": ((1 << gen.m_bits) - 1, (1 << EXPONENT_BITS[fmt]) - 2),
-            }
+        bases = {
+            "Zero": (0, 0),
+            "One": (0, (1 << (EXPONENT_BITS[fmt] - 1)) - 1),
+            "MinSub": (1, 0),
+            "MaxSub": ((1 << gen.m_bits) - 1, 0),
+            "MinNorm": (0, 1),
+            "MaxNorm": ((1 << gen.m_bits) - 1, (1 << EXPONENT_BITS[fmt]) - 2),
+        }
 
-            for base, (base_m, base_e) in bases.items():
-                maxnorm = base == "MaxNorm"
+        for base, (base_m, base_e) in bases.items():
+            maxnorm = base == "MaxNorm"
 
-                for i in range(gen.m_bits):
-                    for sign in [0, 1]:
-                        desired = decimal_components_to_hex(fmt, sign, base_e, base_m ^ (1 << i))
-                        seed(reproducible_hash(f"{fmt}_{base}_{i}_{sign}"))
+            for i in range(gen.m_bits):
+                for sign in [0, 1]:
+                    desired = decimal_components_to_hex(fmt, sign, base_e, base_m ^ (1 << i))
+                    seed(reproducible_hash(f"{fmt}_{base}_{i}_{sign}"))
 
-                        a, b, c = gen.gen_add(desired, base_e, maxnorm, sign)
-                        vec = generate_test_vector(OP_ADD, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
-
-                        a, b, c = gen.gen_sub(desired, base_e, maxnorm, sign)
-                        vec = generate_test_vector(OP_SUB, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
-
-                        a, b, c = gen.gen_mul(desired, maxnorm, sign)
-                        vec = generate_test_vector(OP_MUL, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
-
-                        a, b, c = gen.gen_div(desired, maxnorm, sign)
-                        vec = generate_test_vector(OP_DIV, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
-
-                        if sign == 0 and base == "One":
-                            a, b, c = gen.gen_sqrt(desired)
-                            vec = generate_test_vector(OP_SQRT, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                            run_and_store_test_vector(vec, test_f, cover_f)
-
-                        for op in [OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB]:
-                            a, b, c = gen.gen_fma(op, desired, base_e, maxnorm)
-                            vec = generate_test_vector(op, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                            run_and_store_test_vector(vec, test_f, cover_f)
-
-                # for -0 cases
-                if base == "Zero":
-                    desired = decimal_components_to_hex(fmt, 1, 0, 0)
-
-                    seed(reproducible_hash(f"{fmt}_zero_add_1"))
-                    a, b, c = gen.gen_add(desired, 0, False, 1)
+                    a, b, c = gen.gen_add(desired, base_e, maxnorm, sign)
                     vec = generate_test_vector(OP_ADD, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
                     run_and_store_test_vector(vec, test_f, cover_f)
 
-                    seed(reproducible_hash(f"{fmt}_zero_sub_1"))
-                    a, b, c = gen.gen_sub(desired, 0, False, 1)
+                    a, b, c = gen.gen_sub(desired, base_e, maxnorm, sign)
                     vec = generate_test_vector(OP_SUB, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
                     run_and_store_test_vector(vec, test_f, cover_f)
 
+                    a, b, c = gen.gen_mul(desired, maxnorm, sign)
+                    vec = generate_test_vector(OP_MUL, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                    run_and_store_test_vector(vec, test_f, cover_f)
 
-if __name__ == "__main__":
-    main()
+                    a, b, c = gen.gen_div(desired, maxnorm, sign)
+                    vec = generate_test_vector(OP_DIV, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                    run_and_store_test_vector(vec, test_f, cover_f)
+
+                    if sign == 0 and base == "One":
+                        a, b, c = gen.gen_sqrt(desired)
+                        vec = generate_test_vector(OP_SQRT, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                        run_and_store_test_vector(vec, test_f, cover_f)
+
+                    for op in [OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB]:
+                        a, b, c = gen.gen_fma(op, desired, base_e, maxnorm)
+                        vec = generate_test_vector(op, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                        run_and_store_test_vector(vec, test_f, cover_f)
+
+            # for -0 cases
+            if base == "Zero":
+                desired = decimal_components_to_hex(fmt, 1, 0, 0)
+
+                seed(reproducible_hash(f"{fmt}_zero_add_1"))
+                a, b, c = gen.gen_add(desired, 0, False, 1)
+                vec = generate_test_vector(OP_ADD, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                run_and_store_test_vector(vec, test_f, cover_f)
+
+                seed(reproducible_hash(f"{fmt}_zero_sub_1"))
+                a, b, c = gen.gen_sub(desired, 0, False, 1)
+                vec = generate_test_vector(OP_SUB, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
+                run_and_store_test_vector(vec, test_f, cover_f)

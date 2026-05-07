@@ -18,4 +18,4 @@ tests/covervectors/B*_cv.txt
 tests/testvectors/B*_tv.txt
 coverage/covergroups/bins_templates/generated
 tests/readable/B*_parsed.txt
-src/cover_float/testgen/softfloat_parser.py
+tests/processed/*/B*.csv

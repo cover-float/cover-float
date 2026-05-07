@@ -1,9 +1,23 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # Lamarr
 # B6 Model
 
 
 import random
-from pathlib import Path
 from random import seed
 from typing import TextIO
 
@@ -27,6 +41,7 @@ from cover_float.common.constants import (
 )
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
 
 B6_FMTS = [FMT_QUAD, FMT_DOUBLE, FMT_SINGLE, FMT_BF16, FMT_HALF]
 ROUNDING_MODES = ["00", "01", "02", "03", "04", "05"]
@@ -238,7 +253,7 @@ def get_grs_mant(operation: str, precision: str, a_exp: int, b_exp: int, hashStr
         a_int = 0
         b_int = 0
 
-        if grs_int == 7 or grs_int == 5:  # G = 1, R = 1, S = 1
+        if grs_int == 7 or grs_int == 5:
             # b and a mantissas have the same range
             b_min_range = b_min
             b_max_range = (2 * b_max) // 3
@@ -574,14 +589,7 @@ def createTests(test_f: TextIO, cover_f: TextIO) -> None:
                             )
 
 
-def main() -> None:
-    with (
-        Path("./tests/testvectors/B6_tv.txt").open("w") as test_f,
-        Path("./tests/covervectors/B6_cv.txt").open("w") as cover_f,
-    ):
-        convertTests(test_f, cover_f)
-        createTests(test_f, cover_f)
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B6")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    convertTests(test_f, cover_f)
+    createTests(test_f, cover_f)

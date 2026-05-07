@@ -1,8 +1,27 @@
-from pathlib import Path
-from typing import TextIO
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
+import logging
+from typing import TextIO, cast
 
 import cover_float.common.constants as const
+import cover_float.common.log as log
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
+
+logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
 
 SRC1_OPS = [const.OP_SQRT, const.OP_CLASS]
 
@@ -74,6 +93,11 @@ RES_OPS = [
 
 
 # }
+
+# Chooses +-0, +-1, +-min norm, +-max norm, +-max subnorm, +-mid subnorm, +-min subnorm, +-infinity, +-default nan,
+# and one SNaN, and one QNaN. These are the minimal requirements from Aharoni et al. The full coverage model includes
+# the complete set of basic types
+minimal_set = [0, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 26, 27, 28, 29, 30, 32]
 
 BASIC_TYPES = {
     const.FMT_SINGLE: [
@@ -269,7 +293,7 @@ BASIC_TYPES = {
 }
 
 
-def write1SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write1SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
@@ -277,15 +301,16 @@ def write1SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     print("// 1 source operations, all basic type input combinations", file=test_f)
     # print("//", file=f)
     for op in SRC1_OPS:
-        print(f"OP IS: {op}")
+        logger.status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
-        for val in BASIC_TYPES[fmt]:
+        for i in choices:
+            val = BASIC_TYPES[fmt][i]
             run_and_store_test_vector(
                 f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
             )
 
 
-def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
@@ -293,61 +318,63 @@ def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     print("// 1 source convert operations, all basic type input and result format combinations", file=test_f)
     # print("//", file=f)
     for op in CVT_OPS:
-        print(f"OP IS: {op}")
+        logger.status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
         fmts = const.FLOAT_FMTS if op == const.OP_CFF else const.INT_FMTS
         for resultFmt in fmts:
             if resultFmt != fmt:
-                for val in BASIC_TYPES[fmt]:
+                for i in choices:
+                    val = BASIC_TYPES[fmt][i]
                     run_and_store_test_vector(
                         f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{resultFmt}_00", test_f, cover_f
                     )
 
 
-def write2SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write2SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
     print("// 2 source operations, all basic type input combinations", file=test_f)
     for op in SRC2_OPS:
-        print(f"OP IS: {op}")
-        for val1 in BASIC_TYPES[fmt]:
-            for val2 in BASIC_TYPES[fmt]:
+        logger.status(f"OP IS: {op}")
+        for i in choices:
+            val1 = BASIC_TYPES[fmt][i]
+            for j in choices:
+                val2 = BASIC_TYPES[fmt][j]
                 run_and_store_test_vector(
                     f"{op}_{rm}_{val1}_{val2}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
                 )
 
 
-def write3SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write3SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
     print("// 3 source operations, all basic type input combinations", file=test_f)
     for op in SRC3_OPS:
-        print(f"OP IS: {op}")
-        for val1 in BASIC_TYPES[fmt]:
-            for val2 in BASIC_TYPES[fmt]:
-                for val3 in BASIC_TYPES[fmt]:
+        logger.status(f"OP IS: {op}")
+        for i in choices:
+            val1 = BASIC_TYPES[fmt][i]
+            for j in choices:
+                val2 = BASIC_TYPES[fmt][j]
+                for k in choices:
+                    val3 = BASIC_TYPES[fmt][k]
                     run_and_store_test_vector(
                         f"{op}_{rm}_{val1}_{val2}_{val3}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
                     )
 
 
-def main() -> None:
-    with (
-        Path("./tests/testvectors/B1_tv.txt").open("w") as test_vectors,
-        Path("./tests/covervectors/B1_cv.txt").open("w") as cover_vectors,
-    ):
-        for fmt in const.FLOAT_FMTS:
-            write1SrcTests(test_vectors, cover_vectors, fmt)
-            write2SrcTests(test_vectors, cover_vectors, fmt)
-            write3SrcTests(test_vectors, cover_vectors, fmt)
-            writeCvtTests(test_vectors, cover_vectors, fmt)
-            # writeResultTests(f, fmt)
+@register_model("B1")
+def main(test_vectors: TextIO, cover_vectors: TextIO) -> None:
+    choices = list(range(len(BASIC_TYPES[const.FMT_SINGLE]))) if const.config.FULL_COVERAGE_TESTGEN else minimal_set
 
+    for fmt in const.FLOAT_FMTS:
+        write1SrcTests(test_vectors, cover_vectors, fmt, choices)
+        write2SrcTests(test_vectors, cover_vectors, fmt, choices)
+        write3SrcTests(test_vectors, cover_vectors, fmt, choices)
+        writeCvtTests(test_vectors, cover_vectors, fmt, choices)
+        # writeResultTests(f, fmt)
 
-if __name__ == "__main__":
-    main()
 
 """
 

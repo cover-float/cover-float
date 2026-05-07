@@ -1,3 +1,18 @@
+// Copyright (C) 2025-26 Harvey Mudd College
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, any work distributed under the
+// License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+
 
 `include "../config.svh"
 `include "macros.svh"
@@ -181,6 +196,35 @@ package coverfloat_pkg;
 
     parameter int SIZEOF_INT  = 32;
     parameter int SIZEOF_LONG = 64;
+    parameter int UINT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 1;//add 1 because of hidden 1
+    parameter int INT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 2;//hidden1 + 1
+    parameter int LONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 2;//hidden1 + 1
+    parameter int ULONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 1;//hidden1
+
+    typedef struct {
+    int max_int_exp;
+    logic [111:0] max_int_mantissa;
+    logic [111:0] one_quarter;
+    logic [111:0] one_half;
+    logic [111:0] three_quarters;
+    logic [111:0] one;
+    } max_int_struct;
+
+    // Some Constants For B28
+    // This value seems like an odd choice ... because it is a trivial task for rfi,
+    // it seems like the intention should be 1.1111 * 2^(precision-2) as that is the maximum value
+    // that has some meaning when it goes through rfi
+    parameter int F32_RFI_MAX = (F32_EXP_BIAS + F32_M_BITS + 1) << (F32_M_BITS) | ((1 << F32_M_BITS) - 1); // 'h4bff0000
+    parameter logic[63:0] F64_RFI_MAX = (F64_EXP_BIAS + F64_M_BITS + 1) << (F64_M_BITS) | ((1 << F64_M_BITS) - 1);
+    parameter logic[127:0] F128_RFI_MAX = (F128_EXP_BIAS + F128_M_BITS + 1) << (F128_M_BITS) | ((1 << F128_M_BITS) - 1);
+    parameter int F16_RFI_MAX = (F16_EXP_BIAS + F16_M_BITS + 1) << (F16_M_BITS) | ((1 << F16_M_BITS) - 1);
+    parameter int BF16_RFI_MAX = (BF16_EXP_BIAS + BF16_M_BITS + 1) << (BF16_M_BITS) | ((1 << BF16_M_BITS) - 1);
+
+    parameter int F32_ONE = (F32_EXP_BIAS) << F32_M_BITS; // 'h3f800000
+    parameter logic[63:0] F64_ONE = (F64_EXP_BIAS) << F64_M_BITS;
+    parameter logic[127:0] F128_ONE = (F128_EXP_BIAS) << F128_M_BITS;
+    parameter int F16_ONE = (F16_EXP_BIAS) << F16_M_BITS;
+    parameter int BF16_ONE = (BF16_EXP_BIAS) << BF16_M_BITS;
 
 
     // Helper functions for difficult coverpoints
@@ -562,6 +606,201 @@ package coverfloat_pkg;
         return unbiased_exp;
     endfunction
 
+    //returns the exponent values associated with each maxInt
+    function automatic max_int_struct get_max_int(
+        input logic [7:0] int_fmt
+    );
+    max_int_struct target_max_int;
+
+    //Setting up the ranges based on the int format
+    case(int_fmt)
+        FMT_UINT: begin
+            target_max_int.max_int_exp = (SIZEOF_INT - 1);//2^31
+            target_max_int.max_int_mantissa = F128_M_BITS'({(SIZEOF_INT - 1){1'b1}}) << (UINT_TRAILING_ZEROS);//upper 31 bits are 1s, lower bits are 0s; 31 bits because of hidden 1
+            target_max_int.one_quarter = F128_M_BITS'(1'b1) << (UINT_TRAILING_ZEROS - 2);//31 0s, 01
+            target_max_int.one_half = F128_M_BITS'(1'b1) << (UINT_TRAILING_ZEROS - 1);//31 0s, 1
+            target_max_int.three_quarters = F128_M_BITS'(2'b11) << (UINT_TRAILING_ZEROS - 2);//31 0s, 11
+            target_max_int.one = F128_M_BITS'(1'b1) << UINT_TRAILING_ZEROS;//30 0s, 1
+        end
+        FMT_INT: begin
+            target_max_int.max_int_exp = (SIZEOF_INT - 2);//2^30
+            target_max_int.max_int_mantissa = F128_M_BITS'({(SIZEOF_INT - 2){1'b1}}) << (INT_TRAILING_ZEROS);//leading 0, next 31 bits are 1s, lower bits are 0s
+            target_max_int.one_quarter = F128_M_BITS'(1'b1) << (INT_TRAILING_ZEROS - 2);//30 0s, 01
+            target_max_int.one_half = F128_M_BITS'(1'b1) << (INT_TRAILING_ZEROS - 1);//30 0s, 1
+            target_max_int.three_quarters = F128_M_BITS'(2'b11) << (INT_TRAILING_ZEROS - 2);//30 0s, 11
+            target_max_int.one = F128_M_BITS'(1'b1) << INT_TRAILING_ZEROS;//30 0s, 1
+        end
+        FMT_ULONG: begin
+            target_max_int.max_int_exp = (SIZEOF_LONG - 1);//2^63
+            target_max_int.max_int_mantissa = F128_M_BITS'({(SIZEOF_LONG - 1){1'b1}}) << (ULONG_TRAILING_ZEROS);//upper 63 bits are 1s, lower bits are 0s
+            target_max_int.one_quarter = F128_M_BITS'(1'b1) << (ULONG_TRAILING_ZEROS - 2);//63 0s, 01
+            target_max_int.one_half = F128_M_BITS'(1'b1) << (ULONG_TRAILING_ZEROS - 1);//63 0s, 1
+            target_max_int.three_quarters = F128_M_BITS'(2'b11) << (ULONG_TRAILING_ZEROS - 2);//63 0s, 11
+            target_max_int.one = F128_M_BITS'(1'b1) << ULONG_TRAILING_ZEROS;//62 0s, 1
+        end
+        FMT_LONG: begin
+            target_max_int.max_int_exp = (SIZEOF_LONG - 2);//2^62
+            target_max_int.max_int_mantissa = F128_M_BITS'({(SIZEOF_LONG - 2){1'b1}}) << (LONG_TRAILING_ZEROS);//leading 0, upper 62 bits are 1s, lower bits are 0s
+            target_max_int.one_quarter = F128_M_BITS'(1'b1) << (LONG_TRAILING_ZEROS - 2);//62 0s, 01
+            target_max_int.one_half = F128_M_BITS'(1'b1) << (LONG_TRAILING_ZEROS - 1);//62 0s, 1
+            target_max_int.three_quarters = F128_M_BITS'(2'b11) << (LONG_TRAILING_ZEROS - 2);//62 0s, 11
+            target_max_int.one = F128_M_BITS'(1'b1) << LONG_TRAILING_ZEROS;//61 0s, 1
+        end
+        default: begin//fill everything with 0s if an unrecognized int_fmt
+            target_max_int.max_int_exp = 0;
+            target_max_int.max_int_mantissa = '0;
+            target_max_int.one_quarter = '0;
+            target_max_int.one_half = '0;
+            target_max_int.three_quarters = '0;
+            target_max_int.one = '0;
+        end
+    endcase
+    return target_max_int;
+    endfunction
+
+    function automatic int get_proximity_to_max_int(
+        input logic [127:0] input_val,
+        input logic [7:0] fp_fmt,
+        input logic [7:0] int_fmt
+    );
+
+    max_int_struct target_int = get_max_int(int_fmt);
+    int input_exp = get_unbiased_exponent(input_val, fp_fmt);
+    logic [111:0] input_mantissa = input_val[111:0];
+
+    //Shift the double mantissa so the mantissa fills the upper bits
+    //This allows for one comparison regardless of whether the input is double or quad
+    if(fp_fmt == FMT_DOUBLE) begin
+        input_mantissa = F128_M_BITS'(input_val[F64_M_UPPER:0]) << (F128_M_BITS - F64_M_BITS);
+    end
+
+    //Comparison, returns the number corresponding to the test that each condition satisfies
+    if(input_exp == target_int.max_int_exp) begin
+        if(input_mantissa == target_int.max_int_mantissa) begin
+            return 1;//+-MaxInt
+        end
+        else if(input_mantissa > target_int.max_int_mantissa) begin
+            if(input_mantissa <= (target_int.max_int_mantissa + target_int.one_quarter)) begin
+                return 2;//+-MaxInt + (1/4)
+            end
+            else if(input_mantissa <= (target_int.max_int_mantissa + target_int.one_half)) begin
+                return 3;//+-MaxInt + (1/2)
+            end
+            else if(input_mantissa <= (target_int.max_int_mantissa + target_int.three_quarters)) begin
+                return 4;//+-MaxInt + (3/4)
+            end
+        end
+        else if(input_mantissa < target_int.max_int_mantissa) begin
+            if(input_mantissa >= (target_int.max_int_mantissa - target_int.one_quarter)) begin
+                return 2;//+-MaxInt - (1/4)
+            end
+            else if(input_mantissa >= (target_int.max_int_mantissa - target_int.one_half)) begin
+                return 3;//+-MaxInt - (1/2)
+            end
+            else if(input_mantissa >= (target_int.max_int_mantissa - target_int.three_quarters)) begin
+                return 4;//+-MaxInt - (3/4)
+            end
+            else if(input_mantissa >= (target_int.max_int_mantissa - target_int.one)) begin
+                return 5;//+-MaxInt - 1
+            end
+        end
+    end
+    else if (input_exp == target_int.max_int_exp + 1)begin
+        if(input_mantissa == '0) begin
+            return 5;//+- MaxInt + 1
+        end
+    end
+    return 0;
+    endfunction
+
+    function automatic int get_proximity_to_zero(
+        input logic [127:0] input_val,
+        input logic [7:0]   fmt
+    );
+
+    int exp_bias;
+    int unbiased_exp = get_unbiased_exponent(input_val, fmt);
+    int m_bits;//the first bit in the mantissa is the msb, the last is the lsb. Below examples of the mantissa are half precision
+    logic less_than_one_mantissa;// Checking if the value of the mantissa <= msb; mantissa = [0000_0000_00, 1000_0000_00]
+    logic less_than_two_mantissa;// Checking if the value of the mantissa <= (msb/2); mantissa = [0000_0000_00, 0100_0000_00]
+    logic less_than_three_mantissa;// Checking if the value of the mantissa <= (3msb/2); mantissa = [0000_0000_00, 1100_0000_00]
+    logic zero_mantissa;// flag corresponding to whether the mantissa is all 0s; mantissa = 0000_0000_00
+
+    case (fmt)
+            FMT_HALF: begin
+                exp_bias = F16_EXP_BIAS;
+                less_than_one_mantissa = (input_val[F16_M_UPPER:0] <= 112'b1 << (F16_M_BITS - 1));// <= 1000_0000_00
+                less_than_two_mantissa = (input_val[F16_M_UPPER:0] <= 112'b1 << (F16_M_BITS - 2));// <= 0100_0000_00
+                less_than_three_mantissa = (input_val[F16_M_UPPER:0] <= 112'b11 << (F16_M_BITS - 2));// <= 1100_0000_00
+                zero_mantissa = (input_val[F16_M_UPPER:0] == '0);
+            end
+            FMT_BF16: begin
+                exp_bias = BF16_EXP_BIAS;
+                less_than_one_mantissa = (input_val[BF16_M_UPPER:0] <= 112'b1 << (BF16_M_BITS - 1));
+                less_than_two_mantissa = (input_val[BF16_M_UPPER:0] <= 112'b1 << (BF16_M_BITS - 2));
+                less_than_three_mantissa = (input_val[BF16_M_UPPER:0] <= 112'b11 << (BF16_M_BITS - 2));
+                zero_mantissa = (input_val[BF16_M_UPPER:0] == '0);
+            end
+            FMT_SINGLE: begin
+                exp_bias = F32_EXP_BIAS;
+                less_than_one_mantissa = (input_val[F32_M_UPPER:0] <= 112'b1 << (F32_M_BITS - 1));
+                less_than_two_mantissa = (input_val[F32_M_UPPER:0] <= 112'b1 << (F32_M_BITS - 2));
+                less_than_three_mantissa = (input_val[F32_M_UPPER:0] <= 112'b11 << (F32_M_BITS - 2));
+                zero_mantissa = (input_val[F32_M_UPPER:0] == '0);
+            end
+            FMT_DOUBLE: begin
+                exp_bias = F64_EXP_BIAS;
+                less_than_one_mantissa = (input_val[F64_M_UPPER:0] <= 112'b1 << (F64_M_BITS - 1));
+                less_than_two_mantissa = (input_val[F64_M_UPPER:0] <= 112'b1 << (F64_M_BITS - 2));
+                less_than_three_mantissa = (input_val[F64_M_UPPER:0] <= 112'b11 << (F64_M_BITS - 2));
+                zero_mantissa = (input_val[F64_M_UPPER:0] == '0);
+            end
+            FMT_QUAD: begin
+                exp_bias = F128_EXP_BIAS;
+                less_than_one_mantissa = (input_val[F128_M_UPPER:0] <= 112'b1 << (F128_M_BITS - 1));
+                less_than_two_mantissa = (input_val[F128_M_UPPER:0] <= 112'b1 << (F128_M_BITS - 2));
+                less_than_three_mantissa = (input_val[F128_M_UPPER:0] <= 112'b11 << (F128_M_BITS - 2));
+                zero_mantissa = (input_val[F128_M_UPPER:0] == '0);
+            end
+            default: begin
+                exp_bias = 0;
+                less_than_one_mantissa = 0;
+                less_than_two_mantissa = 0;
+                less_than_three_mantissa = 0;
+                zero_mantissa = 0;
+            end
+    endcase
+
+    //return value corresponds to the test number number which is satisfied
+    if((unbiased_exp == -exp_bias) && (zero_mantissa)) begin//0 must have all 0s unbiased exp and all 0s mantissa
+        return 1;//+-0
+    end
+    else if(((unbiased_exp == -2) && (zero_mantissa)) || (unbiased_exp < -2)) begin//<= 2^-2
+        return 2;//+-(1/4)
+    end
+    else if(((unbiased_exp == -1) && (zero_mantissa)) || (unbiased_exp < -1)) begin//<= 2^-1
+        return 3;//+-(1/2)
+    end
+    else if((unbiased_exp == -1) && (less_than_one_mantissa)) begin//<= 2^-1 + 2^-2
+        return 4;//+-(3/4)
+    end
+    else if(((unbiased_exp == 0) && (zero_mantissa)) || (unbiased_exp < 0)) begin//<= 2^0
+        return 5;//+-1
+    end
+    else if(((unbiased_exp == 0) && (less_than_two_mantissa))) begin //<= 2^0 + 2^-2
+        return 6;//+-(5/4)
+    end
+    else if(((unbiased_exp == 0) && (less_than_one_mantissa))) begin//<= 2^0 + 2^-1
+        return 7;//+-(3/2)
+    end
+    else if(((unbiased_exp == 0) && (less_than_three_mantissa))) begin// <= 2^0 + 2^-1 + 2^-2
+        return 8;//+-(7/4)
+    end
+    else begin
+        return 0;//corresponds to no test number, will not satisfy the coverpoint
+    end
+
+    endfunction
 function automatic int effective_exponent (
     input logic [255:0] val,
     input logic [7:0]   fmt

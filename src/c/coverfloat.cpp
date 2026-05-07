@@ -1,3 +1,18 @@
+// Copyright (C) 2025-26 Harvey Mudd College
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, any work distributed under the
+// License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+// either express or implied. See the License for the specific language governing permissions
+// and limitations under the License.
+
 #include "coverfloat.hpp"
 #include <cinttypes>
 #include <cstdint>
@@ -5,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
+#include <utility>
 
 #ifndef TEST_FMA
 // #define TEST_FMA
@@ -12,6 +28,21 @@
 
 #ifndef TEST_DIV
 #define TEST_DIV
+#endif
+
+#ifdef UNMODIFIED_SOFTFLOAT
+THREAD_LOCAL intermResult_t softfloat_intermediateResult;
+THREAD_LOCAL fmaFullShiftInfo_t softfloat_fmaAddShiftInfo;
+
+// Remove Unnecessary Features
+#ifdef TEST_DIV
+#undef TEST_DIV
+#endif
+
+#ifdef TEST_FMA
+#undef TEST_FMA
+#endif
+
 #endif
 
 namespace mp = boost::multiprecision;
@@ -187,7 +218,7 @@ uint128_t parse_hex_128(const char *hex) {
     return value;
 }
 
-int reference_model(
+std::pair<int, std::string> reference_model(
     const uint32_t op,
     const uint8_t rm,
     const mp::uint128_t &a,
@@ -473,8 +504,7 @@ int reference_model(
             break;
         }
         default: {
-            fprintf(stderr, "Bad Operand Format for Div: %08x", operandFmt);
-            return EXIT_FAILURE;
+            return {EXIT_FAILURE, "Bad Operand Format For Div " + operandFmt};
         }
         }
 
@@ -505,8 +535,6 @@ int reference_model(
         int extra_bits = nf + 3;
         mp::cpp_int shifted_sigA = sigA << (nf + extra_bits);
         mp::cpp_int pre_rounding = (shifted_sigA) / sigB;
-
-        // std::cout << std::hex << pre_rounding << std::dec << std::endl;
 
         if (pre_rounding * sigB != shifted_sigA) {
             pre_rounding |= 1;
@@ -556,24 +584,25 @@ int reference_model(
                                  (((pre_rounding & sticky_mask) != 0) ^ ((pre_rounding & sticky_mask) != 0));
 
                     // Exact Sticky Bits are Wrong for Doubles, but overall correct (normally)
+                    std::stringstream msg;
                     if (!(operandFmt == FMT_DOUBLE || operandFmt == FMT_QUAD) || dirty) {
-                        std::cerr << "Division Prerounding Calculation Failed: Softfloat gave ";
-                        std::cerr << std::hex << std::setfill('0') << std::setw(48) << softfloat_computed;
-                        std::cerr << " We generated: " << std::setw(48) << pre_rounding << std::endl;
+                        msg << "Division Prerounding Calculation Failed: Softfloat gave ";
+                        msg << std::hex << std::setfill('0') << std::setw(48) << softfloat_computed;
+                        msg << " We generated: " << std::setw(48) << pre_rounding << "\n";
                     }
 
                     if ((pre_rounding & sig_mask) != (softfloat_computed & sig_mask)) {
-                        std::cerr << "Sigs Disagree" << std::endl;
+                        msg << "Sigs Disagree" << "\n";
                     }
                     if ((pre_rounding & guard_mask) != (softfloat_computed & guard_mask)) {
-                        std::cerr << "Guards Disagree" << std::endl;
+                        msg << "Guards Disagree" << "\n";
                     }
                     if (((pre_rounding & sticky_mask) != 0) ^ ((pre_rounding & sticky_mask) != 0)) {
-                        std::cerr << "Stickies Disagree" << std::endl;
+                        msg << "Stickies Disagree" << "\n";
                     }
 
                     if (dirty) {
-                        return EXIT_FAILURE;
+                        return {EXIT_FAILURE, msg.str()};
                     }
                 }
             }
@@ -1109,8 +1138,9 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: int to float conversion with non-int operand format: %x\n", operandFmt);
-                return EXIT_FAILURE;
+                std::stringstream msg;
+                msg << "ERROR: int to float conversion with non-int operand format: " << std::hex << operandFmt;
+                return {EXIT_FAILURE, msg.str()};
             }
             }
 
@@ -1159,8 +1189,9 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: int to float conversion with unsupported operand format: %x\n", operandFmt);
-                return EXIT_FAILURE;
+                std::stringstream msg;
+                msg << "ERROR: int to float conversion with non-int operand format: " << std::hex << operandFmt;
+                return {EXIT_FAILURE, msg.str()};
             }
             }
 
@@ -1199,8 +1230,9 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: int to float conversion with non-int operand format: %x\n", operandFmt);
-                return EXIT_FAILURE;
+                std::stringstream msg;
+                msg << "ERROR: int to float conversion with non-int operand format: " << std::hex << operandFmt;
+                return {EXIT_FAILURE, msg.str()};
             }
             }
 
@@ -1239,8 +1271,9 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: int to float conversion with non-int operand format: %x\n", operandFmt);
-                return EXIT_FAILURE;
+                std::stringstream msg;
+                msg << "ERROR: int to float conversion with non-int operand format: " << std::hex << operandFmt;
+                return {EXIT_FAILURE, msg.str()};
             }
             }
 
@@ -1279,8 +1312,9 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: int to float conversion with non-int operand format: %x\n", operandFmt);
-                return EXIT_FAILURE;
+                std::stringstream msg;
+                msg << "ERROR: int to float conversion with non-int operand format: " << std::hex << operandFmt;
+                return {EXIT_FAILURE, msg.str()};
             }
             }
 
@@ -1288,8 +1322,9 @@ int reference_model(
             break;
         }
         default: {
-            fprintf(stderr, "ERROR: int to float conversion called with unsupported result format: %x\n", resultFmt);
-            return EXIT_FAILURE;
+            std::stringstream msg;
+            msg << "ERROR: int to float conversion with unsupported result format: " << std::hex << resultFmt;
+            return {EXIT_FAILURE, msg.str()};
         }
         }
 
@@ -1320,8 +1355,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to int conversion with non-int result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to int conversion with non-int result format"};
             }
             }
             // FLOAT32_TO_MP(result, resultf);
@@ -1349,8 +1383,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to int conversion with non-int result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to int conversion with non-int result format"};
             }
             }
             // FLOAT64_TO_MP(result, resultf);
@@ -1378,8 +1411,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to int conversion with non-int result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to int conversion with non-int result format"};
             }
             }
             // FLOAT128_TO_MP(result, resultf);
@@ -1407,8 +1439,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to int conversion with non-int result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to int conversion with non-int result format"};
             }
             }
             // FLOAT16_TO_MP(result, resultf);
@@ -1436,15 +1467,14 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to int conversion with non-int result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to int conversion with non-int result format"};
             }
             }
             // FLOAT16_TO_MP(result, resultf);
             break;
         }
         default: {
-            fprintf(stderr, "ERROR: float to int conversion with non-float source format\n");
+            return {EXIT_FAILURE, "ERROR: float to int conversion with non-float source format"};
         }
         }
 
@@ -1470,8 +1500,10 @@ int reference_model(
                 break;
             }
             case FMT_SINGLE: {
-                fprintf(stderr, "ERROR: float to float conversion with the same operand and result format (single)\n");
-                return EXIT_FAILURE;
+                return {
+                    EXIT_FAILURE,
+                    "ERROR: float to float conversion with the same operand and result format (single)"
+                };
             }
             case FMT_DOUBLE: {
                 float64_t resultf = f32_to_f64(af);
@@ -1484,8 +1516,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to float conversion with non-float result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to float conversion with non-float result format"};
             }
             }
             // FLOAT32_TO_MP(result, resultf);
@@ -1512,8 +1543,10 @@ int reference_model(
                 break;
             }
             case FMT_DOUBLE: {
-                fprintf(stderr, "ERROR: float to float conversion with the same operand and result format (double)\n");
-                return EXIT_FAILURE;
+                return {
+                    EXIT_FAILURE,
+                    "ERROR: float to float conversion with the same operand and result format (double)"
+                };
             }
             case FMT_QUAD: {
                 float128_t resultf = f64_to_f128(af);
@@ -1521,8 +1554,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to float conversion with non-float result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to float conversion with non-float result format"};
             }
             }
             // FLOAT64_TO_MP(result, resultf);
@@ -1558,12 +1590,13 @@ int reference_model(
                 break;
             }
             case FMT_QUAD: {
-                fprintf(stderr, "ERROR: float to float conversion with the same operand and result format (quad)\n");
-                return EXIT_FAILURE;
+                return {
+                    EXIT_FAILURE,
+                    "ERROR: float to float conversion with the same operand and result format (quad)"
+                };
             }
             default: {
-                fprintf(stderr, "ERROR: float to float conversion with non-float result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to float conversion with non-float result format"};
             }
             }
             // FLOAT128_TO_MP(result, resultf);
@@ -1575,8 +1608,10 @@ int reference_model(
             MP_TO_FLOAT16(af, a);
             switch (resultFmt) {
             case FMT_HALF: {
-                fprintf(stderr, "ERROR: float to float conversion with the same operand and result format (half)\n");
-                return EXIT_FAILURE;
+                return {
+                    EXIT_FAILURE,
+                    "ERROR: float to float conversion with the same operand and result format (half)"
+                };
             }
             case FMT_BF16: {
                 bfloat16_t resultf = f32_to_bf16(f16_to_f32(af));
@@ -1599,8 +1634,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to float conversion with non-float result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to float conversion with non-float result format"};
             }
             }
             // FLOAT16_TO_MP(result, resultf);
@@ -1617,8 +1651,10 @@ int reference_model(
                 break;
             }
             case FMT_BF16: {
-                fprintf(stderr, "ERROR: float to float conversion with the same operand and result format (half)\n");
-                return EXIT_FAILURE;
+                return {
+                    EXIT_FAILURE,
+                    "ERROR: float to float conversion with the same operand and result format (bf16)"
+                };
             }
             case FMT_SINGLE: {
                 float32_t resultf = bf16_to_f32(af);
@@ -1636,8 +1672,7 @@ int reference_model(
                 break;
             }
             default: {
-                fprintf(stderr, "ERROR: float to float conversion with non-float result format\n");
-                return EXIT_FAILURE;
+                return {EXIT_FAILURE, "ERROR: float to float conversion with non-float result format"};
             }
             }
             // FLOAT16_TO_MP(result, resultf);
@@ -2110,14 +2145,16 @@ int reference_model(
 
         mp::cpp_int mask = (mp::cpp_int(1) << INTERM_SIG_LENGTH) - 1;
         intermResult.sig &= mask;
+        *flags = softFloat_getFlags();
 
         // DO NOT FALL THROUGH TO THE NORMAL POST-PROCESSING!
-        return EXIT_SUCCESS;
+        return {EXIT_SUCCESS, ""};
     }
 
     default: {
-        fprintf(stderr, "Unsupported Operation Called, OP: %x\n", op);
-        return EXIT_FAILURE;
+        std::stringstream msg;
+        msg << "Unsupported Operation Called, OP: " << std::hex << op;
+        return {EXIT_FAILURE, msg.str()};
     }
     }
 
@@ -2298,10 +2335,11 @@ int reference_model(
                 softfloat_computed |= jam;
 
                 if (jam) {
-                    std::cout << "FMA Interm Mantissa Reconstruction Lost Information Compared to Softfloat" << std::hex
-                              << " Softfloat: " << softfloat_computed << " Ours: " << Z << std::endl;
+                    std::stringstream msg;
+                    msg << "FMA Interm Mantissa Reconstruction Lost Information Compared to Softfloat" << std::hex
+                        << " Softfloat: " << softfloat_computed << " Ours: " << Z << "\n";
 
-                    return EXIT_FAILURE;
+                    return {EXIT_FAILURE, msg.str()};
                 }
             } else {
                 softfloat_computed <<= our_msb - softfloat_msb;
@@ -2314,10 +2352,11 @@ int reference_model(
                 bool pre_rounding_bit = (Z & bit_mask) != 0;
 
                 if (softfloat_bit != pre_rounding_bit && !only_zeros) {
-                    std::cout << "FMA Interm Mantissa Reconstruction Lost Information Compared to Softfloat" << std::hex
-                              << " Softfloat: " << softfloat_computed << " Ours: " << Z << std::endl;
+                    std::stringstream msg;
+                    msg << "FMA Interm Mantissa Reconstruction Lost Information Compared to Softfloat" << std::hex
+                        << " Softfloat: " << softfloat_computed << " Ours: " << Z << "\n";
 
-                    return EXIT_FAILURE;
+                    return {EXIT_FAILURE, msg.str()};
                 }
 
                 if (softfloat_bit == 1 && only_zeros) {
@@ -2378,7 +2417,7 @@ int reference_model(
     mp::cpp_int mask = (mp::cpp_int(1) << INTERM_SIG_LENGTH) - 1;
     intermResult.sig &= mask;
 
-    return EXIT_SUCCESS;
+    return {EXIT_SUCCESS, ""};
 }
 
 // TODO move to own file
@@ -2491,11 +2530,10 @@ std::string coverfloat_runtestvector(const std::string &input, bool suppress_err
 
     // Call reference model
 
-    int success = reference_model(op, rm, a, b, c, opFmt, resFmt, newRes, &newFlags, intermRes);
+    auto [success, msg] = reference_model(op, rm, a, b, c, opFmt, resFmt, newRes, &newFlags, intermRes);
 
     if (success == EXIT_FAILURE) {
-        return "";
-        // return EXIT_FAILURE;
+        return msg;
     }
 
     // newRes += newRes128.upper;

@@ -1,3 +1,18 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # Created By: Ryan Wolk (rwolk@hmc.edu) on 2/26/2026
 
 import math
@@ -8,6 +23,7 @@ from typing import TextIO
 import cover_float.common.constants as constants
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
 
 B9_1SRC = [constants.OP_SQRT]
 B9_2SRC = [
@@ -205,23 +221,20 @@ def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO) -> 
                     break  # Don't over generate tests
 
 
-def main() -> None:
-    with (
-        Path("tests/testvectors/B9_tv.txt").open("w") as test_f,
-        Path("tests/covervectors/B9_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in constants.FLOAT_FMTS:
-            generator = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], fmt + "b9")
+@register_model("B9")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in constants.FLOAT_FMTS:
+        generator = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], fmt + "b9")
 
-            bins_path = Path(
-                "coverage",
-                "covergroups",
-                "bins_templates",
-                "generated",
-                f"B9_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
-            )
-            bins_path.parent.mkdir(parents=True, exist_ok=True)
+        bins_path = Path(
+            "coverage",
+            "covergroups",
+            "bins_templates",
+            "generated",
+            f"B9_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
+        )
+        bins_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with bins_path.open("w") as generated_coverage:
-                sigs = generator.generate(generated_coverage)
-                B9_generator(sigs, fmt, test_f, cover_f)
+        with bins_path.open("w") as generated_coverage:
+            sigs = generator.generate(generated_coverage)
+            B9_generator(sigs, fmt, test_f, cover_f)
