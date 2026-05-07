@@ -4,7 +4,6 @@
 
 import random
 from collections.abc import Iterator
-from pathlib import Path
 from random import seed
 from typing import TextIO
 
@@ -36,6 +35,7 @@ from cover_float.common.constants import (
 )
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
 
 B5_FMTS = [FMT_QUAD, FMT_DOUBLE, FMT_SINGLE, FMT_BF16, FMT_HALF]
 ROUNDING_MODES = [ROUND_NEAR_EVEN, ROUND_MINMAG, ROUND_MIN, ROUND_MAX, ROUND_NEAR_MAXMAG]
@@ -1264,17 +1264,10 @@ def addSubTests(test_f: TextIO, cover_f: TextIO) -> None:
             tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
 
 
-def main() -> None:
-    with (
-        Path("./tests/testvectors/B5_tv.txt").open("w") as test_f,
-        Path("./tests/covervectors/B5_cv.txt").open("w") as cover_f,
-    ):
-        convertTests(test_f, cover_f)
-        multiplyTests(test_f, cover_f)
-        addSubTests(test_f, cover_f)
-        fmaTests(test_f, cover_f)
-        divTests(test_f, cover_f)
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B5")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    convertTests(test_f, cover_f)
+    multiplyTests(test_f, cover_f)
+    addSubTests(test_f, cover_f)
+    fmaTests(test_f, cover_f)
+    divTests(test_f, cover_f)

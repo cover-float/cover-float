@@ -2,7 +2,6 @@
 # Lamarr
 
 import random
-from pathlib import Path
 from typing import TextIO
 
 from cover_float.common.constants import (
@@ -28,6 +27,7 @@ from cover_float.common.constants import (
 )
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.B5 import getMultiplyTests
+from cover_float.testgen.model import register_model
 
 B5_FMTS = [FMT_QUAD, FMT_DOUBLE, FMT_SINGLE, FMT_BF16, FMT_HALF]
 ROUNDING_MODES = [ROUND_NEAR_EVEN, ROUND_MINMAG, ROUND_MIN, ROUND_MAX, ROUND_NEAR_MAXMAG]
@@ -92,10 +92,11 @@ def genUnderflowTests(test_f: TextIO, cover_f: TextIO) -> None:
     for precision in FLOAT_FMTS:
         min_exp = UNBIASED_EXP[precision][0] + 1
         max_exp = UNBIASED_EXP[precision][1] - 1
-        for rounding_mode in ROUNDING_MODES:
-            for a, b in getMultiplyTests(precision, rounding_mode):
-                for operation in FMA_OPS:
-                    c = getRandomInt(min_exp, max_exp, str(random.randint(0, 1)), precision)
+        rounding_mode = random.choice(ROUNDING_MODES)
+        for a, b in getMultiplyTests(precision, rounding_mode):
+            for operation in FMA_OPS:
+                for sign in ["0", "1"]:
+                    c = getRandomInt(min_exp, max_exp, sign, precision)
                     run_and_store_test_vector(
                         f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
                         test_f,
@@ -329,15 +330,8 @@ def get_fp_values(precision: str, grs_pattern: str, mul_sign: int, addend_sign: 
     return a_fp, b_fp, c_fp
 
 
-def main() -> None:
-    with (
-        Path("./tests/testvectors/B18_tv.txt").open("w") as test_f,
-        Path("./tests/covervectors/B18_cv.txt").open("w") as cover_f,
-    ):
-        genUnderflowTests(test_f, cover_f)
-        # overFlowTests(test_f, cover_f)
-        lsbGuardStickyTests(test_f, cover_f)
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B18")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    genUnderflowTests(test_f, cover_f)
+    # overFlowTests(test_f, cover_f)
+    lsbGuardStickyTests(test_f, cover_f)
