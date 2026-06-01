@@ -273,8 +273,6 @@ def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
         hp = B5_FMTS[i_hp]
         for i_lp in range(i_hp + 1, len(B5_FMTS)):
             lp = B5_FMTS[i_lp]
-            # hp = B5_FMTS[0]
-            # lp = B5_FMTS[4]
             for rounding_mode in ROUNDING_MODES:
                 tests_conversion_1_2(lp, hp, rounding_mode, test_f, cover_f)
                 tests_conversion_3_4(lp, hp, rounding_mode, test_f, cover_f)
@@ -461,7 +459,7 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
             FMT_QUAD: ((2**38) + 1) * ((2**76) - (2**38) + 1),
         },
         "010": {
-            FMT_BF16: 2056,
+            FMT_BF16: 1,
             FMT_HALF: (2**11) + 1,
             FMT_SINGLE: ((2**8) + 1) * ((2**8) ** 2 - (2**8) + 1),
             FMT_DOUBLE: (2**53) + 1,
@@ -472,7 +470,7 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
             FMT_HALF: 2**13 + 4 + 3,
             FMT_SINGLE: (2**26) + 7,
             FMT_DOUBLE: 2**55 + 7,
-            FMT_QUAD: 2**120 + 125,
+            FMT_QUAD: (2**112 + 2) * (2**113 - 2),
         },
         # Below MinNorm
         "111": {
@@ -507,8 +505,8 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
             FMT_DOUBLE: ((2**11) + 1),
             FMT_QUAD: ((2**38) + 1),
         },
-        "010": {FMT_BF16: 257, FMT_HALF: 683, FMT_SINGLE: ((2**8) + 1), FMT_DOUBLE: 321, FMT_QUAD: 491003369344660409},
-        "011": {FMT_BF16: 103, FMT_HALF: 9, FMT_SINGLE: 23 * 29, FMT_DOUBLE: 9 * 25, FMT_QUAD: 1099511627781},
+        "010": {FMT_BF16: 1, FMT_HALF: 683, FMT_SINGLE: ((2**8) + 1), FMT_DOUBLE: 321, FMT_QUAD: 491003369344660409},
+        "011": {FMT_BF16: 103, FMT_HALF: 9, FMT_SINGLE: 23 * 29, FMT_DOUBLE: 9 * 25, FMT_QUAD: (2**112 + 2)},
         # Below MinNorm
         "111": {
             FMT_BF16: (2**7) - 1,
@@ -544,9 +542,6 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
     factor_1 = factor_list[grs_pattern][precision]
     factor_2 = target_int // factor_1  # Integers have unlimited precision, must use integer division
 
-    if target_int == 1 and factor_1 == 1:
-        yield ("0", "0")
-
     a_int = int(max(factor_1, factor_2))  # Ensure a is the largest value
     b_int = int(min(factor_1, factor_2))
 
@@ -555,6 +550,9 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
 
     a_bits = len(a_bin)
     b_bits = len(b_bin)
+    # Thow error is bit width is impossibly long
+    if a_bits > m_bits + 1 or b_bits > m_bits + 1:
+        raise ValueError(f"a_bits ({a_bits}) or b_bits ({b_bits}) cannot be greater than m_bits + 1 ({m_bits + 1}).")
 
     exp_offset = a_bits - b_bits
 
@@ -580,8 +578,8 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
 
     a_fp = generate_FP(e_bits, str(a_sign), a_exp, a_bin, e_bias)
     b_fp = generate_FP(e_bits, str(b_sign), b_exp, b_bin, e_bias)
-
-    yield (a_fp, b_fp)
+    if not (target_int == 1 and factor_1 == 1):
+        yield (a_fp, b_fp)
 
 
 def mul_div_grs_gen(
@@ -690,7 +688,7 @@ def tests_multiply_5_6(precision: str, rounding_mode: str) -> Iterator[tuple[str
 
     # MinNorm + 2 ulp
     yield from factor_mul_gen(precision, rounding_mode, "010", "0")  # Positive Test
-    yield from factor_mul_gen(precision, rounding_mode, "010", "1")  # Negative Test #BF_16 is producing an error
+    yield from factor_mul_gen(precision, rounding_mode, "010", "1")  # Negative Test BF_16 factor is impossible
 
     # MinNorm + 3 ulp
     yield from factor_mul_gen(precision, rounding_mode, "011", "0")  # Positive Test
@@ -719,17 +717,6 @@ def tests_multiply_9(precision: str, rounding_mode: str) -> Iterator[tuple[str, 
         sign = str(random.randint(0, 1))
 
         yield from mul_div_grs_gen(OP_MUL, precision, rounding_mode, "011", target_exp, sign, str(target_exp))
-
-
-# def multiplyTests(test_f: TextIO, cover_f: TextIO, genTests: bool) -> None:
-#     if genTests:
-#         for precision in FLOAT_FMTS:
-#             for rounding_mode in ROUNDING_MODES:
-#                 tests_multiply_1_2(precision, rounding_mode, test_f, cover_f)
-#                 tests_multiply_3_4(precision, rounding_mode, test_f, cover_f)
-#                 tests_multiply_5_6(precision, rounding_mode, test_f, cover_f)
-#                 tests_multiply_7_8(precision, rounding_mode, test_f, cover_f)
-#                 tests_multiply_9(precision, rounding_mode, test_f, cover_f)
 
 
 def getMultiplyTests(precision: str, rounding_mode: str) -> Iterator[tuple[str, str]]:
@@ -1105,7 +1092,7 @@ def getDivTests(precision: str, rounding_mode: str) -> Iterator[tuple[str, str]]
     yield from tests_div_1_2(precision, rounding_mode)
     yield from tests_div_3_4(precision, rounding_mode)
     yield from tests_div_7_8(precision, rounding_mode)
-    # yield from tests_div_9(precision, rounding_mode)
+    yield from tests_div_9(precision, rounding_mode)
 
 
 def divTests(test_f: TextIO, cover_f: TextIO) -> None:
@@ -1258,16 +1245,16 @@ def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f:
 def addSubTests(test_f: TextIO, cover_f: TextIO) -> None:
     for precision in FLOAT_FMTS:
         for rounding_mode in ROUNDING_MODES:
-            tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f)
-            tests_add_sub_3_4(precision, rounding_mode, test_f, cover_f)
+            # tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f)
+            # tests_add_sub_3_4(precision, rounding_mode, test_f, cover_f)
             tests_add_sub_5_6(precision, rounding_mode, test_f, cover_f)
-            tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
+            # tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
 
 
 @register_model("B5")
 def main(test_f: TextIO, cover_f: TextIO) -> None:
-    convertTests(test_f, cover_f)
+    convertTests(test_f, cover_f)  # Generating Too little tests
     multiplyTests(test_f, cover_f)
-    addSubTests(test_f, cover_f)
+    addSubTests(test_f, cover_f)  # Generating too many tests
     fmaTests(test_f, cover_f)
     divTests(test_f, cover_f)

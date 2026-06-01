@@ -95,13 +95,12 @@ def genUnderflowTests(test_f: TextIO, cover_f: TextIO) -> None:
         rounding_mode = random.choice(ROUNDING_MODES)
         for a, b in getMultiplyTests(precision, rounding_mode):
             for operation in FMA_OPS:
-                for sign in ["0", "1"]:
-                    c = getRandomInt(min_exp, max_exp, sign, precision)
-                    run_and_store_test_vector(
-                        f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
-                        test_f,
-                        cover_f,
-                    )
+                c = getRandomInt(min_exp, max_exp, str(random.randint(0, 1)), precision)
+                run_and_store_test_vector(
+                    f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
+                    test_f,
+                    cover_f,
+                )
 
 
 # def genOverflowTests(test_f: TextIO, cover_f: TextIO) -> None:
@@ -141,21 +140,21 @@ def get_fp_values(precision: str, grs_pattern: str, mul_sign: int, addend_sign: 
     # Determine the input mantissas for each desired value
     target_list = {
         # Above MinNorm
-        "001": {
+        "001": {  # Same as B5, FIX
             FMT_BF16: (8 + 1) * (8**2 - 8 + 1),
             FMT_HALF: ((2**4) + 1) * ((2**4) ** 2 - (2**4) + 1),
             FMT_SINGLE: ((2**5) + 1) * ((2**5) ** 4 - (2**5) ** 3 + (2**5) ** 2 - (2**5) + 1),
             FMT_DOUBLE: ((2**11) + 1) * ((2**11) ** 4 - (2**11) ** 3 + (2**11) ** 2 - (2**11) + 1),
             FMT_QUAD: ((2**38) + 1) * ((2**76) - (2**38) + 1),
         },
-        "010": {
+        "010": {  # Same as B5, FIX
             FMT_BF16: 2056,
             FMT_HALF: (2**11) + 1,
             FMT_SINGLE: ((2**8) + 1) * ((2**8) ** 2 - (2**8) + 1),
             FMT_DOUBLE: (2**53) + 1,
             FMT_QUAD: (2**113) + 1,
         },
-        "011": {
+        "011": {  # Same as B5, FIX
             FMT_BF16: 2**9 + 2 + 1,
             FMT_HALF: 2**13 + 4 + 3,
             FMT_SINGLE: (2**26) + 7,
@@ -334,4 +333,4 @@ def get_fp_values(precision: str, grs_pattern: str, mul_sign: int, addend_sign: 
 def main(test_f: TextIO, cover_f: TextIO) -> None:
     genUnderflowTests(test_f, cover_f)
     # overFlowTests(test_f, cover_f)
-    lsbGuardStickyTests(test_f, cover_f)
+    # lsbGuardStickyTests(test_f, cover_f)

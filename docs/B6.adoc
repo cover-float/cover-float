@@ -28,7 +28,7 @@ Test 4):: stem:[+"MinSubNorm" / 2 < "intermediate" < +"MinSubNorm"]
 == Implementation
 
 === Definitions
-`min_exp`:: The minimum exponent for each precision, where the biased exponent value is 1.
+`min_exp`:: The minimum normal exponent for each precision, where the biased exponent value is 1.
 `lp/hp`:: As specified within the operations section, this test suite will be performing high to low precision converts. `hp` refers to the higher precision input operand for these operations, `lp` refers to the lower precision output of the conversion.
 `m_bits`:: The number of mantissa bits, dependent on the precision.
 `min_sn_exp`:: The smallest possible subnormal value based on the precision, 2^min_exp - m_bits.

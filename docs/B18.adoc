@@ -1,0 +1,93 @@
+= B18 Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem:
+
+== B18: Multiply-Add: Special Events
+
+Aharoni et al.
+
+=== Description
+This model checks different cases where the multipliccaion causes some event in the product while the addition cancels this event
+
+Test 1):: Product: Enumerate on all options for LSB, Guard, and Sticky bit.
+Intermediate Result: Exact (Guard and Sticky are zero)
+
+Test 2):: Product: Take overflow values from (B4) "Overflow".
+Intermediate Result: No overflow
+
+Test 3):: Product: Take underflow values from model (B5) "Underflow".
+Intermediate Result: No underflow
+
+*Number of tests:* 1 E 6
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* `All`
+
+== Implementation
+
+=== Definitions
+`min_exp`:: The minimum exponent for each precision, where the biased exponent value is 1.
+`lp/hp`:: As specified within the operations section, this test suite will be performing high to low precision converts. `hp` refers to the higher precision input operand for these operations, `lp` refers to the lower precision output of the conversion.
+`m_bits`:: The number of mantissa bits, dependent on the precision.
+`min_sn_exp`:: The smallest possible subnormal value based on the precision, 2^min_exp - m_bits.
+`min_sn`:: The smallest possible subnormal input, 2^(min_exp - m_bits)
+`hp_exp/lp_exp`:: The exponent value for `hp` and `lp` respectively.
+`lp_sn_exp`:: The exponent value corresponding to a subnormal value for `lp`. In any precision, this is 0 when represented as a biased exponent. In most tests, the mathematical operations will be expressed where `lp_sn_exp` is unbiased.
+`lsb_exp`:: The exponent value for the least significant bit.
+`lrs_int`:: The integer representation of the desired Isb, rounding, and guard bit values.
+
+== Operations
+=== Three operands
+* FMADD
+* FMSUB
+* FNMSUB
+* FNMADD
+
+=== General Implementation
+Each test presents a different requirement on the intermediate result and product. Based on this requirement, the appropriate factors for multiplication are chosen and the effective operation is determined. The rounding mode is randomly chosen.
+
+==== Test 1 Product Mantissa Pattern
+[cols="5*"]
+|===
+| lrs_int | LSB | Rounding | Sticky | Intermediate Mantissa
+
+| 1 | 0 | 0 | 1 | pass:[****_****_** 1*]
+| 2 | 0 | 1 | 0 | pass:[****_****_** 10]
+| 3 | 0 | 1 | 1 | pass:[****_****_** 1*]
+| 4 | 1 | 0 | 0 | pass:[****_****_*1 00]
+| 5 | 1 | 0 | 1 | pass:[****_****_*1 0*]
+| 6 | 1 | 1 | 0 | pass:[****_****_*1 10]
+| 7 | 1 | 1 | 1 | pass:[****_****_*1 1*]
+| 8 | 0 | 0 | 0 | pass:[****_****_*0 00]
+
+|===
+
+==== Test 1 Intermediate Mantissa Pattern
+[cols="4*"]
+|===
+|LSB | Rounding | Sticky | Intermediate Mantissa
+
+| * | 0 | 0 | pass:[****_****_** 00]
+
+|===
+
+
+== Specific Test Procedure
+=== Test 1
+Multiplication products were extracted from B5, any random number was added or subtracted with a random sign and random operation. Rounding mode is randomly chosen.
+
+=== Total Test Count
+[cols="3*", options="header"]
+|===
+| Test # | Breakdown | Count
+
+| 1 | (188 * 4) | 752
+| 2 | incomplete | incomplete
+| 3 | incomplete | incomplete
+| *Total Tests* | *700*
+|===
+
+_*Differs from Aharoni test count_
