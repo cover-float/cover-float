@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import os
 import pathlib
 import time
 from dataclasses import dataclass
@@ -111,13 +112,16 @@ def postprocess_testvectors(
     logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger(model))
 
     test_vector_file = test_vector_location / f"{model}_tv.txt"
-    readable_vectors_file = readable_vectors_dir / f"{model}_parsed.txt"
+    readable_vectors_file = (
+        readable_vectors_dir / f"{model}_parsed.txt" if not constants.config.RELEASE else pathlib.Path(os.devnull)
+    )
     processed_vectors: dict[str, tuple[csv.DictWriter[str], TextIO]] = {}
     total = 0
     non_riscv = 0
 
     file_size = test_vector_file.stat().st_size
-    readable_vectors_file.parent.mkdir(parents=True, exist_ok=True)
+    if not constants.config.RELEASE:
+        readable_vectors_file.parent.mkdir(parents=True, exist_ok=True)
 
     with (
         test_vector_file.open("r") as test_vectors,
@@ -130,7 +134,8 @@ def postprocess_testvectors(
         for line in test_vectors.readlines():
             parsed = parse_test_vector(line)
             if parsed:
-                readable_vectors.write(format_output(parsed) + "\n")
+                if not constants.config.RELEASE:
+                    readable_vectors.write(format_output(parsed) + "\n")
 
                 if not verify_test_vector(line):
                     logger.exception(

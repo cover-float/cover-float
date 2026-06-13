@@ -162,14 +162,21 @@ class OptionalColumn(ProgressColumn):
 
 
 class AsyncLoggingHandler(logging.handlers.QueueListener):
-    def __init__(self, reporter: StatusReporter, listen_to: Queue[Any], *handlers: logging.Handler) -> None:
+    def __init__(self, reporter: StatusReporter, listen_to: Queue[Any], level: int, *handlers: logging.Handler) -> None:
         super().__init__(listen_to, *handlers)
 
         self.reporter = reporter
+        self.level = level
 
     def handle_progress_update(self, record: dict[Any, Any]) -> None:
         try:
             action = record["action"]
+            if self.level > STATUS_LEVEL_NUM:
+                if action == "add_task":
+                    task_id_pipe: Connection = record["pipe_end"]
+                    task_id_pipe.send(-1)
+                return
+
             if action == "update":
                 self.reporter.progress.update(*record["args"], **record["kwargs"])
             elif action == "advance":
@@ -186,8 +193,8 @@ class AsyncLoggingHandler(logging.handlers.QueueListener):
                 self.reporter.progress.refresh()
             else:
                 logging.info(f"Failed to Log {record}")
-        except Exception as e:
-            logging.info(f"Failed to Log {record}", exc_info=e)
+        except Exception:
+            logging.exception(f"Failed to Log {record}")
 
     def handle(self, record: logging.LogRecord | dict[Any, Any]) -> None:
         if isinstance(record, logging.LogRecord):
@@ -217,7 +224,7 @@ class ProgressAwareLogHandler(logging.Handler):
 
 
 class StatusReporter:
-    def __init__(self) -> None:
+    def __init__(self, *, disable: bool = False) -> None:
         self.active_status_bars: dict[str, TaskID] = {}
         self.progress = Progress(
             SpinnerColumn(),
@@ -234,7 +241,9 @@ class StatusReporter:
 
         # This is the actual handler that prints to console
         self.rich_handler = ProgressAwareLogHandler(self.progress)
-        self.queue_listener = AsyncLoggingHandler(self, self.logging_queue, self.rich_handler)
+        self.queue_listener = AsyncLoggingHandler(
+            self, self.logging_queue, logging.getLogger().level, self.rich_handler
+        )
         logging.getLogger().addHandler(logging.handlers.QueueHandler(self.logging_queue))
 
         # This keeps all of the refreshes in one thread, eliminating all race conditions
@@ -242,6 +251,7 @@ class StatusReporter:
         self._refresh_thread.daemon = True
 
         self.exiting = False
+        self.disable = disable
 
     def _reset_refresh_timer(self) -> None:
         self.logging_queue.put({"action": "refresh", "args": [], "kwargs": {}})
@@ -252,7 +262,9 @@ class StatusReporter:
             self._refresh_thread.start()
 
     def __enter__(self) -> StatusReporter:
-        self.progress.start()
+        if not self.disable:
+            self.progress.start()
+
         self.queue_listener.start()
         self._refresh_thread.start()
 
