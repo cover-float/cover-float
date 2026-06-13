@@ -100,7 +100,7 @@ def generate_B28(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
 
 @register_model("B28")
 def main(test_f: TextIO, cover_f: TextIO) -> None:
-    seed = reproducible_hash("B28_C0DE")
+    seed = reproducible_hash("B28")
     random.seed(seed)
     for fmt in constants.FLOAT_FMTS:
         generate_B28(fmt, test_f, cover_f)
