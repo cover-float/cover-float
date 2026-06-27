@@ -17,7 +17,7 @@ from typing import TextIO
 
 import cover_float._reference
 import cover_float._unmodified_reference
-from cover_float.common.constants import TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS
+from cover_float.common.constants import TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS, config
 
 
 def run_and_store_test_vector(test_vector: str, test_file: TextIO, cover_file: TextIO) -> None:
@@ -27,13 +27,15 @@ def run_and_store_test_vector(test_vector: str, test_file: TextIO, cover_file: T
 
     generated_test_vector = cover_vector[:TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS]
     test_file.write(generated_test_vector + "\n")
-    cover_file.write(cover_vector.strip() + "\n")
+    if not config.RELEASE:
+        cover_file.write(cover_vector.strip() + "\n")
 
 
 def store_cover_vector(cover_vector: str, test_file: TextIO, cover_file: TextIO) -> None:
     generated_test_vector = cover_vector[:TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS]
     test_file.write(generated_test_vector + "\n")
-    cover_file.write(cover_vector.strip() + "\n")
+    if not config.RELEASE:
+        cover_file.write(cover_vector.strip() + "\n")
 
 
 def verify_test_vector(test_vector: str) -> bool:

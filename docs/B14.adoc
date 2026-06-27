@@ -1,0 +1,151 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+
+== B14 Multiply-Add: Shift
+
+Aharoni et al.
+
+=== Description
+
+This model tests every possible value for a shift between the addends of the
+multiply-add (FMA) operation. For the difference between the unbiased
+exponent of the addend and the unbiased exponent of the result of the
+multiplication, test the following values:
+
+1. A value smaller than `-(2p + 1)`
+2. All the values in the range `[-(2p + 1), (p + 1)]`
+3. A value larger than `(p + 1)`
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* FMADD, FMSUB, FNMADD, FNMSUB
+
+*Rounding Mode:* Round-to-Nearest-Even (RNE)
+
+== Implementation
+
+=== General Implementation
+
+An FMA (fused multiply-add) unit computes `X = A * B + C`, where `X` is the
+result, `A` and `B` are the multiplicands, and `C` is the addend.
+
+The shift is defined as the difference between the unbiased exponent of the
+multiplication product and the unbiased exponent of the addend `C`:
+
+[source]
+----
+S = unbiased_exp(product) - unbiased_exp(C)
+  = (unbiased_exp(A) + unbiased_exp(B)) - unbiased_exp(C)
+----
+
+In order for a processor to properly execute a fused multiply-add operation,
+it must first compute the product and then align the significand of the
+addend with the significand of the multiplication result (or the other way
+around) so that both quantities share the same exponent before addition or
+subtraction is performed.
+
+=== Definitions
+
+`p`:: `mantissa_bits + 1`, the precision
+`min_u`:: Minimum unbiased exponent for the format
+`max_u`:: Maximum unbiased exponent for the format
+`bias`:: `(2 ^ (E - 1)) - 1`, exponent bias for the format
+`A`, `B`, `C`:: The three FMA operands
+`P = A * B`:: The intermediate product
+`S`:: The target shift, measured as `unbiased_exp(P) - unbiased_exp(C)`
+
+=== General Procedure
+
+The generator produces a single group of test vectors per format,
+corresponding directly to Aharoni's three shift regions:
+
+[cols="2,1,2,2",options="header"]
+|===
+| Group                           | Aharoni Case | Shift Constraint                      | Vectors per format
+
+| Group 1 (small_diff)            | 1            | `S <= -(2p + 2)`                      | 4
+| Group 2 (mid_diff sweep)        | 2            | `S ∈ [-(2p + 1), (p + 1)]`            | `(3p + 3) * 4`
+| Group 3 (large_diff)            | 3            | `S >= (p + 2)`                        | 4
+|===
+
+Where `S = unbiased_exp(product) - unbiased_exp(C)` and
+`p = mantissa_bits + 1`.
+
+For every group, the generator loops through the four FMA operations
+{FMADD, FMSUB, FNMADD, FNMSUB}, and the rounding mode is fixed at RNE. The
+sign, mantissa, and exponent-split choices are randomized within the
+constraints of the target shift.
+
+== Test Implementation
+
+=== Group 1 — The Deep-Negative Shift (small_diff)
+
+*Goal:* Drive the alignment shift into the region `S <= -(2p + 2)`. This
+region corresponds to the case where the addend `C` is so much larger than
+the product `P` that `P` effectively becomes a sticky bit relative to `C`.
+
+*Intermediate Constraint:* `S <= -(2p + 2)`, achieved by pairing a
+small-exponent product with a large-exponent addend.
+
+*Construction Method:*
+
+1. Given the fixed target shift `S = -(2p + 2)`, pick an unbiased addend
+   exponent `C_u` from the reachable range
+   `[max(min_u, 2*min_u - S), min(max_u, 2*max_u - S)] ∩ [min_u, max_u]`.
+2. Compute the required unbiased product exponent `P_u = S + C_u`.
+3. Split `P_u = A_u + B_u` with both in `[min_u, max_u]` by randomly picking
+   `A_u ∈ [max(min_u, P_u - max_u), min(max_u, P_u - min_u)]` and setting
+   `B_u = P_u - A_u`.
+4. Emit the test vector with random signs and random mantissas for `A`,
+   `B`, `C`.
+
+*Total Test Cases for Group 1:* `1 shift x 4 operations = 4 vectors per format.`
+
+=== Group 2 — The Mid Range Sweep (mid_diff)
+
+*Goal:* Exercise every integer alignment shift in the range where the
+addend and product have comparable magnitudes. Every integer shift
+`S ∈ [-(2p + 1), (p + 1)]` is visited.
+
+*Intermediate Constraint:* `S` takes every value in `[-(2p + 1), (p + 1)]`.
+
+*Construction Method:* For each target shift `S` in the sweep and for each
+of the four FMA operations, the generator applies the same construction as
+Group 1.
+
+*Total Test Cases for Group 2:* `(3p + 3) shifts x 4 operations = (12p + 12) vectors per format.`
+
+=== Group 3 — The Deep-Positive Shift (large_diff)
+
+*Goal:* Drive the alignment shift into the region `S >= (p + 2)`. This
+region corresponds to the case where the product `P` is so much larger than
+the addend `C` that `C` effectively becomes a sticky bit relative to `P`.
+
+*Intermediate Constraint:* `S >= (p + 2)`, achieved by pairing a
+large-exponent product with a small-exponent addend.
+
+*Construction Method:* Same as Group 1.
+
+*Total Test Cases for Group 3:* `1 shift x 4 operations = 4 vectors per format.`
+
+=== Vector Count Summary
+
+NOTE: There is no redundancy between groups, and no vector contributes to
+more than one shift.
+
+[cols="1,1,1,1,1,1",options="header"]
+|===
+| Precision | p   | Group 1 | Group 2 | Group 3 | Total per format
+
+| BF16      |   8 | 4       |   108   | 4       |   116
+| F16       |  11 | 4       |   144   | 4       |   152
+| F32       |  24 | 4       |   300   | 4       |   308
+| F64       |  53 | 4       |   648   | 4       |   656
+| F128      | 113 | 4       | 1,368   | 4       | 1,376
+|===
+
+*Total across 5 formats:* 2,608 vectors

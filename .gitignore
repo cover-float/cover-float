@@ -19,3 +19,4 @@ tests/testvectors/B*_tv.txt
 coverage/covergroups/bins_templates/generated
 tests/readable/B*_parsed.txt
 tests/processed/*/B*.csv
+tests/.stamp/*

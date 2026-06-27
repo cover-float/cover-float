@@ -2180,6 +2180,12 @@ std::pair<int, std::string> reference_model(
 
             intermResult.exp = exp;
 
+            if (exp == 0 && sig != 0) {
+                // In theory, we place the leading one (zero for subnormals) in the INTERM_SIG - 2 position
+                // so an effective exponent of 0 means that the leading digit is in the INTERM_SIG - 3 position
+                intermResult.exp = -(INTERM_SIG_LENGTH - 3 - safe_msb(intermResult.sig));
+            }
+
             intermResult.sign = signBF16UI(result);
             break;
         }
@@ -2196,6 +2202,10 @@ std::pair<int, std::string> reference_model(
 
             intermResult.exp = exp;
 
+            if (exp == 0 && sig != 0) {
+                intermResult.exp = -(INTERM_SIG_LENGTH - 3 - safe_msb(intermResult.sig));
+            }
+
             intermResult.sign = signF16UI(result);
             break;
         }
@@ -2205,10 +2215,15 @@ std::pair<int, std::string> reference_model(
 
             if (exp != 0) {
                 sig |= (1 << 23);
-                intermResult.sig = mp::cpp_int(sig) << (INTERM_SIG_LENGTH - 2 - 23);
             }
 
+            intermResult.sig = mp::cpp_int(sig) << (INTERM_SIG_LENGTH - 2 - 23);
+
             intermResult.exp = exp;
+
+            if (exp == 0 && sig != 0) {
+                intermResult.exp = -(INTERM_SIG_LENGTH - 3 - safe_msb(intermResult.sig));
+            }
 
             intermResult.sign = signF32UI(result);
             break;
@@ -2224,6 +2239,10 @@ std::pair<int, std::string> reference_model(
             intermResult.sig = mp::cpp_int(sig) << (INTERM_SIG_LENGTH - 2 - 52);
 
             intermResult.exp = exp;
+
+            if (exp == 0 && sig != 0) {
+                intermResult.exp = -(INTERM_SIG_LENGTH - 3 - safe_msb(intermResult.sig));
+            }
 
             intermResult.sign = signF64UI(result);
             break;
@@ -2243,6 +2262,10 @@ std::pair<int, std::string> reference_model(
             intermResult.sig = sig << (INTERM_SIG_LENGTH - 128);
 
             intermResult.exp = exp;
+
+            if (exp == 0 && sig != 0) {
+                intermResult.exp = -(INTERM_SIG_LENGTH - 3 - safe_msb(intermResult.sig));
+            }
 
             intermResult.sign = signF128UI64(result >> 64);
             break;
@@ -2398,7 +2421,8 @@ std::pair<int, std::string> reference_model(
 
     // 2. Subnormal Handling
     if (intermResult.exp <= 0 && !int_format) {
-        // See s_roundPackToF32.c for why we add 1. Our exp is +1 theirs
+        // We add 1 here to account for there being no leading one. Consider intermResult.exp=0,
+        // in this case, we need to shift the result over by one.
         int32_t shift_dist = -intermResult.exp + 1;
 
         // Lets shift right jam ourselves now!

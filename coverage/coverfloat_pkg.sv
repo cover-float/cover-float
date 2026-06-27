@@ -204,19 +204,26 @@ package coverfloat_pkg;
     logic [111:0] one;
     } max_int_struct;
 
+    // Helpers for finding the first fractional digit in FMA_PreAddition
+    parameter int F32_FMA_PRE_ADDITION_NF = 2 * F32_M_BITS;
+    parameter int F64_FMA_PRE_ADDITION_NF = 2 * F64_M_BITS;
+    parameter int F128_FMA_PRE_ADDITION_NF = 2 * F128_M_BITS;
+    parameter int F16_FMA_PRE_ADDITION_NF = 2 * F16_M_BITS;
+    parameter int BF16_FMA_PRE_ADDITION_NF = 2 * BF16_M_BITS;
+
     // Some Constants For B28
     // This value seems like an odd choice ... because it is a trivial task for rfi,
     // it seems like the intention should be 1.1111 * 2^(precision-2) as that is the maximum value
     // that has some meaning when it goes through rfi
     parameter int F32_RFI_MAX = (F32_EXP_BIAS + F32_M_BITS + 1) << (F32_M_BITS) | ((1 << F32_M_BITS) - 1); // 'h4bff0000
-    parameter int F64_RFI_MAX = (F64_EXP_BIAS + F64_M_BITS + 1) << (F64_M_BITS) | ((1 << F64_M_BITS) - 1);
-    parameter int F128_RFI_MAX = (F128_EXP_BIAS + F128_M_BITS + 1) << (F128_M_BITS) | ((1 << F128_M_BITS) - 1);
+    parameter logic[63:0] F64_RFI_MAX = (F64_EXP_BIAS + F64_M_BITS + 1) << (F64_M_BITS) | ((1 << F64_M_BITS) - 1);
+    parameter logic[127:0] F128_RFI_MAX = (F128_EXP_BIAS + F128_M_BITS + 1) << (F128_M_BITS) | ((1 << F128_M_BITS) - 1);
     parameter int F16_RFI_MAX = (F16_EXP_BIAS + F16_M_BITS + 1) << (F16_M_BITS) | ((1 << F16_M_BITS) - 1);
     parameter int BF16_RFI_MAX = (BF16_EXP_BIAS + BF16_M_BITS + 1) << (BF16_M_BITS) | ((1 << BF16_M_BITS) - 1);
 
     parameter int F32_ONE = (F32_EXP_BIAS) << F32_M_BITS; // 'h3f800000
-    parameter int F64_ONE = (F64_EXP_BIAS) << F64_M_BITS;
-    parameter int F128_ONE = (F128_EXP_BIAS) << F128_M_BITS;
+    parameter logic[63:0] F64_ONE = (F64_EXP_BIAS) << F64_M_BITS;
+    parameter logic[127:0] F128_ONE = (F128_EXP_BIAS) << F128_M_BITS;
     parameter int F16_ONE = (F16_EXP_BIAS) << F16_M_BITS;
     parameter int BF16_ONE = (BF16_EXP_BIAS) << BF16_M_BITS;
 
@@ -441,12 +448,15 @@ package coverfloat_pkg;
                 logic [F16_E_BITS-1:0] exp_a = a[14:10];
                 logic [F16_E_BITS-1:0] exp_b = b[14:10];
 
+                logic [F16_M_BITS-1:0] sig_a = a[F16_M_UPPER:0];
+                logic [F16_M_BITS-1:0] sig_b = b[F16_M_UPPER:0];
+
                 E_a = (exp_a == 0) ?
-                        (1 - F16_EXP_BIAS) :
+                        (0 - F16_EXP_BIAS - count_leading_zeros(sig_a, F16_M_BITS)) :
                         (int'(exp_a) - F16_EXP_BIAS);
 
                 E_b = (exp_b == 0) ?
-                        (1 - F16_EXP_BIAS) :
+                        (0 - F16_EXP_BIAS - count_leading_zeros(sig_b, F16_M_BITS)) :
                         (int'(exp_b) - F16_EXP_BIAS);
 
                 bias = F16_EXP_BIAS;
@@ -460,12 +470,15 @@ package coverfloat_pkg;
                 logic [BF16_E_BITS-1:0] exp_a = a[14:7];
                 logic [BF16_E_BITS-1:0] exp_b = b[14:7];
 
+                logic [BF16_M_BITS-1:0] sig_a = a[BF16_M_UPPER:0];
+                logic [BF16_M_BITS-1:0] sig_b = b[BF16_M_UPPER:0];
+
                 E_a = (exp_a == 0) ?
-                        (1 - BF16_EXP_BIAS) :
+                        (0 - BF16_EXP_BIAS - count_leading_zeros(sig_a, BF16_M_BITS)) :
                         (int'(exp_a) - BF16_EXP_BIAS);
 
                 E_b = (exp_b == 0) ?
-                        (1 - BF16_EXP_BIAS) :
+                        (0 - BF16_EXP_BIAS - count_leading_zeros(sig_b, BF16_M_BITS)) :
                         (int'(exp_b) - BF16_EXP_BIAS);
 
                 bias = BF16_EXP_BIAS;
@@ -479,12 +492,15 @@ package coverfloat_pkg;
                 logic [F32_E_BITS-1:0] exp_a = a[30:23];
                 logic [F32_E_BITS-1:0] exp_b = b[30:23];
 
+                logic [F32_M_BITS-1:0] sig_a = a[F32_M_UPPER:0];
+                logic [F32_M_BITS-1:0] sig_b = b[F32_M_UPPER:0];
+
                 E_a = (exp_a == 0) ?
-                        (1 - F32_EXP_BIAS) :
+                        (0 - F32_EXP_BIAS - count_leading_zeros(sig_a, F32_M_BITS)) :
                         (int'(exp_a) - F32_EXP_BIAS);
 
                 E_b = (exp_b == 0) ?
-                        (1 - F32_EXP_BIAS) :
+                        (0 - F32_EXP_BIAS - count_leading_zeros(sig_b, F32_M_BITS)) :
                         (int'(exp_b) - F32_EXP_BIAS);
 
                 bias = F32_EXP_BIAS;
@@ -498,12 +514,15 @@ package coverfloat_pkg;
                 logic [F64_E_BITS-1:0] exp_a = a[62:52];
                 logic [F64_E_BITS-1:0] exp_b = b[62:52];
 
+                logic [F64_M_BITS-1:0] sig_a = a[F64_M_UPPER:0];
+                logic [F64_M_BITS-1:0] sig_b = b[F64_M_UPPER:0];
+
                 E_a = (exp_a == 0) ?
-                        (1 - F64_EXP_BIAS) :
+                        (0 - F64_EXP_BIAS - count_leading_zeros(sig_a, F64_M_BITS)) :
                         (int'(exp_a) - F64_EXP_BIAS);
 
                 E_b = (exp_b == 0) ?
-                        (1 - F64_EXP_BIAS) :
+                        (0 - F64_EXP_BIAS - count_leading_zeros(sig_b, F64_M_BITS)) :
                         (int'(exp_b) - F64_EXP_BIAS);
 
                 bias = F64_EXP_BIAS;
@@ -517,12 +536,15 @@ package coverfloat_pkg;
                 logic [F128_E_BITS-1:0] exp_a = a[126:112];
                 logic [F128_E_BITS-1:0] exp_b = b[126:112];
 
+                logic [F128_M_BITS-1:0] sig_a = a[F128_M_UPPER:0];
+                logic [F128_M_BITS-1:0] sig_b = b[F128_M_UPPER:0];
+
                 E_a = (exp_a == 0) ?
-                        (1 - F128_EXP_BIAS) :
+                        (0 - F128_EXP_BIAS - count_leading_zeros(sig_a, F128_M_BITS)) :
                         (int'(exp_a) - F128_EXP_BIAS);
 
                 E_b = (exp_b == 0) ?
-                        (1 - F128_EXP_BIAS) :
+                        (0 - F128_EXP_BIAS - count_leading_zeros(sig_b, F128_M_BITS)) :
                         (int'(exp_b) - F128_EXP_BIAS);
 
                 bias = F128_EXP_BIAS;
@@ -538,6 +560,37 @@ package coverfloat_pkg;
         return (E_a + E_b) + bias;
 
     endfunction
+
+    function automatic int get_effective_product_exponent(
+        input logic[127:0] a,
+        input logic[127:0] b,
+        input logic[255:0] pre_addition,
+        input logic [7:0] fmt
+    );
+        int shift_one;
+
+        case (fmt)
+            FMT_BF16: begin
+                shift_one = pre_addition[BF16_FMA_PRE_ADDITION_NF+1];
+            end
+            FMT_HALF: begin
+                shift_one = pre_addition[F16_FMA_PRE_ADDITION_NF+1];
+            end
+            FMT_SINGLE: begin
+                shift_one = pre_addition[F32_FMA_PRE_ADDITION_NF+1];
+            end
+            FMT_DOUBLE: begin
+                shift_one = pre_addition[F64_FMA_PRE_ADDITION_NF+1];
+            end
+            FMT_QUAD: begin
+                shift_one = pre_addition[F128_FMA_PRE_ADDITION_NF+1];
+            end
+        endcase
+
+        return get_product_exponent(a, b, fmt) + shift_one;
+
+    endfunction
+
 
     function automatic int get_unbiased_exponent(
         input logic [127:0] input_val,

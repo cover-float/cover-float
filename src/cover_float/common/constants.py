@@ -148,8 +148,10 @@ RFI_DECIMAL_POINT = INTER_SIGNIFICAND_LENGTH // 2
 
 @dataclass
 class Config:
-    FULL_COVERAGE_TESTGEN: int = 1
+    FULL_COVERAGE_TESTGEN: bool = True
     CACHE_DIR: str = "build/cache"
+    QUIET: bool = False
+    RELEASE: bool = False
 
 
 config = Config()
