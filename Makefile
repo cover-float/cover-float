@@ -11,15 +11,7 @@ ifeq ($(AGGRESSIVENESS), 0)
 	COVER_FLOAT_FLAGS += --partial-output
 endif
 
-ifneq ($(PROCESSED_ONLY),)
-	COVER_FLOAT_FLAGS += --only-processed-vectors
-endif
-
-ifneq ($(SILENT),)
-	COVER_FLOAT_FLAGS += -qq
-endif
-
-MODELS := B1 B2 B3 B6 B7 B8 B9 B10 B11 B12 B13 B14 B15 B16 B20 B21 B25 B26 B27 B29
+MODELS := B1 B2 B3 B5 B6 B7 B8 B9 B10 B11 B12 B13 B14 B15 B16 B18 B20 B21 B25 B26 B27 B29
 
 .PHONY: build clean sim all $(MODELS)
 
