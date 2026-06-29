@@ -30,15 +30,15 @@ def generate_B26(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
     for float_fmt in constants.FLOAT_FMTS:
         seed = reproducible_hash(f"B26 {int_fmt} {float_fmt}")
         random.seed(seed)
-        for msb in range(bits):
-            unsigned = 1 << msb | random.getrandbits(msb)
+        for msb in range(-1, bits):
+            unsigned = 1 << msb | random.getrandbits(msb) if msb != -1 else 0
             tv = generate_test_vector(
                 constants.OP_CIF, unsigned, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
             )
             run_and_store_test_vector(tv, test_f, cover_f)
 
             if constants.INT_SIGNED[int_fmt]:
-                signed = -(1 << msb | random.getrandbits(msb))
+                signed = -(1 << msb | random.getrandbits(msb)) if msb != -1 else 0
                 unsigned = signed & (
                     (1 << constants.INT_SIZES[int_fmt]) - 1
                 )  # This gives a twos complement representation

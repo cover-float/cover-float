@@ -190,68 +190,151 @@ covergroup B27_cg (virtual coverfloat_interface CFI);
         }
 
     // ---------------------------------------------------------------
+    // Per-conversion Rest of Bits Data
+    // rest of bits = the (remaining bits) MSB fraction bits beyond the destination's precision
+    // ---------------------------------------------------------------
+
+    // F16 -> BF16
+    F16_to_BF16_remaining: coverpoint (CFI.a[F16_M_UPPER - BF16_M_BITS: 0] == '0)
+        iff (CFI.operandFmt == FMT_HALF && CFI.resultFmt == FMT_BF16
+             && CFI.a[F16_E_UPPER:F16_E_LOWER] == '1 && CFI.a[F16_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+
+    // F32 -> F16 / BF16
+    F32_to_F16_remaining: coverpoint (CFI.a[F32_M_UPPER - F16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_SINGLE && CFI.resultFmt == FMT_HALF
+             && CFI.a[F32_E_UPPER:F32_E_LOWER] == '1 && CFI.a[F32_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F32_to_BF16_remaining: coverpoint (CFI.a[F32_M_UPPER - BF16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_SINGLE && CFI.resultFmt == FMT_BF16
+             && CFI.a[F32_E_UPPER:F32_E_LOWER] == '1 && CFI.a[F32_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+
+    // F64 -> F32 / F16 / BF16
+    F64_to_F32_remaining: coverpoint (CFI.a[F64_M_UPPER - F32_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_DOUBLE && CFI.resultFmt == FMT_SINGLE
+             && CFI.a[F64_E_UPPER:F64_E_LOWER] == '1 && CFI.a[F64_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F64_to_F16_remaining: coverpoint (CFI.a[F64_M_UPPER - F16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_DOUBLE && CFI.resultFmt == FMT_HALF
+             && CFI.a[F64_E_UPPER:F64_E_LOWER] == '1 && CFI.a[F64_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F64_to_BF16_remaining: coverpoint (CFI.a[F64_M_UPPER - BF16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_DOUBLE && CFI.resultFmt == FMT_BF16
+             && CFI.a[F64_E_UPPER:F64_E_LOWER] == '1 && CFI.a[F64_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+
+    // F128 -> F64 / F32 / F16 / BF16
+    F128_to_F64_remaining: coverpoint (CFI.a[F128_M_UPPER - F64_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_QUAD && CFI.resultFmt == FMT_DOUBLE
+             && CFI.a[F128_E_UPPER:F128_E_LOWER] == '1 && CFI.a[F128_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F128_to_F32_remaining: coverpoint (CFI.a[F128_M_UPPER - F32_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_QUAD && CFI.resultFmt == FMT_SINGLE
+             && CFI.a[F128_E_UPPER:F128_E_LOWER] == '1 && CFI.a[F128_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F128_to_F16_remaining: coverpoint (CFI.a[F128_M_UPPER - F16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_QUAD && CFI.resultFmt == FMT_HALF
+             && CFI.a[F128_E_UPPER:F128_E_LOWER] == '1 && CFI.a[F128_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+    F128_to_BF16_remaining: coverpoint (CFI.a[F128_M_UPPER - BF16_M_BITS : 0] == '0)
+        iff (CFI.operandFmt == FMT_QUAD && CFI.resultFmt == FMT_BF16
+             && CFI.a[F128_E_UPPER:F128_E_LOWER] == '1 && CFI.a[F128_M_UPPER:0] != 0) {
+            type_option.weight = 0;
+            bins all_zero = {1};
+            bins not_zero = {0};
+        }
+
+    // ---------------------------------------------------------------
     // Crosses (one per narrowing conversion)
     // sNaN + all-zero surviving payload == +-Inf, so it is ignored.
     // ---------------------------------------------------------------
 
     `ifdef COVER_F16
         `ifdef COVER_BF16
-            B27_F16_to_BF16: cross CFF_op, F16_nan_class, F16_to_BF16_surviving, F16_sign {
-                ignore_bins inf = binsof(F16_nan_class.snan) && binsof(F16_to_BF16_surviving.all_zero);
+            B27_F16_to_BF16: cross CFF_op, F16_nan_class, F16_to_BF16_surviving, F16_to_BF16_remaining, F16_sign {
+                ignore_bins inf = binsof(F16_nan_class.snan) && binsof(F16_to_BF16_surviving.all_zero) && binsof(F16_to_BF16_remaining.all_zero);
             }
         `endif
     `endif
 
     `ifdef COVER_F32
         `ifdef COVER_F16
-            B27_F32_to_F16: cross CFF_op, F32_nan_class, F32_to_F16_surviving, F32_sign {
-                ignore_bins inf = binsof(F32_nan_class.snan) && binsof(F32_to_F16_surviving.all_zero);
+            B27_F32_to_F16: cross CFF_op, F32_nan_class, F32_to_F16_surviving, F32_to_F16_remaining, F32_sign {
+                ignore_bins inf = binsof(F32_nan_class.snan) && binsof(F32_to_F16_surviving.all_zero) && binsof(F32_to_F16_remaining.all_zero);
             }
         `endif
         `ifdef COVER_BF16
-            B27_F32_to_BF16: cross CFF_op, F32_nan_class, F32_to_BF16_surviving, F32_sign {
-                ignore_bins inf = binsof(F32_nan_class.snan) && binsof(F32_to_BF16_surviving.all_zero);
+            B27_F32_to_BF16: cross CFF_op, F32_nan_class, F32_to_BF16_surviving, F32_to_BF16_remaining, F32_sign {
+                ignore_bins inf = binsof(F32_nan_class.snan) && binsof(F32_to_BF16_surviving.all_zero) && binsof(F32_to_BF16_remaining.all_zero);
             }
         `endif
     `endif
 
     `ifdef COVER_F64
         `ifdef COVER_F32
-            B27_F64_to_F32: cross CFF_op, F64_nan_class, F64_to_F32_surviving, F64_sign {
-                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_F32_surviving.all_zero);
+            B27_F64_to_F32: cross CFF_op, F64_nan_class, F64_to_F32_surviving, F64_to_F32_remaining, F64_sign {
+                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_F32_surviving.all_zero) && binsof(F64_to_F32_remaining.all_zero);
             }
         `endif
         `ifdef COVER_F16
-            B27_F64_to_F16: cross CFF_op, F64_nan_class, F64_to_F16_surviving, F64_sign {
-                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_F16_surviving.all_zero);
+            B27_F64_to_F16: cross CFF_op, F64_nan_class, F64_to_F16_surviving, F64_to_F16_remaining, F64_sign {
+                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_F16_surviving.all_zero) && binsof(F64_to_F16_remaining.all_zero);
             }
         `endif
         `ifdef COVER_BF16
-            B27_F64_to_BF16: cross CFF_op, F64_nan_class, F64_to_BF16_surviving, F64_sign {
-                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_BF16_surviving.all_zero);
+            B27_F64_to_BF16: cross CFF_op, F64_nan_class, F64_to_BF16_surviving, F64_to_BF16_remaining, F64_sign {
+                ignore_bins inf = binsof(F64_nan_class.snan) && binsof(F64_to_BF16_surviving.all_zero) && binsof(F64_to_BF16_remaining.all_zero);
             }
         `endif
     `endif
 
     `ifdef COVER_F128
         `ifdef COVER_F64
-            B27_F128_to_F64: cross CFF_op, F128_nan_class, F128_to_F64_surviving, F128_sign {
-                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F64_surviving.all_zero);
+            B27_F128_to_F64: cross CFF_op, F128_nan_class, F128_to_F64_surviving, F128_to_F64_remaining, F128_sign {
+                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F64_surviving.all_zero) && binsof(F128_to_F64_remaining.all_zero);
             }
         `endif
         `ifdef COVER_F32
-            B27_F128_to_F32: cross CFF_op, F128_nan_class, F128_to_F32_surviving, F128_sign {
-                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F32_surviving.all_zero);
+            B27_F128_to_F32: cross CFF_op, F128_nan_class, F128_to_F32_surviving, F128_to_F32_remaining, F128_sign {
+                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F32_surviving.all_zero) && binsof(F128_to_F32_remaining.all_zero);
             }
         `endif
         `ifdef COVER_F16
-            B27_F128_to_F16: cross CFF_op, F128_nan_class, F128_to_F16_surviving, F128_sign {
-                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F16_surviving.all_zero);
+            B27_F128_to_F16: cross CFF_op, F128_nan_class, F128_to_F16_surviving, F128_to_F16_remaining, F128_sign {
+                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_F16_surviving.all_zero) && binsof(F128_to_F16_remaining.all_zero);
             }
         `endif
         `ifdef COVER_BF16
-            B27_F128_to_BF16: cross CFF_op, F128_nan_class, F128_to_BF16_surviving, F128_sign {
-                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_BF16_surviving.all_zero);
+            B27_F128_to_BF16: cross CFF_op, F128_nan_class, F128_to_BF16_surviving, F128_to_BF16_remaining, F128_sign {
+                ignore_bins inf = binsof(F128_nan_class.snan) && binsof(F128_to_BF16_surviving.all_zero) && binsof(F128_to_BF16_remaining.all_zero);
             }
         `endif
     `endif

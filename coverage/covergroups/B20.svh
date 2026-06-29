@@ -31,36 +31,36 @@ covergroup B20_cg (virtual coverfloat_interface CFI);
     }
 
     F16_trailing_zeros: coverpoint
-    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-2 : INTERM_M_BITS-F16_M_BITS - 1], F16_M_BITS) //nf-bit mantissa window (leading 1 excluded)
-    iff (CFI.operandFmt == FMT_HALF && CFI.intermM[INTERM_M_BITS-F16_M_BITS-2 : 0] == '0) {   //gated to F16; guard+sticky region = all zero
+    count_trailing_zeros(CFI.intermM[INTERM_M_BITS - 1 : INTERM_M_BITS-F16_M_BITS], F16_M_BITS) //nf-bit mantissa window (leading 1 excluded)
+    iff (CFI.operandFmt == FMT_HALF && CFI.intermM[INTERM_M_BITS-F16_M_BITS-1 : 0] == '0) {   //gated to F16; guard+sticky region = all zero
         type_option.weight = 0;
         bins tz[] = {[0 : F16_M_BITS]}; //tz[nf] = mantissa all zero (fully exact)
     }
 
     F32_trailing_zeros: coverpoint
-    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-2 : INTERM_M_BITS-F32_M_BITS-1], F32_M_BITS)
-    iff (CFI.operandFmt == FMT_SINGLE && CFI.intermM[INTERM_M_BITS-F32_M_BITS-2 : 0] == '0) {
+    count_trailing_zeros(CFI.intermM[INTERM_M_BITS - 1 : INTERM_M_BITS-F32_M_BITS], F32_M_BITS)
+    iff (CFI.operandFmt == FMT_SINGLE && CFI.intermM[INTERM_M_BITS-F32_M_BITS-1 : 0] == '0) {
         type_option.weight = 0;
         bins tz[] = {[0 : F32_M_BITS]};
     }
 
     F64_trailing_zeros: coverpoint
-    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-2 : INTERM_M_BITS-F64_M_BITS-1], F64_M_BITS)
-    iff (CFI.operandFmt == FMT_DOUBLE && CFI.intermM[INTERM_M_BITS-F64_M_BITS-2 : 0] == '0) {
+    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-1 : INTERM_M_BITS-F64_M_BITS], F64_M_BITS)
+    iff (CFI.operandFmt == FMT_DOUBLE && CFI.intermM[INTERM_M_BITS-F64_M_BITS-1 : 0] == '0) {
         type_option.weight = 0;
         bins tz[] = {[0 : F64_M_BITS]};
     }
 
     F128_trailing_zeros: coverpoint
-    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-2 : INTERM_M_BITS-F128_M_BITS-1], F128_M_BITS)
-    iff (CFI.operandFmt == FMT_QUAD && CFI.intermM[INTERM_M_BITS-F128_M_BITS-2 : 0] == '0) {
+    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-1 : INTERM_M_BITS-F128_M_BITS], F128_M_BITS)
+    iff (CFI.operandFmt == FMT_QUAD && CFI.intermM[INTERM_M_BITS-F128_M_BITS-1 : 0] == '0) {
         type_option.weight = 0;
         bins tz[] = {[0 : F128_M_BITS]};
     }
 
     BF16_trailing_zeros: coverpoint
-    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-2 : INTERM_M_BITS-BF16_M_BITS-1], BF16_M_BITS)
-    iff (CFI.operandFmt == FMT_BF16 && CFI.intermM[INTERM_M_BITS-BF16_M_BITS-2 : 0] == '0) {
+    count_trailing_zeros(CFI.intermM[INTERM_M_BITS-1 : INTERM_M_BITS-BF16_M_BITS], BF16_M_BITS)
+    iff (CFI.operandFmt == FMT_BF16 && CFI.intermM[INTERM_M_BITS-BF16_M_BITS-1 : 0] == '0) {
         type_option.weight = 0;
         bins tz[] = {[0 : BF16_M_BITS]};
     }
