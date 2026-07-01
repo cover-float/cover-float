@@ -75,6 +75,7 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
             m2 = sig2 | (1 << nf)
         elif cancellation == -(2 * nf + 1):
             target = 1
+            # Another bit of precision is the only way to get this case specifically
             m1, m2 = mul_sigs_with_trailing(target, nf + 2, fmt, mul_sig_length=2 * nf + 2)
             assert m1 != 0 and m2 != 0
 
@@ -82,10 +83,13 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
             sig2 = m2 & ((1 << nf) - 1)
         else:
             # mul_sigs_with_trailing generates m1, m2 such that (m1 * m2).bit_length() == 2 * nf + 1
+            # We need to use mul_sig_length here as this function generates a trailing significand with the desired
+            # properties, not a leading significand with a one after how ever many bits (which is what we truly want)
             set_bit = 2 * nf + cancellation
-            target = 1 << (set_bit) | random.getrandbits(set_bit)
-            m1, m2 = mul_sigs_with_trailing(target, nf + 2, fmt, mul_sig_length=2 * nf + 1)
-            assert m1 != 0 and m2 != 0
+            m1 = m2 = 0
+            while m1 == 0 or m2 == 0:  # Ensure that we generate something useful
+                target = 1 << (set_bit) | random.getrandbits(set_bit)
+                m1, m2 = mul_sigs_with_trailing(target, nf + 2, fmt, mul_sig_length=2 * nf + 1)
 
             sig1 = m1 & ((1 << nf) - 1)
             sig2 = m2 & ((1 << nf) - 1)
@@ -94,22 +98,18 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
         shift = 1 if multiplication_result.bit_length() > (nf * 2 + 1) else 0
 
         opposite_signs = True
-        if cancellation == 1:
+        if cancellation >= 0:
+            # Generate an effective addition case where we have a carry (cancellation = 1 or
+            # nothing interesting cancellation = 0).
             opposite_signs = False
             subnorm_amount = (
                 0 if addend_exp > -constants.EXPONENT_BIAS[fmt] else -(addend_exp + constants.EXPONENT_BIAS[fmt]) + 1
-            )
+            )  # Take into account the shift associated with subnormals
             addend_sig = random.getrandbits(nf - subnorm_amount - 1) if subnorm_amount != nf else 0
             addend_sig |= 1 << (nf - subnorm_amount)
             multiplication_exp = addend_exp - shift
-        elif cancellation == 0:
-            opposite_signs = False
-            subnorm_amount = (
-                0 if addend_exp > -constants.EXPONENT_BIAS[fmt] else -(addend_exp + constants.EXPONENT_BIAS[fmt]) + 1
-            )
-            addend_sig = random.getrandbits(nf - subnorm_amount - 1) if subnorm_amount != nf else 0
-            addend_sig |= 1 << (nf - subnorm_amount)
-            multiplication_exp = addend_exp - 2 - shift
+            if cancellation == 0:
+                multiplication_exp -= 2
         else:
             multiplication_exp = addend_exp - shift
             # We want to cancel the first -cancellation bits
@@ -119,17 +119,20 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
                 leading_bits = multiplication_result >> (multiplication_result.bit_length() - nf - 1)
 
             # Ensure that we have a mismatch after the last addend bit
+            addend_greater = False
             if (
                 cancellation >= -nf
                 and multiplication_result & (1 << (multiplication_result.bit_length() + cancellation - 1)) == 0
             ):
-                continue
+                addend_greater = True
+
                 leading_bits <<= 1
                 leading_bits |= 1
 
+                # This prevents any borrow chain from causing a borrow that removes the one that we placed
                 next_bit = 2
                 while (
-                    multiplication_result & (1 << (multiplication_result.bit_length() + cancellation - next_bit)) == 1
+                    multiplication_result & (1 << (multiplication_result.bit_length() + cancellation - next_bit)) != 0
                 ):
                     leading_bits <<= 1
                     leading_bits |= 1
@@ -139,56 +142,73 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
                         # Then there is no more potential to have a borrow resulting in a drop in precision
                         break
 
+                # One extra one ensures that after matching all of the ones, we have a buffer bit to borrow from
+                leading_bits <<= 1
+                leading_bits |= 1
+
             subnorm_amount = (
                 0 if addend_exp > -constants.EXPONENT_BIAS[fmt] else -(addend_exp + constants.EXPONENT_BIAS[fmt]) + 1
-            )
+            )  # Account for subnorms when shifting the leading bits into a significand
             shift_into_sig = (nf + 1 - subnorm_amount) - leading_bits.bit_length()
             extra_bits = 0
             if shift_into_sig < 0:
                 continue
-            # elif shift_into_sig >= 1:
-            #     extra_bits = random.getrandbits(shift_into_sig - 1)
+            else:
+                if addend_greater:  # We've already done the borrow chain work in this case
+                    randomization_point = shift_into_sig
+                else:
+                    # In this case, we can only randomize beyond the first one
+                    # Find the first one past leading bits
+                    first_one = bin(multiplication_result)[2:].find("1", leading_bits.bit_length() + 1)
+                    if first_one != -1:
+                        # first_one + 1 is safe to randomize after
+                        randomization_point = (nf + 1 - subnorm_amount) - (first_one + 1)
+                        randomization_point = max(0, randomization_point)
+                    else:
+                        randomization_point = 0
+                extra_bits = random.getrandbits(randomization_point)
 
+            # Build out the addend sig, and only allow it to have nf bits
             full_addend_sig = leading_bits << shift_into_sig | extra_bits
             addend_sig = full_addend_sig & ((1 << nf) - 1)
 
+        # Build Floating Point Inputs, given the previous information
+
+        # 1. Signs
         multiplication_sign = random.randint(0, 1)
         addend_sign = multiplication_sign ^ (1 if opposite_signs else 0)
+        multiplication_sign1 = random.randint(0, 1)
+        multiplication_sign2 = multiplication_sign1 ^ (0 if multiplication_sign == 0 else 1)
 
+        if op in [constants.OP_FMSUB, constants.OP_FNMSUB]:  # Account for FMA variants
+            addend_sign ^= 1
+
+        # 2. Exponents
         exp_low, exp_high = constants.UNBIASED_EXP[fmt]
+        # Generate a valid pair of multiplication exponents
         multiplication_exp1 = random.randint(exp_low, exp_high)
         multiplication_exp2 = multiplication_exp - multiplication_exp1
         while not (exp_low <= multiplication_exp2 <= exp_high):
             multiplication_exp1 = random.randint(exp_low, exp_high)
             multiplication_exp2 = multiplication_exp - multiplication_exp1
 
-        multiplication_sign1 = random.randint(0, 1)
-        multiplication_sign2 = multiplication_sign1 ^ (0 if multiplication_sign == 0 else 1)
+        # The addend exponent can be subnormal
+        usable_addend_exp = max(addend_exp, -constants.EXPONENT_BIAS[fmt])
 
+        # Generate the floats and run the test
         mul_f1 = generate_float(multiplication_sign1, multiplication_exp1, sig1, fmt)
         mul_f2 = generate_float(multiplication_sign2, multiplication_exp2, sig2, fmt)
-
-        usable_addend_exp = max(addend_exp, -constants.EXPONENT_BIAS[fmt])
-        # if addend_exp <= -constants.EXPONENT_BIAS[fmt]:
-        #     # addend_sig |= 1 << nf
-        #     # shift_amount = -(addend_exp + constants.EXPONENT_BIAS[fmt])
-        #     # shift_mask = (1 << shift_amount) - 1
-        #     # if addend_sig & shift_mask:
-        #     #     continue
-        #     # addend_sig >>= shift_amount
-        #     addend_exp = -constants.EXPONENT_BIAS[fmt]
-
-        if op in [constants.OP_FMSUB, constants.OP_FNMSUB]:
-            addend_sign ^= 1
-
         add_f = generate_float(addend_sign, usable_addend_exp, addend_sig, fmt)
 
+        # MINMAG is important to not get rounding errors giving an incorrect subnormal exponent
         tv = generate_test_vector(op, mul_f1, mul_f2, add_f, fmt, fmt, constants.ROUND_MINMAG)
-        # run_and_store_test_vector(tv, test_f, cover_f)
-
         cv = run_test_vector(tv)
+
+        # Check that the generated answer is correct using the cover vector
         unpacked = unpack_test_vector(cv)
         interm_sig = bin(unpacked.interm_sig)[2:].zfill(constants.INTER_SIGNIFICAND_LENGTH)
+
+        # Calculate the effective intermediate exponent
         biased_interm_exp = unpacked.interm_exp
         if biased_interm_exp != 0:
             interm_exp = biased_interm_exp
@@ -197,9 +217,11 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
             interm_exp = -sig_leading_zeros
         interm_exp -= constants.EXPONENT_BIAS[fmt]
 
+        # Information for the effective result exponent
         result_sig = unpacked.result & ((1 << nf) - 1)
         result_leading_zeros = nf - result_sig.bit_length()
 
+        # Get the Effective Product and Addend Exponents
         actual_addend_exp = (unpacked.input3 >> nf) & ((1 << constants.EXPONENT_BITS[fmt]) - 1)
         if actual_addend_exp == 0:
             addend_sig = unpacked.input3 & ((1 << nf) - 1)
@@ -250,13 +272,13 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
 
 @register_model("B17")
 def generate(test_f: TextIO, cover_f: TextIO) -> None:
-    random.seed(reproducible_hash("B17"))
-
     for fmt in constants.FLOAT_FMTS:
         for op in [constants.OP_FMADD, constants.OP_FMSUB, constants.OP_FNMADD, constants.OP_FNMSUB]:
-            for subnorm_exp in range(-constants.MANTISSA_BITS[fmt] + 1, 1):
-                min_cancel = -(2 * constants.MANTISSA_BITS[fmt] + 1)
-                max_cancel = 1 if subnorm_exp != -constants.MANTISSA_BITS[fmt] + 1 else 0
+            random.seed(reproducible_hash(f"B17 {fmt} {op}"))
+            with logger.progress_bar(f"{fmt} Subnorm Exp for {op}", show_m_of_n=True) as pbar:
+                for subnorm_exp in pbar.track(range(-constants.MANTISSA_BITS[fmt] + 1, 1)):
+                    min_cancel = -(2 * constants.MANTISSA_BITS[fmt] + 1)
+                    max_cancel = 1 if subnorm_exp != -constants.MANTISSA_BITS[fmt] + 1 else 0
 
-                for cancellation in range(min_cancel, max_cancel + 1):
-                    generate_case(op, fmt, subnorm_exp, cancellation, test_f, cover_f)
+                    for cancellation in range(min_cancel, max_cancel + 1):
+                        generate_case(op, fmt, subnorm_exp, cancellation, test_f, cover_f)
