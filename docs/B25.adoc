@@ -27,7 +27,7 @@ This model creates a test-case for each of the following inputs:
 
 == Background
 
-These are simply the basic test cases for each possible input into a convert int to float operation.
+These are simply the basic test cases for each possible input into a convert int to float operation. In addition, we add IntMin for signed integer conversions.
 
 == Test Procedure
 
@@ -35,4 +35,4 @@ We generate a test for each value in the list that is achievable in the given fo
 
 == Test Count Breakdown
 
-Each signed integer type will generate 6 tests and each unsigned integer type generates 4 tests. Across all integer types there are 20 tests for each of the 5 floating point precision, giving 100 total tests.
+Each signed integer type will generate 7 tests and each unsigned integer type generates 4 tests. Across all integer types there are 22 tests for each of the 5 floating point precision, giving 110 total tests.
