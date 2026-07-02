@@ -2248,7 +2248,7 @@ std::pair<int, std::string> reference_model(
             break;
         }
         case FMT_QUAD: {
-            mp::uint256_t sig = fracF128UI64(result >> 64);
+            mp::cpp_int sig = fracF128UI64(result >> 64);
             sig <<= 64;
             sig |= static_cast<uint64_t>(result);
             uint32_t exp = expF128UI64(result >> 64);
@@ -2259,7 +2259,7 @@ std::pair<int, std::string> reference_model(
             }
             // intermResult.sig64 = static_cast<uint64_t>(sig >> 64);
             // intermResult.sig0 = static_cast<uint64_t>(sig);
-            intermResult.sig = sig << (INTERM_SIG_LENGTH - 128);
+            intermResult.sig = sig << (INTERM_SIG_LENGTH - 2 - 112);
 
             intermResult.exp = exp;
 
