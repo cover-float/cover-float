@@ -86,7 +86,7 @@ def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             f1 = generate_float(0, exp_a, sigA ^ (1 << nf), fmt)
             f2 = generate_float(0, exp_b, sigB ^ (1 << nf), fmt)
 
-            if random.random() < 0.5:
+            if random.random() < 0.5 and not is_subtraction:
                 f1, f2 = f2, f1
 
             tv = generate_test_vector(op, f1, f2, 0, fmt, fmt, constants.ROUND_MAX)
@@ -335,7 +335,7 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             for _ in range(100):
                 # Logic taken from B3.py
                 signA = random.randint(0, 1)
-                signB = random.randint(0, 1)
+                signB = signA if op in [constants.OP_FMADD, constants.OP_FMSUB] else signA ^ 1
 
                 sigA_initial = random.randint(0, (1 << constants.MANTISSA_BITS[fmt]) - 1)
                 sigB_initial = random.randint(0, (1 << constants.MANTISSA_BITS[fmt]) - 1)
@@ -429,14 +429,12 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 actual_extra_bits = interm_mantissa[constants.MANTISSA_BITS[fmt] :]
                 expected_extra_bits = bin(target)[2:].zfill(constants.MANTISSA_BITS[fmt] + 1)
 
-                actual_extra_bits = actual_extra_bits.strip("0")
-                expected_extra_bits = expected_extra_bits.strip("0")
+                actual_extra_bits = actual_extra_bits.rstrip("0")
+                expected_extra_bits = expected_extra_bits.rstrip("0")
 
                 if actual_extra_bits == expected_extra_bits:
                     store_cover_vector(result, test_f, cover_f)
                     break
-                if actual_extra_bits[1:] == expected_extra_bits[1:]:
-                    logger.exception("Failure in FMA Test Generation, failed to create the expected bits")
             else:
                 logger.exception("Failure to generate a Guard=0 Case in FMA Testgen")
 
