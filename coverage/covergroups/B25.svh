@@ -53,10 +53,11 @@ covergroup B25_cg (virtual coverfloat_interface CFI);
         type_option.weight = 0;
         bins zero    = {0};
         bins pos_one = {1};
-        bins neg_one = {'1};                                  // 0xFFFF_FFFF = -1
-        bins pos_max = {{1'b0, {(SIZEOF_INT-1){1'b1}}}};      // 0x7FFF_FFFF =  MaxInt
-        bins neg_max = {{1'b1, {(SIZEOF_INT-2){1'b0}}, 1'b1}};// 0x8000_0001 = -MaxInt
-        bins random  = default;                              // "Random number"
+        bins neg_one = {'1};                                                   // 0xFFFF_FFFF = -1
+        bins pos_max = {{1'b0, {(SIZEOF_INT-1){1'b1}}}};                       // 0x7FFF_FFFF =  MaxInt
+        bins neg_int_max = {{1'b1, {(SIZEOF_INT-2){1'b0}}, 1'b1}};             // 0x8000_0001 = -MaxInt
+        bins neg_max = {{1'b1, {(SIZEOF_INT-1){1'b0}}}};                       // 0x8000_0000 =  NegMaxInt
+        bins random  = {[2:32'h7fff_ffff-1], [32'h8000_0002:32'hffff_ffff-1]}; // Catch-All for "Random number"
     }
 
     // 32-bit UNSIGNED input
@@ -65,7 +66,7 @@ covergroup B25_cg (virtual coverfloat_interface CFI);
         bins zero     = {0};
         bins one      = {1};
         bins max_uint = {'1};                                // 0xFFFF_FFFF = MaxUInt
-        bins random   = default;
+        bins random   = {[2:32'hffff_ffff-1]};
     }
 
     // 64-bit SIGNED input
@@ -75,8 +76,9 @@ covergroup B25_cg (virtual coverfloat_interface CFI);
         bins pos_one = {1};
         bins neg_one = {'1};
         bins pos_max = {{1'b0, {(SIZEOF_LONG-1){1'b1}}}};
-        bins neg_max = {{1'b1, {(SIZEOF_LONG-2){1'b0}}, 1'b1}};
-        bins random  = default;
+        bins neg_int_max = {{1'b1, {(SIZEOF_LONG-2){1'b0}}, 1'b1}};
+        bins neg_max = {{1'b1, {(SIZEOF_LONG-1){1'b0}}}};
+        bins random  = {[2:64'h7fff_ffff_ffff_ffff-1], [64'h8000_0000_0000_0002:64'hffff_ffff_ffff_ffff-1]};
     }
 
     // 64-bit UNSIGNED input
@@ -85,7 +87,7 @@ covergroup B25_cg (virtual coverfloat_interface CFI);
         bins zero     = {0};
         bins one      = {1};
         bins max_uint = {'1};
-        bins random   = default;
+        bins random   = {[2:64'hffff_ffff_ffff_ffff-1]};
     }
 
 
