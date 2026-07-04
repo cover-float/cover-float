@@ -77,15 +77,11 @@ def makeCancellationMantissas(fmt: str, d: int, m_shifts: int) -> tuple[int, int
     m = MANTISSA_BITS[fmt]
     k = -d
 
-    # generate identical prefixes for both operands
-    if k > 1:
-        a_prefix = 1 << (m - 1 - m_shifts) | random.getrandbits(k - 1) << (m - k - m_shifts)
-        b_prefix = a_prefix
-    else:
-        a_prefix = 0
-        b_prefix = 0
+    # generate identical prefixes for both operands (shift so that the leading one is in the correct place)
+    a_prefix = 1 << (m - m_shifts) | random.getrandbits(k - 1) << (m - (k - 1) - m_shifts)
+    b_prefix = a_prefix
 
-    diff_bit = 1 << (m - k - m_shifts - 1)  # differing bit
+    diff_bit = 1 << (m - k - m_shifts)  # differing bit
 
     # randomly generate tails for both operands
     if k < (m - 1 - m_shifts):
@@ -98,6 +94,10 @@ def makeCancellationMantissas(fmt: str, d: int, m_shifts: int) -> tuple[int, int
     a_m = a_prefix | diff_bit | a_tail
     b_m = b_prefix | b_tail
 
+    # Mask off leading one if present
+    a_m &= (1 << m) - 1
+    b_m &= (1 << m) - 1
+
     return a_m, b_m
 
 
@@ -105,8 +105,8 @@ def makeNoCancelMantissas(fmt: str, m_shifts: int) -> tuple[int, int]:
     """Generate mantissas that result in no bit cancellation (d = 0)"""
     m = MANTISSA_BITS[fmt]
 
-    a_m = ((1 << m) - 1) >> m_shifts
-    b_m = (((1 << (m - 1)) - 1) << 1) >> m_shifts
+    a_m = ((1 << m) - 1) >> (m_shifts - 1)
+    b_m = (((1 << (m - 1)) - 1) << 1) >> (m_shifts - 1)
 
     return a_m, b_m
 
@@ -115,7 +115,7 @@ def makeCarryMantissas(fmt: str, m_shifts: int) -> tuple[int, int]:
     """Generate mantissas that will cause a carry (d = +1)"""
     m = MANTISSA_BITS[fmt]
 
-    a_m = ((1 << m) - 1) >> m_shifts  # 0.011...111
+    a_m = ((1 << m) - 1) >> (m_shifts - 1)  # 0.011...111
     b_m = a_m  # 0.011...111
 
     return a_m, b_m
@@ -133,8 +133,9 @@ def makeTestVectors(fmt: str, d: int, leading_zeros: int, operation: str, test_f
     a_exp = (
         -1
     ) * d - leading_zeros  # if a_exp is less than zero, clips to zero and shifts mantissa to the right by m_shift bits
-    if a_exp < 0:
-        m_shifts = (-1) * a_exp
+    if a_exp <= 0:
+        # Add one here because a subnorm exp of 0 is shifted by 1
+        m_shifts = (-1) * a_exp + 1
         a_exp = 0
     b_exp = a_exp
 
@@ -181,7 +182,7 @@ def SubnormCancellationTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
     for leading_zeros in range(m):
         for d in range(-p, 2):
-            if d == -1 or d == 0 or d == 1:
+            if d == 0 or d == 1:
                 if leading_zeros != (m - 1):
                     seed(reproducible_hash(f"{fmt}_b13_add_{d}_{leading_zeros}"))
                     makeTestVectors(fmt, d, leading_zeros, "add", test_f, cover_f)
