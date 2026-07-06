@@ -32,7 +32,7 @@ import cover_float.common.log as log
 from cover_float.scripts.postprocess import postprocess_testvectors
 
 GLOBAL_MODELS: dict[
-    str, Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[None] | None]
+    str, Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[bool] | None]
 ] = {}
 GLOBAL_MODEL_FUNCTIONS: dict[str, Callable[[TextIO, TextIO], None]] = {}
 
@@ -63,7 +63,7 @@ def _run_model_by_name(
     task_id: TaskID,
     logging_queue: Queue[Any],
     post_process: bool,
-) -> None:
+) -> bool:
     tv_path = output_dir / "testvectors" / f"{model_name}_tv.txt"
     cv_path = output_dir / "covervectors" / f"{model_name}_cv.txt" if not constants.config.RELEASE else Path(os.devnull)
     tv_stamp_path = output_dir / ".stamp" / f"{model_name}_tv.stamp"
@@ -109,17 +109,19 @@ def _run_model_by_name(
     except Exception as e:
         logger = logging.getLogger(model_name)
         logger.exception(f"[bold red]Fatal Error in {model_name}[/] ", exc_info=e, extra={"markup": True})
+        return False
+    return True
 
 
 def register_model(
     model_name: str,
 ) -> Callable[
     [Callable[[TextIO, TextIO], None]],
-    Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[None] | None],
+    Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[bool] | None],
 ]:
     def inner(
         fn: Callable[[TextIO, TextIO], None],
-    ) -> Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[None] | None]:
+    ) -> Callable[[Path, log.StatusReporter, concurrent.futures.Executor], concurrent.futures.Future[bool] | None]:
         # Store the function in a global dict so it can be accessed by the worker process
         GLOBAL_MODEL_FUNCTIONS[model_name] = fn
         source_file = Path(inspect.getfile(fn))
@@ -129,7 +131,7 @@ def register_model(
             status_reporter: log.StatusReporter,
             executor: concurrent.futures.Executor,
             post_process: bool = True,
-        ) -> concurrent.futures.Future[None] | None:
+        ) -> concurrent.futures.Future[bool] | None:
             # Check modification of source files
             cover_float_sources = Path(__file__).parent.parent.rglob("*.py")
             max_supporting_mod_time = 0

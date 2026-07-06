@@ -89,7 +89,7 @@ def testgen() -> None:
         executor = ProcessPoolExecutor() if args.jobs is None else ProcessPoolExecutor(max_workers=args.jobs)
 
     with log.StatusReporter(disable=(args.quiet > 0)) as logger, executor:
-        futures: list[Future[None]] = []
+        futures: list[Future[bool]] = []
 
         if args.models is None:
             for model in tg.model.GLOBAL_MODELS:
@@ -108,6 +108,7 @@ def testgen() -> None:
                 print(f"No work to be done for {'cover-float' if not args.models else ', '.join(args.models)}")
             return
 
+        success = True
         if args.quiet == 1:
             with Progress(
                 TextColumn("{task.description}"),
@@ -118,7 +119,10 @@ def testgen() -> None:
                 for future in progress.track(
                     as_completed(futures), total=len(futures), description="[cyan]Generating Cover-Float Tests"
                 ):
-                    future.result()
+                    success &= future.result()
         else:
             for future in as_completed(futures):
-                future.result()
+                success &= future.result()
+
+        if not success:
+            exit(1)
