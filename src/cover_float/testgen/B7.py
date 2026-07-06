@@ -207,7 +207,7 @@ def two_ones_multiplicands(fmt: str) -> dict[int, tuple[int, int]]:
         target = 1 << (2 * nf + 1)
         target |= 1 << low_one
 
-        factors = factorint(target)
+        factors = cached_factorint(target)
         f1, f2 = factors_to_bit_width(factors, target, nf + 1)
 
         if f1 * f2 == target:
@@ -513,7 +513,7 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         placements: list[int] = []
 
         with logger.progress_bar(status=f"{fmt} FMA Target Placements", show_m_of_n=True) as pbar:
-            for target_placement in pbar.track(range(1, 2 * constants.MANTISSA_BITS[fmt])):
+            for target_placement in pbar.track(range(1, 2 * constants.MANTISSA_BITS[fmt] + 1)):
                 # We want the lowest possible exponent difference
                 shift_amount = max(3, target_placement - constants.MANTISSA_BITS[fmt] + 1)
                 target_location = target_placement - shift_amount
@@ -590,6 +590,12 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                     signB ^= 1
 
                 signC = 0
+
+                if effective_subtraction:
+                    # Ensure a positive result by flipping product and addend signs
+                    # (logic is for product > C)
+                    signA ^= 1
+                    signC ^= 1
 
                 floatA = generate_float(signA, mul_exp1, sigA ^ (1 << constants.MANTISSA_BITS[fmt]), fmt)
                 floatB = generate_float(signB, mul_exp2, sigB ^ (1 << constants.MANTISSA_BITS[fmt]), fmt)
