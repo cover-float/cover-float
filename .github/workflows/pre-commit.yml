@@ -1,4 +1,5 @@
 # Source: jcarlin@hmc.edu on 19 Feb 2026
+# Modified by rwolk@hmc.edu on 6 Jul 2026
 
 name: CI
 
@@ -27,3 +28,19 @@ jobs:
 
       - name: Ensure pre-commit checks pass
         run: uvx pre-commit run --all-files --show-diff-on-failure --color=always
+
+  testgen:
+    name: Run all Test Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: 'true'
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Generate Tests
+        run: make all
