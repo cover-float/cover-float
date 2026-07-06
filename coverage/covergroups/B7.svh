@@ -671,8 +671,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_F32_from_U32_cross: cross FP_op_cif, uint_source_fmt, F32_result_fmt, F32_guard, F32_sign, F32_sticky_from_U32, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_F32_from_I64_cross: cross FP_op_cif, long_source_fmt, F32_result_fmt, F32_guard, F32_sign, F32_sticky_from_I64, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_F32_from_U64_cross: cross FP_op_cif, ulong_source_fmt, F32_result_fmt, F32_guard, F32_sign, F32_sticky_from_U64, rounding_pos_inf;
         `endif
 
@@ -680,8 +678,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_U32_from_F32_cross: cross FP_op_cfi, F32_source_fmt, uint_result_fmt, uint_guard, interm_sign, U32_sticky_from_F32, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_I64_from_F32_cross: cross FP_op_cfi, F32_source_fmt, long_result_fmt, long_guard, interm_sign, I64_sticky_from_F32, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_U64_from_F32_cross: cross FP_op_cfi, F32_source_fmt, ulong_result_fmt, ulong_guard, interm_sign, U64_sticky_from_F32, rounding_pos_inf;
         `endif
     `endif
@@ -698,8 +694,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
 
         `ifdef COVER_LONG
             B7_F64_from_I64_cross: cross FP_op_cif, long_source_fmt, F64_result_fmt, F64_guard, F64_sign, F64_sticky_from_I64, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_F64_from_U64_cross: cross FP_op_cif, ulong_source_fmt, F64_result_fmt, F64_guard, F64_sign, F64_sticky_from_U64, rounding_pos_inf;
         `endif
 
@@ -707,8 +701,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_U32_from_F64_cross: cross FP_op_cfi, F64_source_fmt, uint_result_fmt, uint_guard, interm_sign, U32_sticky_from_F64, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_I64_from_F64_cross: cross FP_op_cfi, F64_source_fmt, long_result_fmt, long_guard, interm_sign, I64_sticky_from_F64, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_U64_from_F64_cross: cross FP_op_cfi, F64_source_fmt, ulong_result_fmt, ulong_guard, interm_sign, U64_sticky_from_F64, rounding_pos_inf;
         `endif
     `endif
@@ -723,8 +715,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_U32_from_F128_cross: cross FP_op_cfi, F128_source_fmt, uint_result_fmt, uint_guard, interm_sign, U32_sticky_from_F128, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_I64_from_F128_cross: cross FP_op_cfi, F128_source_fmt, long_result_fmt, long_guard, interm_sign, I64_sticky_from_F128, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_U64_from_F128_cross: cross FP_op_cfi, F128_source_fmt, ulong_result_fmt, ulong_guard, interm_sign, U64_sticky_from_F128, rounding_pos_inf;
         `endif
     `endif
@@ -750,8 +740,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_F16_from_U32_cross: cross FP_op_cif, uint_source_fmt, F16_result_fmt, F16_guard, F16_sign, F16_sticky_from_U32, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_F16_from_I64_cross: cross FP_op_cif, long_source_fmt, F16_result_fmt, F16_guard, F16_sign, F16_sticky_from_I64, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_F16_from_U64_cross: cross FP_op_cif, ulong_source_fmt, F16_result_fmt, F16_guard, F16_sign, F16_sticky_from_U64, rounding_pos_inf;
         `endif
 
@@ -759,8 +747,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_U32_from_F16_cross: cross FP_op_cfi, F16_source_fmt, uint_result_fmt, uint_guard, interm_sign, U32_sticky_from_F16, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_I64_from_F16_cross: cross FP_op_cfi, F16_source_fmt, long_result_fmt, long_guard, interm_sign, I64_sticky_from_F16, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_U64_from_F16_cross: cross FP_op_cfi, F16_source_fmt, ulong_result_fmt, ulong_guard, interm_sign, U64_sticky_from_F16, rounding_pos_inf;
         `endif
     `endif
@@ -788,8 +774,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_BF16_from_U32_cross: cross FP_op_cif, uint_source_fmt, BF16_result_fmt, BF16_guard, BF16_sign, BF16_sticky_from_U32, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_BF16_from_I64_cross: cross FP_op_cif, long_source_fmt, BF16_result_fmt, BF16_guard, BF16_sign, BF16_sticky_from_I64, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_BF16_from_U64_cross: cross FP_op_cif, ulong_source_fmt, BF16_result_fmt, BF16_guard, BF16_sign, BF16_sticky_from_U64, rounding_pos_inf;
         `endif
 
@@ -797,8 +781,6 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         B7_U32_from_BF16_cross: cross FP_op_cfi, BF16_source_fmt, uint_result_fmt, uint_guard, interm_sign, U32_sticky_from_BF16, rounding_pos_inf;
         `ifdef COVER_LONG
             B7_I64_from_BF16_cross: cross FP_op_cfi, BF16_source_fmt, long_result_fmt, long_guard, interm_sign, I64_sticky_from_BF16, rounding_pos_inf;
-        `endif
-        `ifdef COVER_ULONG
             B7_U64_from_BF16_cross: cross FP_op_cfi, BF16_source_fmt, ulong_result_fmt, ulong_guard, interm_sign, U64_sticky_from_BF16, rounding_pos_inf;
         `endif
     `endif
