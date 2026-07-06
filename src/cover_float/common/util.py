@@ -36,6 +36,11 @@ def generate_test_vector(op: str, in1: int, in2: int, in3: int, fmt1: str, fmt2:
 
 def generate_float(sign: int, exponent: int, mantissa: int, fmt: str) -> int:
     exponent += constants.BIAS[fmt]
+
+    # Verify that parameters are in the right range
+    assert mantissa.bit_length() <= constants.MANTISSA_BITS[fmt]
+    assert exponent.bit_length() <= constants.EXPONENT_BITS[fmt] and exponent >= 0
+
     return (
         (sign << (constants.MANTISSA_BITS[fmt] + constants.EXPONENT_BITS[fmt]))
         | (exponent << constants.MANTISSA_BITS[fmt])

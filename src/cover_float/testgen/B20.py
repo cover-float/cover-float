@@ -70,8 +70,8 @@ def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         while not min_exp < exp1 - exp2 < max_exp:
             exp1, exp2 = random.randint(min_exp, max_exp), random.randint(min_exp, max_exp)
 
-        f1 = generate_float(random.randint(0, 1), exp1, s1, fmt)
-        f2 = generate_float(random.randint(0, 1), exp2, s2, fmt)
+        f1 = generate_float(random.randint(0, 1), exp1, s1 & ((1 << nf) - 1), fmt)
+        f2 = generate_float(random.randint(0, 1), exp2, s2 & ((1 << nf) - 1), fmt)
         tv = generate_test_vector(constants.OP_DIV, f1, f2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
 
         run_and_store_test_vector(tv, test_f, cover_f)
