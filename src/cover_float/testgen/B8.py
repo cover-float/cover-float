@@ -408,30 +408,41 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
             target_exp_min -= constants.BIAS[target_fmt]
             target_exp_max -= constants.BIAS[target_fmt]
         else:
-            target_exp_min = 1
-            target_exp_max = 1
+            target_exp_min = 0
+            target_exp_max = 0
 
-        maximal_overhang = nf - target_nf if target_fmt in constants.FLOAT_FMTS else nf - 1
+        maximal_overhang = nf - target_nf - 1 if target_fmt in constants.FLOAT_FMTS else nf - 1
         op = constants.OP_CFF if target_fmt in constants.FLOAT_FMTS else constants.OP_CFI
 
         for sign, lsb, guard in sign_lsb_guard():
             if target_fmt in constants.INT_FMTS and not constants.INT_SIGNED[target_fmt] and sign:
                 continue
 
-            for extra_bits in generate_extra_bits_patterns(maximal_overhang - 2):
-                target = ((lsb << 1) | guard) << (maximal_overhang - 2) | extra_bits
+            for extra_bits in generate_extra_bits_patterns(maximal_overhang):
+                target = ((lsb << 1) | guard) << (maximal_overhang) | extra_bits
 
-                sig = random.getrandbits(nf - maximal_overhang - 1) << (maximal_overhang + 1) | target
+                sig = random.getrandbits(nf - maximal_overhang - 1) << (maximal_overhang + 2) | target
                 exp = random.randint(max(exp_min, target_exp_min), min(exp_max, target_exp_max))
 
-                f = generate_float(sign, exp, sig, fmt)
+                if target_fmt in constants.INT_FMTS and lsb == 0:
+                    exp -= 1
+                    sig <<= 1
+                    if guard == 0:
+                        exp -= 1
+                        sig <<= 1
+
+                    while (sig & (1 << nf)) == 0:
+                        exp -= 1
+                        sig <<= 1
+
+                f = generate_float(sign, exp, sig & ((1 << nf) - 1), fmt)
                 tv = generate_test_vector(op, f, 0, 0, fmt, target_fmt, rm)
                 result = run_test_vector(tv)
 
                 fields = unpack_test_vector(result)
                 interm_sig = f"{fields.interm_sig:0{constants.INTER_SIGNIFICAND_LENGTH}b}"
 
-                rounding_bits = interm_sig[target_nf - 1 :][: maximal_overhang + 1]
+                rounding_bits = interm_sig[target_nf - 1 :][: maximal_overhang + 2]
 
                 if (
                     int(rounding_bits, 2) == target and rounding_bits[target_nf + maximal_overhang :].count("1") == 0
@@ -456,13 +467,13 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
             if sign and not constants.INT_SIGNED[from_fmt]:
                 continue
 
-            for extra_bits in generate_extra_bits_patterns(maximal_overhang - 2):
-                target = ((lsb << 1) | guard) << (maximal_overhang - 2) | extra_bits
+            for extra_bits in generate_extra_bits_patterns(maximal_overhang - 1):
+                target = ((lsb << 1) | guard) << (maximal_overhang - 1) | extra_bits
                 integer = random.getrandbits(from_bits - maximal_overhang - 1) << (maximal_overhang + 1) | target
                 integer |= 1 << (from_bits - 1)
 
                 if sign:
-                    integer *= 1
+                    integer *= -1
                     integer &= (1 << constants.INT_SIZES[from_fmt]) - 1  # Bring it to 2s complement representation
 
                 tv = generate_test_vector(constants.OP_CIF, integer, 0, 0, from_fmt, fmt, rm)
