@@ -67,27 +67,6 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
         bins f128 = {1};
     }
 
-    int_result_fmt : coverpoint CFI.resultFmt == FMT_INT {
-        type_option.weight = 0;
-        // int format for result
-        bins fmt_int = {1};
-    }
-    uint_result_fmt : coverpoint CFI.resultFmt == FMT_UINT {
-        type_option.weight = 0;
-        // uint format for result
-        bins fmt_uint = {1};
-    }
-    long_result_fmt : coverpoint CFI.resultFmt == FMT_LONG {
-        type_option.weight = 0;
-        // long format for result
-        bins fmt_long = {1};
-    }
-    ulong_result_fmt : coverpoint CFI.resultFmt == FMT_ULONG {
-        type_option.weight = 0;
-        // ulong format for result
-        bins fmt_ulong = {1};
-    }
-
     FP_convert_ops: coverpoint CFI.op {
         type_option.weight = 0;
         // checks that a convert is happening (F2X, X2F, or F2F)
@@ -136,78 +115,6 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     }
 
     // cases iii & iv
-
-    //                                          Guard bit                                       sticky bit
-    int_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT +1] == 1) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    uint_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 2  : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT] == 1) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    long_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG +1] == 1) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    ulong_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 2 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG] == 1) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    int_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT +1] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    uint_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 2  : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    long_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG +1] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    ulong_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 2 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
 
     //                                          Guard bit                                       sticky bit
     F32_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 2) : 0]}
@@ -302,78 +209,6 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     // cases v & vi
 
     //                                          Guard bit                                       sticky bit
-    int_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT +1] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    uint_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 2  : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    long_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG +1] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    ulong_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 2 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG] == 0) {
-            type_option.weight = 0;
-
-            bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    int_minNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT +1] == '1) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    uint_minNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_INT - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_INT - 2  : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_INT] == '1) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    long_minNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 1 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG +1] == '1) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
-    ulong_minNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - SIZEOF_LONG - 1)], |CFI.intermM[INTERM_M_BITS - SIZEOF_LONG - 2 : 0]}
-    //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 : INTERM_M_BITS - SIZEOF_LONG] == '1) {
-            type_option.weight = 0;
-
-            bins minNorm_m_3ulp[] = {[2'b01 : 2'b11]};
-    }
-
-    //                                          Guard bit                                       sticky bit
     F32_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
         iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS] == 0) {
@@ -466,34 +301,6 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
 
     // cases vii & viii
 
-    int_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
-        type_option.weight = 0;
-
-        // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - SIZEOF_INT - 1)) - 1)]};
-    }
-
-    uint_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
-        type_option.weight = 0;
-
-        // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - SIZEOF_INT - 2)) - 1)]};
-    }
-
-    long_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
-        type_option.weight = 0;
-
-        // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - SIZEOF_LONG - 1)) - 1)]};
-    }
-
-    ulong_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
-        type_option.weight = 0;
-
-        // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - SIZEOF_LONG - 2)) - 1)]};
-    }
-
     F32_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
         type_option.weight = 0;
 
@@ -543,134 +350,10 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
 
 // TODO: need to add helper coverpoints for int formats, and fmt coverpoints for available conversion destination formats
 
-    B5_int_convert_subnorm:  cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_subnorm: cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_minSubNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, int_minSubNorm_p_3ulp, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_minSubNorm_p_3ulp: cross FP_convert_ops, rounding_mode_all, uint_minSubNorm_p_3ulp, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_minSubNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, int_minSubNorm_m_3ulp, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_minSubNorm_m_3ulp: cross FP_convert_ops, rounding_mode_all, uint_minSubNorm_m_3ulp, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_minNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, int_minNorm_p_3ulp, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_minNorm_p_3ulp: cross FP_convert_ops, rounding_mode_all, uint_minNorm_p_3ulp, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_minNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, int_minNorm_m_3ulp, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_minNorm_m_3ulp: cross FP_convert_ops, rounding_mode_all, uint_minNorm_m_3ulp, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, int_btw_minSubNorm_zero, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_btw_minSubNorm_zero: cross FP_convert_ops, rounding_mode_all, uint_btw_minSubNorm_zero, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    B5_int_convert_minNorm_p5_exp_range:  cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt,  int_result_fmt {
-        bins narrow_f64_to_int  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_int = binsof(FP_convert_fmt.fmt_quad);
-    }
-    B5_uint_convert_minNorm_p5_exp_range: cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt, uint_result_fmt {
-        bins narrow_f64_to_uint  = binsof(FP_convert_fmt.fmt_double);
-        bins narrow_f128_to_uint = binsof(FP_convert_fmt.fmt_quad);
-    }
-
-    `ifdef COVER_LONG
-
-        B5_long_convert_subnorm:  cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
         }
-        B5_ulong_convert_subnorm: cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
         }
-
-        B5_long_convert_minSubNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, long_minSubNorm_p_3ulp, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
         }
-        B5_ulong_convert_minSubNorm_p_3ulp: cross FP_convert_ops, rounding_mode_all, ulong_minSubNorm_p_3ulp, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
         }
-
-        B5_long_convert_minSubNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, long_minSubNorm_m_3ulp, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
-        }
-        B5_ulong_convert_minSubNorm_m_3ulp: cross FP_convert_ops, rounding_mode_all, ulong_minSubNorm_m_3ulp, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
-        }
-
-        B5_long_convert_minNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, long_minNorm_p_3ulp, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
-        }
-        B5_ulong_convert_minNorm_p_3ulp: cross FP_convert_ops, rounding_mode_all, ulong_minNorm_p_3ulp, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
-        }
-
-        B5_long_convert_minNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, long_minNorm_m_3ulp, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
-        }
-        B5_ulong_convert_minNorm_m_3ulp: cross FP_convert_ops, rounding_mode_all, ulong_minNorm_m_3ulp, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
-        }
-
-        B5_long_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, long_btw_minSubNorm_zero, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
-        }
-        B5_ulong_convert_btw_minSubNorm_zero: cross FP_convert_ops, rounding_mode_all, ulong_btw_minSubNorm_zero, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
-        }
-
-        B5_long_convert_minNorm_p5_exp_range:  cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt,  long_result_fmt {
-            bins narrow_f64_to_long  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_long = binsof(FP_convert_fmt.fmt_quad);
-        }
-        B5_ulong_convert_minNorm_p5_exp_range: cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt, ulong_result_fmt {
-            bins narrow_f64_to_ulong  = binsof(FP_convert_fmt.fmt_double);
-            bins narrow_f128_to_ulong = binsof(FP_convert_fmt.fmt_quad);
-        }
-    `endif // COVER_LONG
 
     `ifdef COVER_F32
         B5_F32_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,              F32_result_fmt;
