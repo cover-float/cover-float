@@ -152,33 +152,7 @@ def generate_div_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, targe
     if not target_bits:
         target_bits = nf - 2
 
-    for target in range(1, 4):
-        for sign, lsb, guard in sign_lsb_guard():
-            maybe_result = divideSetRounding(lsb, guard, target, target_bits, fmt)
-            if not maybe_result:
-                logger.exception(f"Div Failure for lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
-                continue
-
-            s1, s2 = maybe_result
-
-            sign1 = random.randint(0, 1)
-            sign2 = sign1 ^ sign
-
-            exp1, exp2 = generate_exponents(fmt, subtract=True)
-
-            f1 = generate_float(sign1, exp1, s1 & ((1 << nf) - 1), fmt)
-            f2 = generate_float(sign2, exp2, s2 & ((1 << nf) - 1), fmt)
-
-            tv = generate_test_vector(constants.OP_DIV, f1, f2, 0, fmt, fmt)
-            result = run_test_vector(tv)
-            info = extract_rounding_info(result)
-            if check_div_result(result, target, target_bits) and info["Guard"] == guard and info["LSB"] == lsb:
-                store_cover_vector(result, test_f, cover_f)
-            else:
-                logger.exception(f"Div Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
-
-    for target_offset in range(4, 0, -1):
-        target = (1 << target_bits) - target_offset
+    for target in itertools.chain(range(1, 4), range((1 << target_bits) - 4, (1 << target_bits))):
         for sign, lsb, guard in sign_lsb_guard():
             maybe_result = divideSetRounding(lsb, guard, target, target_bits, fmt)
             if not maybe_result:
@@ -253,41 +227,45 @@ def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
     for op in [constants.OP_ADD, constants.OP_SUB]:
         for sign, lsb, guard in sign_lsb_guard():
             if guard == 1:  # noqa: SIM108
-                sticky_length = nf + (op == constants.OP_SUB)
+                sticky_length = nf - 1 + (op == constants.OP_ADD)
             else:  # guard == 0
                 sticky_length = nf - 1 + (op == constants.OP_SUB)
 
             extra_bits_patterns = generate_extra_bits_patterns(sticky_length)
-            if op == constants.OP_SUB and guard == 1:
-                # We need to lower the sticky length when we have a high extra bits pattern
-                shorter_sticky_length = generate_extra_bits_patterns(sticky_length - 2)
-                patterns: list[int] = []
-                for long_target, short_target in zip(extra_bits_patterns, shorter_sticky_length):
-                    if long_target < 4:
-                        patterns.append(long_target)
-                    else:
-                        patterns.append(short_target)
-                extra_bits_patterns = patterns
+
+            # We need these additional patterns for coverage
+            additional_patterns: list[int] = []
+            for target in extra_bits_patterns:
+                if target < 4:
+                    additional_patterns.append(target << 1)
+                else:
+                    sticky_len = sticky_length
+                    additional_patterns.append((target << 1) & ((1 << sticky_len) - 1))
+            extra_bits_patterns.extend(additional_patterns)
 
             for target_sticky in extra_bits_patterns:
                 if op == constants.OP_ADD:
                     s1 = random.getrandbits(nf - 1) << 1 | lsb
                     s2 = target_sticky
                 else:
-                    s1 = random.getrandbits(nf - 1) << 1 | (lsb ^ 1)
-                    s2 = (1 << nf + 1) - target_sticky
-                    s2 &= (1 << nf) - 1
+                    s1 = random.getrandbits(nf - 1) << 1 | lsb
+                    if guard == 0:
+                        s2 = (1 << nf + 1) - target_sticky
+                        s2 &= (1 << nf) - 1
+                    else:
+                        s2 = (1 << nf + 1) - ((1 << sticky_length) | (target_sticky))
+                        s2 &= (1 << nf) - 1
 
-                if guard == 0 and op != constants.OP_SUB:
+                if guard == 0:
                     s1 ^= 1
 
                 # Edge case handling (overflowing into another exponent)
-                if ((1 << nf) + s1 + 1).bit_length() > ((1 << nf) + s1).bit_length():
+                if ((1 << nf) + s1 + 2).bit_length() > ((1 << nf) + s1).bit_length():
                     s1 -= 4
-                if ((1 << nf) + s1 - 1).bit_length() < ((1 << nf) + s1).bit_length():
+                if ((1 << nf) + s1 - 2).bit_length() < ((1 << nf) + s1).bit_length():
                     s1 += 4
 
-                expDiff = nf + (guard == 1) + (op == constants.OP_SUB)
+                expDiff = nf + (guard == 1) if op == constants.OP_ADD else nf + (guard == 0)
                 exp1 = 0
                 exp2 = exp1 - expDiff
 
