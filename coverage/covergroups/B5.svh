@@ -119,7 +119,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F32_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS +1] == 1) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS] == 1) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -128,7 +128,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F32_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           all zeros fraction (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS +1] == 0) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minSubNorm_m_3ulp[] = {[2'b01 : 2'b11]};
@@ -137,7 +137,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F64_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS +1] == 1) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS] == 1) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -146,7 +146,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F64_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           all zeros fraction (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS +1] == 0) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minSubNorm_m_3ulp[] = {[2'b01 : 2'b11]};
@@ -155,7 +155,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F128_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS +1] == 1) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS] == 1) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -164,7 +164,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F128_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           all zeros fraction (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS +1] == 0) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minSubNorm_m_3ulp[] = {[2'b01 : 2'b11]};
@@ -173,7 +173,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F16_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS +1] == 1) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS] == 1) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -182,7 +182,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F16_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           all zeros fraction (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS +1] == 0) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minSubNorm_m_3ulp[] = {[2'b01 : 2'b11]};
@@ -191,7 +191,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     BF16_minSubNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           single 1 in LSB (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS +1] == 1) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS] == 1) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -200,7 +200,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     BF16_minSubNorm_m_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 2) : 0]}
     //   implicit leading 0 (subnorm)           all zeros fraction (except for Guard and sticky)
-        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS +1] == 0) {
+        iff (CFI.intermX == 0 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minSubNorm_m_3ulp[] = {[2'b01 : 2'b11]};
@@ -211,7 +211,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F32_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F32_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS] == 0) {
+        iff (CFI.intermX == 1 && CFI.intermM[INTERM_M_BITS -1 -: F32_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -229,7 +229,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F64_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F64_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS] == 0) {
+        iff (CFI.intermX == 1 && CFI.intermM[INTERM_M_BITS -1 -: F64_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -247,7 +247,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F128_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F128_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS] == 0) {
+        iff (CFI.intermX == 1 && CFI.intermM[INTERM_M_BITS -1 -: F128_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -265,7 +265,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     F16_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - F16_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS] == 0) {
+        iff (CFI.intermX == 1 && CFI.intermM[INTERM_M_BITS -1 -: F16_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -283,7 +283,7 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
     //                                          Guard bit                                       sticky bit
     BF16_minNorm_p_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 1)], |CFI.intermM[(INTERM_M_BITS - BF16_M_BITS - 2) : 0]}
     //   implicit leading 1 (norm)           all zero fraction (except for Guard and sticky)
-        iff (CFI.intermX != 0 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS] == 0) {
+        iff (CFI.intermX == 1 && CFI.intermM[INTERM_M_BITS -1 -: BF16_M_BITS] == 0) {
             type_option.weight = 0;
 
             bins minNorm_p_3ulp[] = {[2'b00 : 2'b11]};
@@ -305,35 +305,35 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
         type_option.weight = 0;
 
         // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F32_M_BITS - 2)) - 1)]};
+        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F32_M_BITS - 1)) - 1)]};
     }
 
     F64_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
         type_option.weight = 0;
 
         // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F64_M_BITS - 2)) - 1)]};
+        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F64_M_BITS - 1)) - 1)]};
     }
 
     F128_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
         type_option.weight = 0;
 
         // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F128_M_BITS - 2)) - 1)]};
+        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F128_M_BITS - 1)) - 1)]};
     }
 
     F16_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
         type_option.weight = 0;
 
         // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F16_M_BITS - 2)) - 1)]};
+        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - F16_M_BITS - 1)) - 1)]};
     }
 
     BF16_btw_minSubNorm_zero: coverpoint CFI.intermM iff (CFI.intermX == 0) {
         type_option.weight = 0;
 
         // shift 1 into the ULP position, subtract one to be in the exclusive range (0 , minSubNorm)
-        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - BF16_M_BITS - 2)) - 1)]};
+        bins btw_minSubNorm_zero = {[1 : ((INTERM_M_BITS'(1) << (INTERM_M_BITS - BF16_M_BITS - 1)) - 1)]};
     }
 
     // case ix
@@ -350,20 +350,30 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
 
 // TODO: need to add helper coverpoints for int formats, and fmt coverpoints for available conversion destination formats
 
-        }
-        }
-        }
-        }
-
     `ifdef COVER_F32
         B5_F32_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,              F32_result_fmt;
-        B5_F32_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F32_minSubNorm_p_3ulp,   F32_result_fmt;
-        B5_F32_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F32_minSubNorm_m_3ulp,   F32_result_fmt {
-            ignore_bins impossible_addsub = binsof(FP_result_ops.add) && binsof(FP_result_ops.add);
+        B5_F32_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F32_minSubNorm_p_3ulp,   F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
         }
-        B5_F32_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F32_minNorm_p_3ulp,      F32_result_fmt;
-        B5_F32_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F32_minNorm_m_3ulp,      F32_result_fmt;
-        B5_F32_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F32_btw_minSubNorm_zero, F32_result_fmt;
+        B5_F32_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F32_minSubNorm_m_3ulp,   F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
+        B5_F32_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F32_minNorm_p_3ulp,      F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F32_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F32_minNorm_m_3ulp,      F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F32_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F32_btw_minSubNorm_zero, F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
         B5_F32_minNorm_p5_exp_range: cross FP_result_ops, rounding_mode_all, FP_minNorm_p5_exp_range, F32_result_fmt;
 
 
@@ -371,12 +381,12 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -385,12 +395,12 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -399,12 +409,12 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -413,12 +423,12 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -427,26 +437,26 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
 
-        B5_F32_convert_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F32_btw_minSubNorm_zero, FP_convert_fmt, F32_result_fmt {
+        B5_F32_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, F32_btw_minSubNorm_zero, FP_convert_fmt, F32_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -455,12 +465,12 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_single);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_f16_to_f32 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_single);
+                ignore_bins widen_bf16_to_f32 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -469,13 +479,28 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
 
     `ifdef COVER_F64
         B5_F64_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,              F64_result_fmt;
-        B5_F64_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F64_minSubNorm_p_3ulp,   F64_result_fmt;
-        B5_F64_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F64_minSubNorm_m_3ulp,   F64_result_fmt {
-            ignore_bins impossible_addsub = binsof(FP_result_ops.add) && binsof(FP_result_ops.add);
+        B5_F64_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F64_minSubNorm_p_3ulp,   F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
         }
-        B5_F64_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F64_minNorm_p_3ulp,      F64_result_fmt;
-        B5_F64_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F64_minNorm_m_3ulp,      F64_result_fmt;
-        B5_F64_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F64_btw_minSubNorm_zero, F64_result_fmt;
+        B5_F64_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F64_minSubNorm_m_3ulp,   F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
+        B5_F64_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F64_minNorm_p_3ulp,      F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F64_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F64_minNorm_m_3ulp,      F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F64_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F64_btw_minSubNorm_zero, F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
         B5_F64_minNorm_p5_exp_range: cross FP_result_ops, rounding_mode_all, FP_minNorm_p5_exp_range, F64_result_fmt;
 
 
@@ -483,17 +508,17 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -502,17 +527,17 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -521,17 +546,17 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -540,17 +565,17 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -559,36 +584,36 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
 
-        B5_F64_convert_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F64_btw_minSubNorm_zero, FP_convert_fmt, F64_result_fmt {
+        B5_F64_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, F64_btw_minSubNorm_zero, FP_convert_fmt, F64_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -597,17 +622,17 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_double);
 
             `ifdef COVER_F16
-                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f16_to_f64 = binsof(FP_convert_fmt.fmt_half);
             `endif // COVER_F16
 
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_bf16_to_f64 = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
 
             `ifdef COVER_F32
-                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_double);
+                ignore_bins widen_f32_to_f64 = binsof(FP_convert_fmt.fmt_single);
             `endif // COVER_F32
 
         }
@@ -616,230 +641,78 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
 
     `ifdef COVER_F128
         B5_F128_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,               F128_result_fmt;
-        B5_F128_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F128_minSubNorm_p_3ulp,   F128_result_fmt;
-        B5_F128_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F128_minSubNorm_m_3ulp,   F128_result_fmt {
-            ignore_bins impossible_addsub = binsof(FP_result_ops.add) && binsof(FP_result_ops.add);
+        B5_F128_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F128_minSubNorm_p_3ulp,   F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
         }
-        B5_F128_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F128_minNorm_p_3ulp,      F128_result_fmt;
-        B5_F128_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F128_minNorm_m_3ulp,      F128_result_fmt;
-        B5_F128_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F128_btw_minSubNorm_zero, F128_result_fmt;
+        B5_F128_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F128_minSubNorm_m_3ulp,   F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
+        B5_F128_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F128_minNorm_p_3ulp,      F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F128_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F128_minNorm_m_3ulp,      F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F128_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F128_btw_minSubNorm_zero, F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
         B5_F128_minNorm_p5_exp_range: cross FP_result_ops, rounding_mode_all, FP_minNorm_p5_exp_range,  F128_result_fmt;
 
 
-        B5_F128_convert_subnorm:  cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_minSubNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, F128_minSubNorm_p_3ulp, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_minSubNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, F128_minSubNorm_m_3ulp, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_minNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, F128_minNorm_p_3ulp, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_minNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, F128_minNorm_m_3ulp, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F128_btw_minSubNorm_zero, FP_convert_fmt, F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
-        B5_F128_convert_minNorm_p5_exp_range:  cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt,  F128_result_fmt {
-            ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_quad);
-
-            `ifdef COVER_F16
-                ignore_bins widen_f16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F16
-
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_BF16
-
-
-            `ifdef COVER_F32
-                ignore_bins widen_f32_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F32
-
-
-            `ifdef COVER_F64
-                ignore_bins widen_f64_to_f128 = binsof(FP_convert_fmt.fmt_quad);
-            `endif // COVER_F64
-
-        }
-
+        // All Converts to F128 would be widening
     `endif
 
     `ifdef COVER_F16
         B5_F16_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,              F16_result_fmt;
-        B5_F16_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F16_minSubNorm_p_3ulp,   F16_result_fmt;
-        B5_F16_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F16_minSubNorm_m_3ulp,   F16_result_fmt {
-            ignore_bins impossible_addsub = binsof(FP_result_ops.add) && binsof(FP_result_ops.add);
+        B5_F16_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, F16_minSubNorm_p_3ulp,   F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
         }
-        B5_F16_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F16_minNorm_p_3ulp,      F16_result_fmt;
-        B5_F16_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F16_minNorm_m_3ulp,      F16_result_fmt;
-        B5_F16_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F16_btw_minSubNorm_zero, F16_result_fmt;
+        B5_F16_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, F16_minSubNorm_m_3ulp,   F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
+        B5_F16_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, F16_minNorm_p_3ulp,      F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F16_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, F16_minNorm_m_3ulp,      F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_F16_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F16_btw_minSubNorm_zero, F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
         B5_F16_minNorm_p5_exp_range: cross FP_result_ops, rounding_mode_all, FP_minNorm_p5_exp_range, F16_result_fmt;
 
 
         B5_F16_convert_subnorm:  cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt,  F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
-            `endif // COVER_BF16
-
         }
 
         B5_F16_convert_minSubNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, F16_minSubNorm_p_3ulp, FP_convert_fmt,  F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
-            `endif // COVER_BF16
-
         }
 
         B5_F16_convert_minSubNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, F16_minSubNorm_m_3ulp, FP_convert_fmt,  F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
-            `endif // COVER_BF16
-
         }
 
         B5_F16_convert_minNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, F16_minNorm_p_3ulp, FP_convert_fmt,  F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
+                ignore_bins bf16_not_widen_enough = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
@@ -848,69 +721,111 @@ covergroup B5_cg (virtual coverfloat_interface CFI);
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
 
             `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
+                ignore_bins bf16_not_wide_enough = binsof(FP_convert_fmt.fmt_bf16);
             `endif // COVER_BF16
 
         }
 
-        B5_F16_convert_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, F16_btw_minSubNorm_zero, FP_convert_fmt, F16_result_fmt {
+        B5_F16_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, F16_btw_minSubNorm_zero, FP_convert_fmt, F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
-            `endif // COVER_BF16
-
         }
 
         B5_F16_convert_minNorm_p5_exp_range:  cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt,  F16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_half);
-
-            `ifdef COVER_BF16
-                ignore_bins widen_bf16_to_f16 = binsof(FP_convert_fmt.fmt_half);
-            `endif // COVER_BF16
-
         }
 
     `endif
 
     `ifdef COVER_BF16
         B5_BF16_subnorm:              cross FP_result_ops, rounding_mode_all, FP_subnorm,               BF16_result_fmt;
-        B5_BF16_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, BF16_minSubNorm_p_3ulp,   BF16_result_fmt;
-        B5_BF16_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, BF16_minSubNorm_m_3ulp,   BF16_result_fmt {
-            ignore_bins impossible_addsub = binsof(FP_result_ops.add) && binsof(FP_result_ops.add);
+        B5_BF16_minSubNorm_p_3ulp:    cross FP_result_ops, rounding_mode_all, BF16_minSubNorm_p_3ulp,   BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
         }
-        B5_BF16_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, BF16_minNorm_p_3ulp,      BF16_result_fmt;
-        B5_BF16_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, BF16_minNorm_m_3ulp,      BF16_result_fmt;
-        B5_BF16_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, BF16_btw_minSubNorm_zero, BF16_result_fmt;
+        B5_BF16_minSubNorm_m_3ulp:    cross FP_result_ops, rounding_mode_all, BF16_minSubNorm_m_3ulp,   BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
+        B5_BF16_minNorm_p_3ulp:       cross FP_result_ops, rounding_mode_all, BF16_minNorm_p_3ulp,      BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+
+            ignore_bins prime_value = binsof(FP_result_ops.mul) && (binsof(BF16_minNorm_p_3ulp.minNorm_p_3ulp) intersect {2});
+        }
+        B5_BF16_minNorm_m_3ulp:       cross FP_result_ops, rounding_mode_all, BF16_minNorm_m_3ulp,      BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+            ignore_bins impossible_div = binsof(FP_result_ops.div);
+        }
+        B5_BF16_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, BF16_btw_minSubNorm_zero, BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_result_ops.add);
+            ignore_bins impossible_sub = binsof(FP_result_ops.sub);
+        }
         B5_BF16_minNorm_p5_exp_range: cross FP_result_ops, rounding_mode_all, FP_minNorm_p5_exp_range,  BF16_result_fmt;
 
 
         B5_BF16_convert_subnorm:  cross FP_convert_ops, rounding_mode_all, FP_subnorm, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
         B5_BF16_convert_minSubNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, BF16_minSubNorm_p_3ulp, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
         B5_BF16_convert_minSubNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, BF16_minSubNorm_m_3ulp, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
         B5_BF16_convert_minNorm_p_3ulp:  cross FP_convert_ops, rounding_mode_all, BF16_minNorm_p_3ulp, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
         B5_BF16_convert_minNorm_m_3ulp:  cross FP_convert_ops, rounding_mode_all, BF16_minNorm_m_3ulp, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
-        B5_BF16_convert_btw_minSubNorm_zero:  cross FP_result_ops, rounding_mode_all, BF16_btw_minSubNorm_zero, FP_convert_fmt, BF16_result_fmt {
+        B5_BF16_convert_btw_minSubNorm_zero:  cross FP_convert_ops, rounding_mode_all, BF16_btw_minSubNorm_zero, FP_convert_fmt, BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
         B5_BF16_convert_minNorm_p5_exp_range:  cross FP_convert_ops, rounding_mode_all, FP_minNorm_p5_exp_range, FP_convert_fmt,  BF16_result_fmt {
             ignore_bins invalid_convert = binsof(FP_convert_fmt.fmt_bf16);
+
+            `ifdef COVER_BF16
+                ignore_bins widen_f16_to_bf16 = binsof(FP_convert_fmt.fmt_half);
+            `endif // COVER_BF16
+
         }
 
     `endif
