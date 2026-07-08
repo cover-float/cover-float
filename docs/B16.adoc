@@ -1,0 +1,127 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+
+== B12 Add: Cancellation
+
+Aharoni et al.
+
+=== Description
+
+B16. Multiply-Add: Cancellation
+This model tests every possible value for cancellation.
+For the difference between the exponent of the intermediate result and the
+maximum between the exponents of the addend and the multiplication result,
+test all values in the range:
+ [-(2 * p + 1), 1].
+
+*Number of tests generated:* 1732 (1E3)
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* fmadd, fmsub, fnmadd, fnmsub
+
+== Definitions (TODO: CHANGE UP DEFINITIONS)
+
+`a`:: Operand 1
+`b`:: Operand 2
+`m`:: Mantissa. Number of bits in mantissa, excluding the hidden 1
+`p`:: Precision. Number of significant bits, including the hidden 1. p = m + 1
+`d`:: The difference between max(a_exp, b_exp) and exponent of the intermediate result. This is the interest of this model, where we test all d's in [-p, +1]
+`k`:: Magnitude of d. Defined as -d in the code since we deal with d = 1 separately
+`a_m`:: Mantissa of `a`
+`b_m`:: Mantissa of `b`
+`a_exp`:: Exponent of operand `a`, generally in `[min_exp, max_exp]`
+`b_exp`:: Exponent of operand `b`, generally in `[min_exp, max_exp]`
+`exp`:: Exponent of the result, generally in `[min_exp, max_exp]`
+`max_exp`:: Maximum exponent value based on precision
+`min_exp`:: Minimum exponent value based on precision
+
+== Background (TODO: NEED NEW BACKGROUND FOR FMAS)
+
+Cancellation occurs when the most significant digits of two operands subtract to zero, triggering a massive normalization effort as the hardware shifts out the many leading zeros. In high-performing floating point processors, a Leading Zero Anticipator (LZA) is used to predict the location of the most significant bit of the result to perform normalization. Generating operands that force specific cancellation depths thus tests the accuracy of the LZA, especially for the most difficult edge cases where the depth of cancellation is close to the precision.
+
+=== Design Choices (TODO: UPDATE DESIGN CHOICES)
+
+. If a_exp and b_exp are both negative, their sum must not exceed the lower exponent bound. This means that a_exp + b_exp > min_exp
+. If a_exp and b_exp are both positive, their sum must not exceed the upper exponent bound. This means that a_exp + b_exp < max_exp
+. Even though theoretically whether the product exponent is greater or the addend operand is greater should be random, we have the addend exponent to be greater for most cases to make controlling cancellation easier. Since we're only interested in the difference between the exponent of the operands and the intermediate result, this difference should not be of main concern, but could be a future improvement
+. For extremely deep cancellation cases the only possible result is Zero
+
+=== Notes (TODO: CHANGE NOTES)
+
+All explanation in this document will be done with one instead of both operations because the only difference will be sign assignments. All exponents used in the examples are unbiased exponents.
+
+== General Procedure
+We need to ensure that the product exponent `a_raw` and `b_raw` is high enough that even at the most extreme cancellation `d = -(2p+1)`, the result stays above the subnormal floor `min_raw`. Conversely, it must be low enough that at `d=1`, we don't overflow `max_raw`.
+
+Two situations: ab_exp is max, or c_exp is max. When we multiply a, b, the intermediate product is 2p bits wide
+
+product of a and b cannot be too different from desired, otherwise c would dominate and cancellation would be 0
+
+Unlike B2, we cannot use softfloat to generate desired result because ab has 2p precision and softfloat will remove that and round it to p.
+
+For single precision, the `c` only has `m` bits of precision (23 bits for f32). It can only cancel the top `m` bits of the product `a*b`. If you want a cancellation depth of 40, bits 24 through 39 of `a*b` must be exactly zero. If we use purely random mantissas for `a`` and `b`, their cross-multiplication will fill that gap with random noise, `c` won't be able to reach deep enough to cancel it, and the cancellation depth will permanently collapse back to around -24.
+
+Case 1: d < -2m, then we have to generate subnormal numbers, so a_raw and b_raw both need to be the smallest exponent possible
+Case 2: d < -m, meaning the cancellation is deeper than the precision. Set all operands to be power of 2 is an easy way to solve this
+Case 3: shallow cancellation d= -6, -5, -4, -3, -2, -1. (values are experimentally determined) Because shallow bins are very sensitive to
+1. whether c_exp becomes larger than ab_exp
+2. whether the final rounded result carries up one exponent
+3. whether cancellation becomes slightly deeper than intended
+4. whether product rounding changes ab_exp
+Case 4: Other d, random generation
+Case 5: d = 0. We make the exponent of c larger than ab_exp, so the result can be the same exp as c
+Case 6: d = 1. Again we make the exponent of c larger than ab_exp, and force c to be the largest mantissa so the result definitely carries
+
+== Specific Test Procedure
+Case 3: for d = -6, -5, -4, -3, -2, -1, the process looks like
+1. Generate a and b
+2. Compute the real rounded product exponent ab_exp.
+3. Choose a desired result with exponent ab_exp + d
+4. Solve for c
+5. Reject unless c_exp == ab_exp
+6. Reject unless actual_b16_d(...) == d
+
+== Test Count Breakdown
+
+Since each precision has tests going from -(2*p+1) to 1, the amount of test case per precision per operation is (1- -(2*p+1))/1+1 = 2*p+3
+
+[cols="1,1,1",options="header"]
+|===
+| Precision | p | Total (2*p+3)
+
+| BF_16
+| 8
+| 19
+
+| FP_16
+| 11
+| 25
+
+| FP_32
+| 24
+| 51
+
+| FP_64
+| 53
+| 109
+
+| FP_128
+| 113
+| 229
+|===
+
+=== Overall Test Count
+
+[cols="1,1",options="header"]
+|===
+| Description | Value
+
+| Total cancellation tests
+| 433
+
+| Accounting for FMADD, FMSUB, FNMADD, and FNMSUB (×4)
+| 1732
+|===

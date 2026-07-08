@@ -36,18 +36,25 @@ def generate_B27(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             # We only want narrowing conversions
             continue
 
-        for q_nan_bit, other_frac_bits, sign_bit in itertools.product([0, 1], repeat=3):
-            if q_nan_bit == 0 and other_frac_bits == 0:
+        for q_nan_bit, common_bits, rest_of_bits, sign_bit in itertools.product([0, 1], repeat=4):
+            if q_nan_bit == 0 and common_bits == 0 and rest_of_bits == 0:
                 continue  # This generates +- Inf
 
-            exp = (1 << constants.EXPONENT_BIAS[fmt]) - 1
+            exp = (1 << constants.EXPONENT_BITS[fmt]) - 1
             f = (sign_bit << constants.EXPONENT_BITS[fmt] | exp) << constants.MANTISSA_BITS[fmt]
             f |= q_nan_bit << constants.MANTISSA_BITS[fmt] - 1
 
-            if other_frac_bits:
-                bits = random.getrandbits(constants.MANTISSA_BITS[fmt] - 1)
+            rest_of_bits_count = constants.MANTISSA_BITS[fmt] - constants.MANTISSA_BITS[to_fmt]
+            if common_bits:
+                bits = random.getrandbits(constants.MANTISSA_BITS[to_fmt] - 1)
                 while bits == 0:  # Make it actually generate something non-zero
-                    bits = random.getrandbits(constants.MANTISSA_BITS[fmt] - 1)
+                    bits = random.getrandbits(constants.MANTISSA_BITS[to_fmt] - 1)
+                f |= bits << rest_of_bits_count
+
+            if rest_of_bits:
+                bits = random.getrandbits(rest_of_bits_count)
+                while bits == 0:
+                    bits = random.getrandbits(rest_of_bits_count - 1)
                 f |= bits
 
             tv = generate_test_vector(constants.OP_CFF, f, 0, 0, fmt, to_fmt)  # Rounding mode does not matter

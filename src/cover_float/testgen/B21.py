@@ -109,6 +109,6 @@ def genTests(test_f: TextIO, cover_f: TextIO) -> None:
                         )
 
 
-@register_model("B20")
+@register_model("B21")
 def main(test_f: TextIO, cover_f: TextIO) -> None:
     genTests(test_f, cover_f)

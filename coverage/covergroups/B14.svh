@@ -80,7 +80,7 @@ covergroup B14_cg (virtual coverfloat_interface CFI);
         type_option.weight = 0;
 
         bins big_neg_shift = {[ $             : -(2*F16_P + 2)]};
-        bins mid_shift[]   = {[-(2*F16_P + 1) :  (F16_P + 1)  ]};~
+        bins mid_shift[]   = {[-(2*F16_P + 1) :  (F16_P + 1)  ]};
         bins big_pos_shift = {[ (F16_P   + 2) :  $            ]};
 
     }

@@ -23,7 +23,9 @@ vsim -lib coverfloat_worklib coverfloat
 
 run -all
 
-coverage report -cvg -detail
+coverage report
+
+q
 
 # might neet many of these later on...
 coverage save coverfloat.ucdb
