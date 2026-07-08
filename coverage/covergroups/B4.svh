@@ -24,11 +24,10 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
     FP_arith_ops_no_sqrt: coverpoint CFI.op {
         type_option.weight = 0;
 
-        bins op_add    = {[OP_ADD : OP_ADD | 32'hF]};
-        bins op_sub    = {[OP_SUB : OP_SUB | 32'hF]};
-        bins op_mul    = {[OP_MUL : OP_MUL | 32'hF]};
-        bins op_div    = {[OP_DIV : OP_DIV | 32'hF]};
-        bins op_fma    = {[OP_FMA : OP_FMA | 32'hF]};
+        bins op_add    = { OP_ADD };
+        bins op_sub    = { OP_SUB };
+        bins op_mul    = { OP_MUL };
+        bins op_div    = { OP_DIV };
         bins op_fmadd  = {OP_FMADD};
         bins op_fmsub  = {OP_FMSUB};
         bins op_fnmadd = {OP_FNMADD};
@@ -44,31 +43,7 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         bins round_near_maxmag = {ROUND_NEAR_MAXMAG};
     }
 
-    F32_sign: coverpoint CFI.result[31] {
-        type_option.weight = 0;
-        bins pos = {0};
-        bins neg = {1};
-    }
-
-    F64_sign: coverpoint CFI.result[63] {
-        type_option.weight = 0;
-        bins pos = {0};
-        bins neg = {1};
-    }
-
-    F128_sign: coverpoint CFI.result[127] {
-        type_option.weight = 0;
-        bins pos = {0};
-        bins neg = {1};
-    }
-
-    F16_sign: coverpoint CFI.result[15] {
-        type_option.weight = 0;
-        bins pos = {0};
-        bins neg = {1};
-    }
-
-    BF16_sign: coverpoint CFI.result[15] {
+    interm_sign: coverpoint CFI.intermS {
         type_option.weight = 0;
         bins pos = {0};
         bins neg = {1};
@@ -104,70 +79,78 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
     ************************************************************************/
 
     // cases i & ii
-    F32_maxNorm_pm_3ulp: coverpoint CFI.intermM[(INTERM_M_BITS - F32_M_BITS) -: 3]
-        iff (CFI.intermX == F32_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F32_M_BITS - 1] == '1) {
+    //                                  Guard & LSB                                              Sticky
+    F32_maxNorm_pm_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - 1) - (F32_M_BITS - 1) -: 2], |CFI.intermM[(INTERM_M_BITS - 1) - (F32_M_BITS + 1):0]}
+        iff (
+          (CFI.intermX == F32_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F32_M_BITS] == '1) ||
+          (CFI.intermX == F32_MAXNORM_EXP+1 && CFI.intermM[(INTERM_M_BITS-1) -: F32_M_BITS] == 0)
+        ) {
             type_option.weight = 0;
 
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
     }
-
-    F64_maxNorm_pm_3ulp: coverpoint CFI.intermM[(INTERM_M_BITS - F64_M_BITS) -: 3]
-        iff (CFI.intermX == F64_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F64_M_BITS - 1] == '1) {
+    F64_maxNorm_pm_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - 1) - (F64_M_BITS - 1) -: 2], |CFI.intermM[(INTERM_M_BITS - 1) - (F64_M_BITS + 1):0]}
+        iff (
+          (CFI.intermX == F64_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F64_M_BITS] == '1) ||
+          (CFI.intermX == F64_MAXNORM_EXP+1 && CFI.intermM[(INTERM_M_BITS-1) -: F64_M_BITS] == 0)
+        ) {
             type_option.weight = 0;
 
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
     }
-
-    F128_maxNorm_pm_3ulp: coverpoint CFI.intermM[(INTERM_M_BITS - F128_M_BITS) -: 3]
-        iff (CFI.intermX == F128_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F128_M_BITS - 1] == '1) {
+    F128_maxNorm_pm_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - 1) - (F128_M_BITS - 1) -: 2], |CFI.intermM[(INTERM_M_BITS - 1) - (F128_M_BITS + 1):0]}
+        iff (
+          (CFI.intermX == F128_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F128_M_BITS] == '1) ||
+          (CFI.intermX == F128_MAXNORM_EXP+1 && CFI.intermM[(INTERM_M_BITS-1) -: F128_M_BITS] == 0)
+        ) {
             type_option.weight = 0;
 
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
     }
-
-    F16_maxNorm_pm_3ulp: coverpoint CFI.intermM[(INTERM_M_BITS - F16_M_BITS) -: 3]
-        iff (CFI.intermX == F16_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F16_M_BITS - 1] == '1) {
+    F16_maxNorm_pm_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - 1) - (F16_M_BITS - 1) -: 2], |CFI.intermM[(INTERM_M_BITS - 1) - (F16_M_BITS + 1):0]}
+        iff (
+          (CFI.intermX == F16_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: F16_M_BITS] == '1) ||
+          (CFI.intermX == F16_MAXNORM_EXP+1 && CFI.intermM[(INTERM_M_BITS-1) -: F16_M_BITS] == 0)
+        ) {
             type_option.weight = 0;
 
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
     }
-
-    BF16_maxNorm_pm_3ulp: coverpoint CFI.intermM[(INTERM_M_BITS - BF16_M_BITS) -: 3]
-        iff (CFI.intermX == BF16_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: BF16_M_BITS - 1] == '1) {
+    BF16_maxNorm_pm_3ulp: coverpoint {CFI.intermM[(INTERM_M_BITS - 1) - (BF16_M_BITS - 1) -: 2], |CFI.intermM[(INTERM_M_BITS - 1) - (BF16_M_BITS + 1):0]}
+        iff (
+          (CFI.intermX == BF16_MAXNORM_EXP && CFI.intermM[(INTERM_M_BITS - 1) -: BF16_M_BITS] == '1) ||
+          (CFI.intermX == BF16_MAXNORM_EXP+1 && CFI.intermM[(INTERM_M_BITS-1) -: BF16_M_BITS] == 0)
+        ) {
             type_option.weight = 0;
 
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
     }
 
     // cases vii & viii
-    F32_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F32_MAXNORM_EXP) {
+    F32_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F32_MAXNORM_EXP+1) {
         type_option.weight = 0;
 
-        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - F32_M_BITS - 2)) : $]};
+        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - (F32_M_BITS - 2))) : $]};
     }
-
-    F64_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F64_MAXNORM_EXP) {
+    F64_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F64_MAXNORM_EXP+1) {
         type_option.weight = 0;
 
-        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - F64_M_BITS - 2)) : $]};
+        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - (F64_M_BITS - 2))) : $]};
     }
-
-    F128_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F128_MAXNORM_EXP) {
+    F128_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F128_MAXNORM_EXP+1) {
         type_option.weight = 0;
 
-        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - F128_M_BITS - 2)) : $]};
+        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - (F128_M_BITS - 2))) : $]};
     }
-
-    F16_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F16_MAXNORM_EXP) {
+    F16_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == F16_MAXNORM_EXP+1) {
         type_option.weight = 0;
 
-        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - F16_M_BITS - 2)) : $]};
+        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - (F16_M_BITS - 2))) : $]};
     }
-
-    BF16_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == BF16_MAXNORM_EXP) {
+    BF16_gt_maxNorm_p_3ulp: coverpoint CFI.intermM iff (CFI.intermX == BF16_MAXNORM_EXP+1) {
         type_option.weight = 0;
 
-        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - BF16_M_BITS - 2)) : $]};
+        bins gt_maxNorm = {[ ('1 << (INTERM_M_BITS - (BF16_M_BITS - 2))) : $]};
     }
 
     // case v
@@ -204,33 +187,59 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
     ************************************************************************/
 
     `ifdef COVER_F32
-        B4_F32_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, F32_sign, F32_maxNorm_pm_3ulp,       F32_result_fmt;
-        B4_F32_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, F32_sign, F32_gt_maxNorm_p_3ulp,     F32_result_fmt;
-        B4_F32_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, F32_sign, F32_maxNorm_pm3_exp_range, F32_result_fmt;
+        B4_F32_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F32_maxNorm_pm_3ulp,       F32_result_fmt {
+            ignore_bins impossible_div = binsof(FP_arith_ops_no_sqrt.op_div);
+        }
+        B4_F32_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F32_gt_maxNorm_p_3ulp,     F32_result_fmt;
+        B4_F32_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F32_maxNorm_pm3_exp_range, F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F32_maxNorm_pm3_exp_range.exp_range) intersect {[F32_MAXNORM_EXP+2:F32_MAXNORM_EXP+3]});
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F32_maxNorm_pm3_exp_range.exp_range) intersect {[F32_MAXNORM_EXP+2:F32_MAXNORM_EXP+3]});
+        }
     `endif
 
     `ifdef COVER_F64
-        B4_F64_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, F64_sign, F64_maxNorm_pm_3ulp,       F64_result_fmt;
-        B4_F64_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, F64_sign, F64_gt_maxNorm_p_3ulp,     F64_result_fmt;
-        B4_F64_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, F64_sign, F64_maxNorm_pm3_exp_range, F64_result_fmt;
+        B4_F64_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F64_maxNorm_pm_3ulp,       F64_result_fmt {
+            ignore_bins impossible_div = binsof(FP_arith_ops_no_sqrt.op_div);
+        }
+        B4_F64_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F64_gt_maxNorm_p_3ulp,     F64_result_fmt;
+        B4_F64_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F64_maxNorm_pm3_exp_range, F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F64_maxNorm_pm3_exp_range.exp_range) intersect {[F64_MAXNORM_EXP+2:F64_MAXNORM_EXP+3]});
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F64_maxNorm_pm3_exp_range.exp_range) intersect {[F64_MAXNORM_EXP+2:F64_MAXNORM_EXP+3]});
+        }
     `endif
 
     `ifdef COVER_F128
-        B4_F128_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, F128_sign, F128_maxNorm_pm_3ulp,       F128_result_fmt;
-        B4_F128_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, F128_sign, F128_gt_maxNorm_p_3ulp,     F128_result_fmt;
-        B4_F128_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, F128_sign, F128_maxNorm_pm3_exp_range, F128_result_fmt;
+        B4_F128_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F128_maxNorm_pm_3ulp,       F128_result_fmt {
+            ignore_bins impossible_div = binsof(FP_arith_ops_no_sqrt.op_div);
+        }
+        B4_F128_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F128_gt_maxNorm_p_3ulp,     F128_result_fmt;
+        B4_F128_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F128_maxNorm_pm3_exp_range, F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F128_maxNorm_pm3_exp_range.exp_range) intersect {[F128_MAXNORM_EXP+2:F128_MAXNORM_EXP+3]});
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F128_maxNorm_pm3_exp_range.exp_range) intersect {[F128_MAXNORM_EXP+2:F128_MAXNORM_EXP+3]});
+        }
     `endif
 
     `ifdef COVER_F16
-        B4_F16_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, F16_sign, F16_maxNorm_pm_3ulp,       F16_result_fmt;
-        B4_F16_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, F16_sign, F16_gt_maxNorm_p_3ulp,     F16_result_fmt;
-        B4_F16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, F16_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt;
+        B4_F16_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_maxNorm_pm_3ulp,       F16_result_fmt {
+            ignore_bins impossible_div = binsof(FP_arith_ops_no_sqrt.op_div);
+        }
+        B4_F16_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_gt_maxNorm_p_3ulp,     F16_result_fmt;
+        B4_F16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
+        }
     `endif
 
     `ifdef COVER_BF16
-        B4_BF16_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, BF16_sign, BF16_maxNorm_pm_3ulp,       BF16_result_fmt;
-        B4_BF16_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, BF16_sign, BF16_gt_maxNorm_p_3ulp,     BF16_result_fmt;
-        B4_BF16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, BF16_sign, BF16_maxNorm_pm3_exp_range, BF16_result_fmt;
+        B4_BF16_maxNorm_pm_3ulp:       cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, BF16_maxNorm_pm_3ulp,       BF16_result_fmt {
+            ignore_bins impossible_mul = binsof(FP_arith_ops_no_sqrt.op_mul) && (binsof(BF16_maxNorm_pm_3ulp.maxNorm_pm_3ulp) intersect {2});
+            ignore_bins impossible_div = binsof(FP_arith_ops_no_sqrt.op_div);
+        }
+        B4_BF16_gt_maxNorm_p_3ulp:     cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, BF16_gt_maxNorm_p_3ulp,     BF16_result_fmt;
+        B4_BF16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, BF16_maxNorm_pm3_exp_range, BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(BF16_maxNorm_pm3_exp_range.exp_range) intersect {[BF16_MAXNORM_EXP+2:BF16_MAXNORM_EXP+3]});
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(BF16_maxNorm_pm3_exp_range.exp_range) intersect {[BF16_MAXNORM_EXP+2:BF16_MAXNORM_EXP+3]});
+        }
     `endif
 
 endgroup
