@@ -19,11 +19,24 @@
 #
 #   Total: 1640 / format * 5 formats = 8200 vectors.
 
-from pathlib import Path
-from typing import Optional, TextIO
+import itertools
+import logging
+import random
+from typing import TYPE_CHECKING, Optional, TextIO, cast
 
 import cover_float.common.constants as const
+import cover_float.common.log as log
+from cover_float.common.util import factors_to_bit_width, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
+
+if TYPE_CHECKING:
+    # This block is seen by Pyright but ignored at runtime
+    def factorint(n: int) -> dict[int, int]: ...
+else:
+    from sympy import factorint
+
+logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B4"))
 
 ZERO_PAD = "0" * 32
 
@@ -35,9 +48,9 @@ ROUND_MODES = [
     const.ROUND_NEAR_MAXMAG,
 ]
 
-# LGS configs: (use_m1ulp, gs) covering all 7 non-zero {L,G,S} values.
+# LGS configs: (mantissa_zeros, gs) covering all 7 non-zero {L,G,S} values.
 # gs encodes G and S directly: bit 1 → G, bit 0 → S.
-# use_m1ulp selects A operand: True → A = MaxNorm-1ulp (L=0), False → A = MaxNorm (L=1).
+# mantissa_zeros whether or not the mantissa preceding it was made of all zeros or all ones
 #
 #   (True,  gs=1) → LGS = 001   (True,  gs=2) → LGS = 010   (True,  gs=3) → LGS = 011
 #   (False, gs=0) → LGS = 100   (False, gs=1) → LGS = 101
@@ -185,7 +198,7 @@ def _t_k_half(k: int, sign: int, E: int, M: int, bias: int) -> str:
         return _fp_hex(sign, mb, 1, E, M)
 
 
-def _gs_b(gs: int, sign: int, E: int, M: int, bias: int) -> str:
+def _gs_b(gs: int, sign: int, E: int, M: int, bias: int, *, additional_shift: int = 0) -> str:
     """
     gs x 2^(sub_ulp_exp) where sub_ulp_exp = ulp_exp - 2.
     gs in {0,1,2,3}: bit 1 → G, bit 0 → S in the intermediate.
@@ -194,10 +207,9 @@ def _gs_b(gs: int, sign: int, E: int, M: int, bias: int) -> str:
     if gs == 0:
         return ZERO_PAD
     sub_exp = _ulp_exp(E, M, bias) - 2
-    b = gs.bit_length()
-    biased_exp = (b - 1 + sub_exp) + bias
-    frac = gs ^ (1 << (b - 1))
-    mantissa = frac << (M - (b - 1))
+    biased_exp = (sub_exp + 2) + bias + additional_shift
+    frac = gs
+    mantissa = frac << (M - 2)
     return _fp_hex(sign, biased_exp, mantissa, E, M)
 
 
@@ -305,9 +317,9 @@ def _group1b_arithmetic(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cov
     """
     7 LGS configs x 6 operations x 2 signs x 5 rounding modes = 420 vectors.
 
-    For each config (use_m1ulp, gs):
-      A_lgs = MaxNorm-1ulp  if use_m1ulp else MaxNorm
-      B_lgs = gs x 2^(sub_ulp_exp)
+    For each config (all_zeros, gs):
+      A_lgs = MaxNorm-1ulp
+      B_lgs = gs x (2^(sub_ulp_exp) if all_zeros else 2^(sub_ulp_exp-1))
 
     Positive intermediate +(A_lgs + B_lgs):
       ADD:    A = +A_lgs,  B = +B_lgs
@@ -321,18 +333,18 @@ def _group1b_arithmetic(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cov
     """
     one = _one(E, M, bias)
 
-    for use_m1ulp, gs in _LGS_CONFIGS:
+    for all_zeros, gs in _LGS_CONFIGS:
         for sign in (0, 1):
             # A_lgs with the desired sign
-            if use_m1ulp:
-                a_lgs_pos = _maxnorm_m1ulp(0, E, M)
-                a_lgs_neg = _maxnorm_m1ulp(1, E, M)
-            else:
-                a_lgs_pos = _maxnorm(0, E, M)
-                a_lgs_neg = _maxnorm(1, E, M)
+            a_lgs_pos = _maxnorm_m1ulp(0, E, M)
+            a_lgs_neg = _maxnorm_m1ulp(1, E, M)
 
-            b_lgs_pos = _gs_b(gs, 0, E, M, bias)
-            b_lgs_neg = _gs_b(gs, 1, E, M, bias)
+            if all_zeros:
+                b_lgs_pos = _gs_b(gs, 0, E, M, bias, additional_shift=1)
+                b_lgs_neg = _gs_b(gs, 1, E, M, bias, additional_shift=1)
+            else:
+                b_lgs_pos = _gs_b(gs, 0, E, M, bias)
+                b_lgs_neg = _gs_b(gs, 1, E, M, bias)
 
             if sign == 0:
                 # Positive intermediate: A = +A_lgs, B/C = +B_lgs (or -B_lgs for SUB/FMSUB)
@@ -393,8 +405,99 @@ def _group1b_mul_div(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
     for sign in (0, 1):
         mn = _maxnorm(sign, E, M)
         for rm in ROUND_MODES:
-            _emit(const.OP_MUL, rm, mn, one, ZERO_PAD, fmt, test_f, cover_f)
             _emit(const.OP_DIV, rm, mn, one, ZERO_PAD, fmt, test_f, cover_f)
+
+    nf = const.MANTISSA_BITS[fmt]
+
+    for (all_zeros, bits), sign, rm in itertools.product(_LGS_CONFIGS, (0, 1), ROUND_MODES):
+        if bits == 2 and fmt == const.FMT_BF16 and all_zeros:
+            continue  # This is an impossible case
+
+        # Find two factors
+        if bits & 1 == 0:
+            f1, f2 = generate_exact_mul_group1b(fmt, all_zeros, bits, nf)
+        else:
+            f1, f2 = generate_inexact_mul_group1b(fmt, all_zeros, bits, nf)
+
+        # Find Exponents
+        min_exp, max_exp = const.UNBIASED_EXP[fmt]
+        target_exp = max_exp + all_zeros
+
+        exp1 = random.randint(min_exp + 1, max_exp)  # Don't include min norm so we can subtract it later
+        exp2 = target_exp - exp1
+        while exp2 < min_exp or exp2 > max_exp:
+            exp1 = random.randint(min_exp + 1, max_exp)  # Don't include min norm so we can subtract it later
+            exp2 = target_exp - exp1
+
+        if (f1 * f2).bit_length() == 2 * nf + 2:
+            exp1 -= 1
+
+        sign1 = random.randint(0, 1)
+        sign2 = sign1 ^ sign
+
+        a = _fp_hex(sign1, exp1 + const.EXPONENT_BIAS[fmt], f1 & ((1 << nf) - 1), E, nf)
+        b = _fp_hex(sign2, exp2 + const.EXPONENT_BIAS[fmt], f2 & ((1 << nf) - 1), E, nf)
+
+        _emit(const.OP_MUL, rm, a, b, ZERO_PAD, fmt, test_f, cover_f)
+
+
+def generate_exact_mul_group1b(fmt: str, all_zeros: bool, bits: int, nf: int) -> tuple[int, int]:
+    if all_zeros:  # noqa: SIM108
+        target = 1 << (2 * nf) | bits << nf - 2
+    else:
+        target = ((1 << (nf + 1)) - 1) << nf | bits << nf - 2
+
+    factors = factorint(target)
+    f1, f2 = factors_to_bit_width(factors, target, nf + 1)
+
+    if f1 == 0 or f2 == 0:
+        # Try the target as 2.2nf (rounding bits are still relative to the leading one)
+        target *= 2
+
+        factors = factorint(target)
+        f1, f2 = factors_to_bit_width(factors, target, nf + 1)
+
+        if f1 == 0 or f2 == 0:
+            raise ValueError(
+                f"Could Not Find Factors for LGS Config: {(all_zeros, bits)}, fmt: {fmt}, factors: {factors}, "
+                f"target: {target:b}"
+            )
+
+    return f1, f2
+
+
+def generate_inexact_mul_group1b(fmt: str, all_zeros: bool, bits: int, nf: int) -> tuple[int, int]:
+    assert bits & 1, "Sticky Must Be Set to Generate Inexact Mul Results"
+
+    if all_zeros:
+        target = 1 << (2 * nf) | bits << nf - 2 | 1 << nf - 3
+    else:
+        target = ((1 << (nf + 1)) - 1) << nf | bits << nf - 2 | 1 << nf - 3
+
+    # Find the two mantissas
+    f1, f2 = 0, 0
+    for _ in range(100000):
+        # Try to get somewhere close to halfway to between the two numbers
+        f1 = 1 << nf | random.getrandbits(nf)
+        f2 = target // f1 + random.randint(0, 1)  # Randomly Choose Between Floor and Ceiling Division
+
+        if f2.bit_length() == nf:
+            f2 *= 2
+
+        if f2.bit_length() != nf + 1:
+            continue
+
+        # 1.(nf+1) bits
+        product_bin = f"{f1 * f2:b}"
+        mantissa_and_guard = product_bin[: nf + 2]
+        sticky = "1" in product_bin[nf + 2 :]  # All inexact cases have a sticky bit
+
+        if bin(target)[2:].startswith(mantissa_and_guard) and sticky:
+            break
+    else:
+        raise ValueError(f"Unable to find Inexact Factors to Hit LGS={(all_zeros, bits)}, fmt={fmt}")
+
+    return f1, f2
 
 
 # ---------------------------------------------------------------------------
@@ -592,21 +695,8 @@ def generate_b4_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     _group3_exp_sweep(fmt, E, M, bias, test_f, cover_f)
 
 
-def main() -> None:
-    Path("tests/testvectors").mkdir(parents=True, exist_ok=True)
-    Path("tests/covervectors").mkdir(parents=True, exist_ok=True)
-
-    with (
-        Path("tests/testvectors/B4_tv.txt").open("w") as test_f,
-        Path("tests/covervectors/B4_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in const.FLOAT_FMTS:
-            generate_b4_tests(test_f, cover_f, fmt)
-
-    with Path("tests/testvectors/B4_tv.txt").open() as tv_f:
-        total = sum(1 for _ in tv_f)
-    print(f"Generated {total} total B4 test vectors (expected 8200).")
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B4")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in const.FLOAT_FMTS:
+        random.seed(reproducible_hash(f"B4 {fmt}"))
+        generate_b4_tests(test_f, cover_f, fmt)
