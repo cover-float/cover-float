@@ -238,6 +238,19 @@ def _emit(
     run_and_store_test_vector(tv, test_f, cover_f)
 
 
+def _emit_convert(
+    op: str,
+    rm: str,
+    a: str,
+    fmt: str,
+    target_fmt: str,
+    test_f: TextIO,
+    cover_f: TextIO,
+) -> None:
+    tv = f"{op}_{rm}_{a}_{ZERO_PAD}_{ZERO_PAD}_{fmt}_{ZERO_PAD}_{target_fmt}_00"
+    run_and_store_test_vector(tv, test_f, cover_f)
+
+
 # ---------------------------------------------------------------------------
 # Group 1A: T_k integer-ULP offsets
 # ---------------------------------------------------------------------------
@@ -681,12 +694,81 @@ def get_mul_inputs(fmt: str, E: int, M: int, bias: int, sign: int, k: Optional[i
     return _maxnorm(sign, E, M), _one(E, M, bias)
 
 
+def _group1_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+    # Generate CFF Tests between MaxNorm - 3ulp and MaxNorm + 3ulp
+
+    for target in const.FLOAT_FMTS:
+        target_E, target_M, target_bias = _fmt_params(target)
+
+        if target_E > E or (target in [const.FMT_HALF, const.FMT_SINGLE] and fmt == const.FMT_BF16) or (fmt == target):
+            # Then the conversion is widening
+            continue
+
+        for sign, offset, rm in itertools.product((0, 1), range(-3, 4), ROUND_MODES):
+            target_max_norm_exp = _unbiased_max(target_E, target_bias)
+            exp = target_max_norm_exp
+            mantissa_diff = M - target_M
+
+            if offset > 0:
+                mantissa = offset << (mantissa_diff - 2)
+                exp += 1
+            else:
+                mantissa = (((1 << target_M) - 1) << mantissa_diff) | -offset << (mantissa_diff - 2)
+
+            a = _fp_hex(sign, exp + bias, mantissa, E, M)
+
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+
+
+def _group2_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+    # A Random Number Larger than MaxNorm + 3 ulp
+
+    for target in const.FLOAT_FMTS:
+        target_E, target_M, target_bias = _fmt_params(target)
+
+        if target_E > E or (fmt == target) or (fmt == const.FMT_BF16 and target == const.FMT_SINGLE):
+            # Then the conversion is widening
+            continue
+
+        for sign, rm in itertools.product((0, 1), ROUND_MODES):
+            target_max_norm_exp = _unbiased_max(target_E, target_bias)
+            exp = target_max_norm_exp + 1
+            mantissa_diff = max(M - target_M, 0)
+
+            mantissa = random.randint(4 << mantissa_diff, (1 << M) - 1)
+
+            a = _fp_hex(sign, exp + bias, mantissa, E, M)
+
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+
+
+def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+    # Numbers with exponent in the range MaxNorm.Exp +- 3
+
+    for target in const.FLOAT_FMTS:
+        target_E, _target_M, target_bias = _fmt_params(target)
+
+        if target_E > E or (fmt == target) or (fmt == const.FMT_BF16 and target == const.FMT_SINGLE):
+            # Then the conversion is widening
+            continue
+
+        for offset, sign, rm in itertools.product(range(-3, 4), (0, 1), ROUND_MODES):
+            target_max_norm_exp = _unbiased_max(target_E, target_bias)
+            exp = target_max_norm_exp + offset
+
+            mantissa = random.getrandbits(M)
+
+            a = _fp_hex(sign, exp + bias, mantissa, E, M)
+
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+
+
 # ---------------------------------------------------------------------------
 # Top-level
 # ---------------------------------------------------------------------------
 
 
-def generate_b4_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b4_tests_arithmetic(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     E, M, bias = _fmt_params(fmt)
     _group1a_tk(fmt, E, M, bias, test_f, cover_f)
     _group1b_arithmetic(fmt, E, M, bias, test_f, cover_f)
@@ -695,8 +777,16 @@ def generate_b4_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     _group3_exp_sweep(fmt, E, M, bias, test_f, cover_f)
 
 
+def generate_b4_tests_converts(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+    E, M, bias = _fmt_params(fmt)
+    _group1_converts(fmt, E, M, bias, test_f, cover_f)
+    _group2_converts(fmt, E, M, bias, test_f, cover_f)
+    _group3_converts(fmt, E, M, bias, test_f, cover_f)
+
+
 @register_model("B4")
 def main(test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in const.FLOAT_FMTS:
         random.seed(reproducible_hash(f"B4 {fmt}"))
-        generate_b4_tests(test_f, cover_f, fmt)
+        generate_b4_tests_arithmetic(test_f, cover_f, fmt)
+        generate_b4_tests_converts(test_f, cover_f, fmt)

@@ -1573,9 +1573,13 @@ std::pair<int, std::string> reference_model(
             case FMT_BF16: {
                 softFloat_setRoundingMode(softfloat_round_odd);
                 float32_t af_32 = f128_to_f32(af);
+                // Save them for later
+                intermResult_t temp_interm_results = softfloat_intermediateResult;
                 softFloat_setRoundingMode(rm);
 
                 bfloat16_t resultf = f32_to_bf16(af_32);
+                softfloat_intermediateResult = temp_interm_results;
+
                 FLOAT16_TO_MP(result, resultf);
                 break;
             }
