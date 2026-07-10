@@ -23,7 +23,7 @@ import itertools
 import logging
 import random
 from collections.abc import Generator
-from typing import TYPE_CHECKING, Optional, TextIO, cast
+from typing import TYPE_CHECKING, TextIO, cast
 
 import cover_float.common.constants as const
 import cover_float.common.log as log
@@ -572,6 +572,18 @@ def _group2_clear_overflow(fmt: str, E: int, M: int, bias: int, test_f: TextIO, 
             _emit(const.OP_FNMSUB, rm, hmn_op, two, mn, fmt, test_f, cover_f)
 
 
+def _generate_group2_mul_factors(
+    _fmt: str, E: int, M: int, bias: int, _rm: str
+) -> Generator[tuple[str, str], None, None]:
+    """Generator for the values used for group 2 multiplication tests"""
+    two = _two(E, M, bias)
+
+    for sign in (0, 1):
+        # MUL: ±MaxNorm x 2.0 = ±2*MaxNorm
+        mn = _maxnorm(sign, E, M)
+        yield (mn, two)
+
+
 # ---------------------------------------------------------------------------
 # Group 3: Exponent sweep [max_biased-3 .. max_biased+3]
 # ---------------------------------------------------------------------------
@@ -661,44 +673,44 @@ def _group3_exp_sweep(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover
                     _emit(const.OP_FNMSUB, rm, an, scale, ZERO_PAD, fmt, test_f, cover_f)
 
 
+def _generate_group3_mul_factors(
+    _fmt: str, E: int, M: int, bias: int, _rm: str
+) -> Generator[tuple[str, str], None, None]:
+    """Generator for the factors used in the group 3 multiplication test"""
+
+    mb = _max_biased(E)
+    one = _one(E, M, bias)
+
+    for d in range(-3, 4):
+        for sign in (0, 1):
+            if d <= 0:
+                a_pos = _at_biased_exp(0, mb + d, E, M)
+                a_neg = _at_biased_exp(1, mb + d, E, M)
+                a = a_neg if sign == 1 else a_pos  # dominant operand
+
+                yield (a, one)
+            else:  # d > 0
+                scale = _pow2(d, E, M, bias)  # +2^d
+
+                mn = _maxnorm(0, E, M)  # +MaxNorm
+                mn_neg = _maxnorm(1, E, M)  # -MaxNorm
+
+                # Dominant: +MaxNorm for sign=0, -MaxNorm for sign=1
+                a = mn_neg if sign == 1 else mn
+                yield (a, scale)
+
+
 # ---------------------------------------------------------------------------
 # B18 helper: raw MUL operands
 # ---------------------------------------------------------------------------
 
 
-def get_mul_inputs(fmt: str, E: int, M: int, bias: int, sign: int, k: Optional[int] = None) -> tuple[str, str]:
-    """Return the (A, B) hex operands used in B4 MUL test vectors.
-
-    Group 1A - T_k integer-ULP offset tests (pass k in {-3..+3}):
-      A = ±T_k/2  (``_t_k_half``),  B = +2.0
-      A x B = ±T_k  in infinite precision.
-
-    Group 1B - LGS=100 supplement (pass k=None):
-      A = ±MaxNorm,  B = +1.0
-      A x B = ±MaxNorm exactly  (LGS=100, no rounding bits).
-
-    Parameters
-    ----------
-    fmt:  format string, e.g. ``'fp32'``
-    E:    exponent bit width
-    M:    mantissa bit width
-    bias: exponent bias
-    sign: 0 for positive intermediate, 1 for negative
-    k:    ULP offset for Group 1A; ``None`` selects the Group 1B LGS case
-
-    Returns
-    -------
-    (a_hex, b_hex): two 32-char zero-padded hex strings, matching the operands
-                    emitted by ``_group1a_tk`` / ``_group1b_mul_div``.
-
-    example:
+def get_mul_inputs(fmt: str, rm: str) -> Generator[tuple[str, str], None, None]:
     E, M, bias = _fmt_params(fmt)
-    a_hex, b_hex = get_mul_inputs(fmt, E, M, bias, sign=0, k=2)   # Group 1A
-    a_hex, b_hex = get_mul_inputs(fmt, E, M, bias, sign=1, k=None) # Group 1B LGS
-    """
-    if k is not None:
-        return _t_k_half(k, sign, E, M, bias), _two(E, M, bias)
-    return _maxnorm(sign, E, M), _one(E, M, bias)
+    random.seed(reproducible_hash("B4{fmt}{rm}"))
+    yield from _generate_group1b_mul_factors(fmt, E, M, bias, rm)
+    yield from _generate_group2_mul_factors(fmt, E, M, bias, rm)
+    yield from _generate_group3_mul_factors(fmt, E, M, bias, rm)
 
 
 def _group1_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:

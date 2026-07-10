@@ -23,10 +23,13 @@ from cover_float.common.constants import (
     ROUND_MINMAG,
     ROUND_NEAR_EVEN,
     ROUND_NEAR_MAXMAG,
+    SIGN_BIT,
     UNBIASED_EXP,
 )
+from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
-from cover_float.testgen.B5 import getMultiplyTests
+from cover_float.testgen.B4 import get_mul_inputs as getB4MultiplyTests
+from cover_float.testgen.B5 import getMultiplyTests as getB5MultiplyTests
 from cover_float.testgen.model import register_model
 
 B5_FMTS = [FMT_QUAD, FMT_DOUBLE, FMT_SINGLE, FMT_BF16, FMT_HALF]
@@ -88,22 +91,47 @@ def getRandomInt(min_exp: int, max_exp: int, sign: str, precision: str) -> str:
 
 
 def genUnderflowTests(test_f: TextIO, cover_f: TextIO) -> None:
-
     for precision in FLOAT_FMTS:
         min_exp = UNBIASED_EXP[precision][0] + 1
         max_exp = UNBIASED_EXP[precision][1] - 1
         rounding_mode = random.choice(ROUNDING_MODES)
-        for a, b in getMultiplyTests(precision, rounding_mode):
+        for a, b in getB5MultiplyTests(precision, rounding_mode):
             for operation in FMA_OPS:
                 c = getRandomInt(min_exp, max_exp, str(random.randint(0, 1)), precision)
+                rm = random.choice(ROUNDING_MODES)
                 run_and_store_test_vector(
-                    f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
+                    f"{operation}_{rm}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
                     test_f,
                     cover_f,
                 )
 
 
-# def genOverflowTests(test_f: TextIO, cover_f: TextIO) -> None:
+def genOverflowTests(test_f: TextIO, cover_f: TextIO) -> None:
+    for precision in FLOAT_FMTS:
+        rounding_mode = random.choice(ROUNDING_MODES)
+
+        for a, b in getB4MultiplyTests(precision, rounding_mode):
+            for operation in FMA_OPS:
+                effective_subtraction = operation in [OP_FMSUB, OP_FNMADD]
+                negate_multiply = operation in [OP_FNMADD, OP_FNMSUB]
+
+                a_sign = (int(a, 16) & (1 << SIGN_BIT[precision])) != 0
+                b_sign = (int(b, 16) & (1 << SIGN_BIT[precision])) != 0
+
+                prod_sign = a_sign ^ b_sign ^ negate_multiply
+                c_sign = prod_sign ^ 1 ^ effective_subtraction
+
+                c_exp = UNBIASED_EXP[precision][1]
+                c_mant = (1 << MANTISSA_BITS[precision]) - 1
+
+                c = generate_FP(precision, str(c_sign), c_exp, bin(c_mant)[2:])
+
+                rm = random.choice(ROUNDING_MODES)
+                run_and_store_test_vector(
+                    f"{operation}_{rm}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
+                    test_f,
+                    cover_f,
+                )
 
 
 def get_fma_signs(operation: str) -> tuple[int, int]:
@@ -123,7 +151,7 @@ def get_fma_signs(operation: str) -> tuple[int, int]:
 def lsbGuardStickyTests(test_f: TextIO, cover_f: TextIO) -> None:
     rounding_mode = random.choice(ROUNDING_MODES)
     for precision in FLOAT_FMTS:
-        for grs_int in range(1, 8):
+        for grs_int in range(0, 8):
             for operation in FMA_OPS:
                 mul_sign, add_sign = get_fma_signs(operation)
                 a, b, c = get_fp_values(precision, f"{grs_int:03b}", mul_sign, add_sign)
@@ -137,200 +165,129 @@ def get_fp_values(precision: str, grs_pattern: str, mul_sign: int, addend_sign: 
     e_min = UNBIASED_EXP[precision][0]
     e_max = UNBIASED_EXP[precision][1]
 
-    # Determine the input mantissas for each desired value
-    target_list = {
-        # Above MinNorm
-        "001": {  # Same as B5, FIX
-            FMT_BF16: (8 + 1) * (8**2 - 8 + 1),
-            FMT_HALF: ((2**4) + 1) * ((2**4) ** 2 - (2**4) + 1),
-            FMT_SINGLE: ((2**5) + 1) * ((2**5) ** 4 - (2**5) ** 3 + (2**5) ** 2 - (2**5) + 1),
-            FMT_DOUBLE: ((2**11) + 1) * ((2**11) ** 4 - (2**11) ** 3 + (2**11) ** 2 - (2**11) + 1),
-            FMT_QUAD: ((2**38) + 1) * ((2**76) - (2**38) + 1),
-        },
-        "010": {  # Same as B5, FIX
-            FMT_BF16: 2056,
-            FMT_HALF: (2**11) + 1,
-            FMT_SINGLE: ((2**8) + 1) * ((2**8) ** 2 - (2**8) + 1),
-            FMT_DOUBLE: (2**53) + 1,
-            FMT_QUAD: (2**113) + 1,
-        },
-        "011": {  # Same as B5, FIX
-            FMT_BF16: 2**9 + 2 + 1,
-            FMT_HALF: 2**13 + 4 + 3,
-            FMT_SINGLE: (2**26) + 7,
-            FMT_DOUBLE: 2**55 + 7,
-            FMT_QUAD: 2**120 + 125,
-        },
-        "100": {  # grs_int = 4
-            FMT_BF16: (2**8) - 1,
-            FMT_HALF: (2**11) - 1,
-            FMT_SINGLE: (2**24) - 1,
-            FMT_DOUBLE: (2**53) - 1,
-            FMT_QUAD: (2**113) - 1,
-        },
-        # Below MinNorm
-        "111": {  # grs_int = 7
-            FMT_BF16: (2**10) - 1,
-            FMT_HALF: (2**14) - 1,
-            FMT_SINGLE: (2**26) - 1,
-            FMT_DOUBLE: (2**56) - 1,
-            FMT_QUAD: (2**116) - 1,
-        },  # - 1 ulp
-        "110": {  # grs_int = 6
-            FMT_BF16: (2**9) - 1,
-            FMT_HALF: (2**12) - 1,
-            FMT_SINGLE: (2**25) - 1,
-            FMT_DOUBLE: (2**54) - 1,
-            FMT_QUAD: (2**114) - 1,
-        },
-        "101": {  # grs_int = 5
-            FMT_BF16: 517,
-            FMT_HALF: (2**12) + 5,
-            FMT_SINGLE: (2**26) - 3,
-            FMT_DOUBLE: (2**55) - 3,
-            FMT_QUAD: 613 * 33881219305284356466756909162937,  # FIX
-        },
-    }
+    lsb = grs_pattern[0] == "1"
+    guard = grs_pattern[1] == "1"
+    sticky = grs_pattern[2] == "1"
 
-    factor_list = {
-        # Above MinNorm
-        "001": {
-            FMT_BF16: (8 + 1),
-            FMT_HALF: ((2**4) + 1),
-            FMT_SINGLE: ((2**5) + 1),
-            FMT_DOUBLE: ((2**11) + 1),
-            FMT_QUAD: ((2**38) + 1),
-        },
-        "010": {FMT_BF16: 257, FMT_HALF: 683, FMT_SINGLE: ((2**8) + 1), FMT_DOUBLE: 321, FMT_QUAD: 491003369344660409},
-        "011": {FMT_BF16: 103, FMT_HALF: 9, FMT_SINGLE: 23 * 29, FMT_DOUBLE: 9 * 25, FMT_QUAD: 1099511627781},
-        "100": {
-            FMT_BF16: (2**4) - 1,
-            FMT_HALF: 23,
-            FMT_SINGLE: (2**12) - 1,
-            FMT_DOUBLE: 6361 * 69431,
-            FMT_QUAD: 3391 * 23279 * 65993,
-        },
-        # Below MinNorm
-        "111": {  # grs_int = 7
-            FMT_BF16: (2**5) - 1,
-            FMT_HALF: (2**7) - 1,
-            FMT_SINGLE: (2**13) - 1,
-            FMT_DOUBLE: (2**28) - 1,
-            FMT_QUAD: (2**58) - 1,
-        },
-        "110": {  # grs_int = 6
-            FMT_BF16: 73,
-            FMT_HALF: (2**4) - 1,
-            FMT_SINGLE: (2**5) - 1,
-            FMT_DOUBLE: (2**27) - 1,
-            FMT_QUAD: (2**57) - 1,
-        },
-        "101": {  # grs_int = 5
-            FMT_BF16: 11,
-            FMT_HALF: 1367,
-            FMT_SINGLE: 37 * 349,
-            FMT_DOUBLE: 181 * 313 * 431,
-            FMT_QUAD: 33881219305284356466756909162937,  # FIX
-        },
-    }
-    # Randomize the sign bit
-    if mul_sign == 0:
-        a_sign = random.randint(0, 1)
-        b_sign = a_sign
+    if sticky:
+        sig1, sig2 = generate_inexact_factors(lsb, guard, m_bits)
     else:
-        a_sign = random.randint(0, 1)
-        b_sign = (a_sign + 1) % 2
+        sig1, sig2 = generate_exact_factors(lsb, guard, m_bits)
 
-    target_int = target_list[grs_pattern][precision]
-    factor_1 = factor_list[grs_pattern][precision]
-    factor_2 = target_int // factor_1  # Integers have unlimited precision, must use integer division
+    sign1 = random.randint(0, 1)
+    sign2 = sign1 ^ mul_sign
 
-    a_int = int(max(factor_1, factor_2))  # Ensure a is the largest value
-    b_int = int(min(factor_1, factor_2))
+    sig_prod = sig1 * sig2
 
-    a_bin = format(a_int, "b")
-    b_bin = format(b_int, "b")
+    rounding_bit_count = m_bits if sig_prod.bit_length() == 2 * m_bits + 1 else m_bits + 1
+    rounding_bits = sig_prod & ((1 << rounding_bit_count) - 1)
 
-    a_bits = len(a_bin)
-    b_bits = len(b_bin)
+    if sig_prod.bit_length() == 2 * m_bits + 1:
+        exp_diff = -m_bits
 
-    exp_offset = a_bits - b_bits
+        if addend_sign == 1:
+            sig3 = rounding_bits
+        else:
+            target = 1 << m_bits
+            sig3 = target - rounding_bits
+    else:
+        exp_diff = -m_bits + 1
+        assert sig_prod & 1 == 0, "Generation must make sig_prod even with full 2.2nf products"
 
-    # Subtract Hidden 1
-    a_int -= 1 << (a_bits - 1)
-    b_int -= 1 << (b_bits - 1)
+        if addend_sign == 1:
+            sig3 = rounding_bits >> 1
+        else:
+            target = 1 << m_bits
+            sig3 = target - (rounding_bits >> 1)
 
-    a_trailing_zeros = m_bits - a_bits + 1
-    b_trailing_zeros = m_bits - b_bits + 1
+    sig3 &= (1 << m_bits) - 1
 
-    a_int *= 2 ** max(a_trailing_zeros, 0)
-    b_int *= 2 ** max(b_trailing_zeros, 0)
+    mul_exp = random.randint(e_min, e_max)
+    addend_exp = mul_exp + exp_diff
+    while addend_exp <= e_min or addend_exp >= e_max:
+        mul_exp = random.randint(e_min, e_max)
+        addend_exp = mul_exp + exp_diff
 
-    a_bin = f"{a_int:0{m_bits}b}"
-    b_bin = f"{b_int:0{m_bits}b}"
+    exp1 = random.randint(e_min, e_max)
+    exp2 = mul_exp - exp1
+    while exp2 <= e_min or exp2 >= e_max:
+        exp1 = random.randint(e_min, e_max)
+        exp2 = mul_exp - exp1
 
-    e_mul_target = random.randint(e_min + m_bits + 2, e_max)
+    sig1_str = f"{sig1 & ((1 << m_bits) - 1):0{m_bits}b}"
+    sig2_str = f"{sig2 & ((1 << m_bits) - 1):0{m_bits}b}"
+    sig3_str = f"{sig3 & ((1 << m_bits) - 1):0{m_bits}b}"
 
-    a_exp = int((e_mul_target + exp_offset) / 2)
-    b_exp = int(a_exp - exp_offset) - 1
-    if e_min - (a_exp + b_exp) == -1:
-        b_exp -= 1
-    elif e_min - (a_exp + b_exp) == 1:
-        b_exp += 1
-    target_binary = f"{target_int:b}"
-    target_len = len(target_binary) - 1  # subtract hidden 1
-    additional_bits = max(0, target_len - m_bits)
-    if additional_bits > 0:  # If we have bits to remove
-        c_len = random.randint(additional_bits, m_bits + 1)
+    f1 = generate_FP(precision, str(sign1), exp1, sig1_str)
+    f2 = generate_FP(precision, str(sign2), exp2, sig2_str)
+    f3 = generate_FP(precision, str(0), addend_exp, sig3_str)
 
-        additional_bits_bin = target_binary[m_bits + 1 :]
-        additional_bits_len = len(additional_bits_bin)
-        c_prefix_len = c_len - additional_bits_len
-        c_mantissa_prefix = ""
-        if c_prefix_len > 0:
-            c_mantissa_prefix = f"{random.randint(1 << (c_prefix_len - 1), (1 << c_prefix_len) - 1):0{c_prefix_len}b}"
-        c_mantissa_bin = c_mantissa_prefix + additional_bits_bin
+    return f1, f2, f3
 
-        c_mantissa_bin = c_mantissa_bin.lstrip("0")
-        if not c_mantissa_bin:
-            c_mantissa_bin = "1"  # Failsafe if the slice was entirely zeros
 
-        # Update c_len to the TRUE length after removing leading zeros
-        c_len = len(c_mantissa_bin)
+def generate_inexact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]:
+    for _ in range(100):
+        sig1 = 1 << m_bits | random.getrandbits(m_bits)
+        sig2 = 1 << m_bits | random.getrandbits(m_bits)
 
-        # Calculate precise exponent offset using the corrected c_len
-        c_exp_offset = a_bits + b_bits - c_len - 1
-    else:  # If there are no bits to remove
-        c_len = random.randint(1, m_bits + 1)
-        c_mantissa = random.randint(1 << (c_len - 1), (1 << c_len) - 1)
-        c_mantissa_bin = f"{c_mantissa:0{c_len}b}"
-        c_exp_offset = random.randint(0, m_bits - c_len) if m_bits - c_len > 0 else 0
+        sig_prod = sig1 * sig2
 
-    mantissa_len = len(c_mantissa_bin)
-    c_mantissa_int = int(c_mantissa_bin, 2)
+        # In guard == 0 cases ensure that the last sig bit is zero so that it can be
+        # cancelled later
+        if (sig1 & 1 == 1) and sig_prod.bit_length() == 2 * m_bits + 2:
+            sig1 ^= 1
+            sig_prod = sig1 * sig2
+            assert sig_prod & 1 == 0
 
-    # handle normal vs subnormals:
-    c_exp = (a_exp + b_exp) - c_exp_offset
-    if c_exp < e_min:
-        c_exp = e_min - 1
-    else:  # subtract hidden 1
-        c_mantissa_int -= 1 << (mantissa_len - 1)
+        rounding_bit_count = m_bits if sig_prod.bit_length() == 2 * m_bits + 1 else m_bits + 1
+        gen_lsb = sig_prod & (1 << rounding_bit_count) != 0
+        gen_guard = sig_prod & (1 << rounding_bit_count - 1) != 0
+        gen_sticky = (sig_prod & (1 << (rounding_bit_count - 2) - 1)) != 0
 
-    # Shift the mantissa left to align it to the MSB of the IEEE fraction field
-    c_trailing_zeros = m_bits - c_len + 1
-    c_mantissa_int *= 2 ** max(c_trailing_zeros, 0)
+        if gen_sticky and gen_lsb == lsb and gen_guard == guard:
+            return sig1, sig2
+    else:
+        raise ValueError(
+            f"Failed to Generate Multiplicands giving lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
+        )
 
-    c_bin = f"{c_mantissa_int:0{m_bits}b}"
 
-    a_fp = generate_FP(precision, str(a_sign), a_exp, a_bin)
-    b_fp = generate_FP(precision, str(b_sign), b_exp, b_bin)
-    c_fp = generate_FP(precision, str((addend_sign + 1) % 2), c_exp, c_bin)
+def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]:
+    trailing_zeros = m_bits - 1
 
-    return a_fp, b_fp, c_fp
+    for _ in range(100):
+        # Figure out how many zeros go in each
+        a_zeros = -1
+        b_zeros = -1
+        while b_zeros < 3 or b_zeros > m_bits - 3:
+            a_zeros = random.randint(3, m_bits - 3)
+            b_zeros = trailing_zeros - a_zeros
+
+        m1 = random.getrandbits(m_bits - a_zeros) << a_zeros
+        m2 = random.getrandbits(m_bits - b_zeros) << b_zeros
+
+        sig1 = 1 << m_bits | m1
+        sig2 = 1 << m_bits | m2
+
+        sig_prod = sig1 * sig2
+
+        rounding_bit_count = m_bits if sig_prod.bit_length() == 2 * m_bits + 1 else m_bits + 1
+
+        gen_sticky = (sig_prod & (1 << (rounding_bit_count - 1) - 1)) != 0
+        gen_guard = sig_prod & (1 << rounding_bit_count - 1) != 0
+        gen_lsb = sig_prod & (1 << rounding_bit_count) != 0
+
+        if gen_sticky == 0 and gen_guard == guard and gen_lsb == lsb:
+            return sig1, sig2
+    else:
+        raise ValueError(
+            f"Failed to Generate Exact Multiplicands for lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
+        )
 
 
 @register_model("B18")
 def main(test_f: TextIO, cover_f: TextIO) -> None:
+    random.seed(reproducible_hash("B18"))
     genUnderflowTests(test_f, cover_f)
-    # overFlowTests(test_f, cover_f)
-    # lsbGuardStickyTests(test_f, cover_f)
+    genOverflowTests(test_f, cover_f)
+    lsbGuardStickyTests(test_f, cover_f)
