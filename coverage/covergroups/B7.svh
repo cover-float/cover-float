@@ -513,7 +513,7 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
     // The rounding mode should be to +inf
     rounding_pos_inf: coverpoint CFI.rm {
         type_option.weight = 0;
-        bins round_near_maxmag = {ROUND_MAX};
+        bins round_max = {ROUND_MAX};
     }
 
 
