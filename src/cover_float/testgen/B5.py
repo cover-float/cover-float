@@ -110,7 +110,7 @@ def convert_grs(
     elif grs[1] == "1":
         input_mant += 1 << bits_left
 
-    if grs[2] == "1":
+    if grs[2] == "1" and bits_left > 0:
         input_mant += random.randint(1, (1 << bits_left) - 1)
 
     # Normalize exponent
@@ -179,71 +179,83 @@ def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, c
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
     hp_m_bits = MANTISSA_BITS[hp]
+    lp_n_exp = UNBIASED_EXP[lp][0]
     lp_sn_exp = UNBIASED_EXP[lp][0] - 1
+    hp_sn_exp = UNBIASED_EXP[hp][0] - 1
     hp_e_bits = EXPONENT_BITS[hp]
     hp_e_bias = EXPONENT_BIAS[hp]
     lp_m_bits = MANTISSA_BITS[lp]
 
-    if (
-        hp != FMT_BF16 and lp != FMT_SINGLE
-    ):  # The mantissa bits for bf_16 are smaller than that for single, so you can't do these operations
+    if not (
+        hp == FMT_BF16 and lp == FMT_HALF
+    ):  # The mantissa bits for bf_16 are smaller than that for f16, so you can't do these operations
         rem_bits = hp_m_bits - lp_m_bits
 
         max_rem = (1 << rem_bits) - 1
 
         # MinNorm - 3 i_ulp:
-        hp_m = "1" * (lp_m_bits - 1) + "0" + f"{random.randint(1, max_rem):0{rem_bits}b}"
+        if hp_sn_exp != lp_sn_exp:  # If we need to generate a subnorm, then the criteria for the mantissa is different
+            hp_m = "1" * (lp_m_bits - 1) + "0" + f"{random.randint(1, max_rem):0{rem_bits}b}"
+        else:
+            hp_m = "1" * (lp_m_bits) + "0" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
         hp_exp = lp_sn_exp
 
         genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
 
         # MinNorm - 2 i_ulp:
-        hp_m = "1" * (lp_m_bits - 1) + "1" + "0" * rem_bits
+        if hp_sn_exp != lp_sn_exp:  # If we need to generate a subnorm, then the criteria for the mantissa is different
+            hp_m = "1" * (lp_m_bits - 1) + "1" + "0" * rem_bits
+        else:
+            hp_m = "1" * (lp_m_bits) + "1" + "0" * (rem_bits - 1)
         hp_exp = lp_sn_exp
 
         genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
 
         # MinNorm - 1 i_ulp:
-        hp_m_1 = "1" * (lp_m_bits - 1) + "1" + f"{random.randint(1, max_rem):0{rem_bits}b}"
-        hp_m_2 = "1" * (lp_m_bits - 1) + "1" + f"{random.randint(1, max_rem):0{rem_bits}b}"
+        if hp_sn_exp != lp_sn_exp:  # If we need to generate a subnorm, then the criteria for the mantissa is different
+            hp_m_1 = "1" * (lp_m_bits - 1) + "1" + f"{random.randint(1, max_rem):0{rem_bits}b}"
+            hp_m_2 = "1" * (lp_m_bits - 1) + "1" + f"{random.randint(1, max_rem):0{rem_bits}b}"
+        else:
+            hp_m_1 = "1" * (lp_m_bits) + "1" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
+            hp_m_2 = "1" * (lp_m_bits) + "1" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
         hp_exp = lp_sn_exp
 
         genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f)
 
-        # # MinNorm:
-        # hp_m_1 = "0" * (hp_m_bits)
-        # hp_m_2 = "0" * (hp_m_bits)
-        # hp_exp = lp_n_exp
+        # MinNorm:
+        hp_m_1 = "0" * (hp_m_bits)
+        hp_m_2 = "0" * (hp_m_bits)
+        hp_exp = lp_n_exp
 
-        # genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f)
 
-        # # MinNorm + 1 i_ulp:
-        # hp_m = "0" * (lp_m_bits - 1) + "0" + f"{random.randint(1, max_rem):0{rem_bits}b}"
-        # hp_exp = lp_n_exp
+        # MinNorm + 1 i_ulp:
+        hp_m = "0" * lp_m_bits + "0" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
+        hp_exp = lp_n_exp
 
-        # genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
 
-        # # MinNorm + 2 i_ulp:
-        # hp_m = "0" * lp_m_bits + "1" + "0" * (rem_bits - 1)
-        # hp_exp = lp_n_exp
+        # MinNorm + 2 i_ulp:
+        hp_m = "0" * lp_m_bits + "1" + "0" * (rem_bits - 1)
+        hp_exp = lp_n_exp
 
-        # genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
 
-        # # MinNorm + 3 i_ulp:
-        # hp_m = ("0" * lp_m_bits) + "1" + f"{random.randint(1, (1 << (rem_bits - 1)) - 1):0{(rem_bits - 1)}b}"
-        # hp_exp = lp_n_exp
+        # MinNorm + 3 i_ulp:
+        hp_m = ("0" * lp_m_bits) + "1" + f"{random.randint(1, (1 << (rem_bits - 1)) - 1):0{(rem_bits - 1)}b}"
+        hp_exp = lp_n_exp
 
-        # genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
 
 
 def tests_conversion_7_8(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
 
-    lp_sn_exp = UNBIASED_EXP[lp][0] - 1
+    lp_sn_exp = UNBIASED_EXP[lp][0] - MANTISSA_BITS[lp] - 3
 
-    convert_grs(hp, lp, lp_sn_exp + 2, "001", "0", rounding_mode, test_f, cover_f)
-    convert_grs(hp, lp, lp_sn_exp + 2, "001", "0", rounding_mode, test_f, cover_f)
+    convert_grs(hp, lp, lp_sn_exp, "001", "0", rounding_mode, test_f, cover_f)
+    convert_grs(hp, lp, lp_sn_exp, "001", "1", rounding_mode, test_f, cover_f)
 
 
 def tests_conversion_9(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
@@ -257,14 +269,14 @@ def tests_conversion_9(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cov
 
     hp_exp = lp_sn_exp
 
-    for i in range(0, 6):
+    for i in range(1, 7):
         complete_binary = f"{random.randint(0, max_m_value):0{hp_m_bits}b}"
 
+        hp_exp = lp_sn_exp + i
         input_value_1 = generate_FP(hp_e_bits, f"{random.randint(0, 1)}", hp_exp, complete_binary, hp_e_bias)
         run_and_store_test_vector(
             f"{OP_CFF}_{rounding_mode}_{input_value_1}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
         )  # Test 1
-        hp_exp = lp_sn_exp + i + 1
 
 
 def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
@@ -1230,10 +1242,10 @@ def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f:
             a_exp = sn_exp
             b_exp = sn_exp + i
             seed("b5" + str(op) + precision + rounding_mode + "a" + str(i))
-            a_mant = random.randint(0, maxMant)
+            a_mant = random.randint(0, maxMant >> 1)
             a_sign = str(random.randint(0, 1))
             seed("b5" + str(op) + precision + rounding_mode + "b" + str(i))
-            b_mant = random.randint(a_mant, maxMant)
+            b_mant = random.randint(a_mant, maxMant >> 1)
             b_sign = str(random.randint(0, 1))
             a_fp = generate_FP(e_bits, a_sign, a_exp, f"{a_mant:0{m_bits}b}", e_bias)
             b_fp = generate_FP(e_bits, b_sign, b_exp, f"{b_mant:0{m_bits}b}", e_bias)
@@ -1245,10 +1257,10 @@ def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f:
 def addSubTests(test_f: TextIO, cover_f: TextIO) -> None:
     for precision in FLOAT_FMTS:
         for rounding_mode in ROUNDING_MODES:
-            # tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f)
+            tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f)
             # tests_add_sub_3_4(precision, rounding_mode, test_f, cover_f)
-            tests_add_sub_5_6(precision, rounding_mode, test_f, cover_f)
-            # tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
+            # tests_add_sub_5_6(precision, rounding_mode, test_f, cover_f)
+            tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
 
 
 @register_model("B5")
