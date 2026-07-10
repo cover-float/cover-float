@@ -171,7 +171,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 signC = signProd
                 if op in [common.OP_FMADD, common.OP_FNMSUB]:
                     # For effective addition, add something to make them go away
-                    sigC_initial = 2 ** common.MANTISSA_BITS[fmt] - sticky_bits
+                    sigC_initial = 2 ** common.MANTISSA_BITS[fmt] - sticky_bits if sticky_bits != 0 else 0
                 else:
                     # In effective subtraction subtract them off
                     sigC_initial = sticky_bits
