@@ -17,6 +17,7 @@
 # B6 Model
 
 
+import math
 import random
 from random import seed
 from typing import TextIO
@@ -256,11 +257,11 @@ def get_grs_mant(operation: str, precision: str, a_exp: int, b_exp: int, hashStr
         if grs_int == 7 or grs_int == 5:
             # b and a mantissas have the same range
             b_min_range = b_min
-            b_max_range = (2 * b_max) // 3
+            b_max_range = math.floor((2 * b_max) / 3)
 
             small_int = random.randint(b_min_range, b_max_range)
 
-            a_min_range = (3 * small_int) // 2
+            a_min_range = math.ceil((3 * small_int) / 2)
             a_max_range = a_max
 
             large_int = random.randint(a_min_range, a_max_range)
@@ -380,6 +381,14 @@ def mul_div_grs_gen(
         a_exp, b_exp = genSpecExp_div(precision, target_exp, hashString, grs_int)
 
     a_mant, b_mant = get_grs_mant(operation, precision, a_exp, b_exp, hashString + str(grs) + str(sign), str(grs))
+
+    if operation == OP_DIV and grs in ["101", "111"]:  # noqa: SIM102
+        # This addresses a division subtlety: if we generate a case where a_mant < b_mant, the specExp calculation
+        # is not what the final exponent is because we need to shift the leading one into place. This will safely
+        # account for this. As in these specific cases, the construction is such that there are no subnorms, and we
+        # are trying to get a subnormal division result, so a_exp cannot be near its maximum.
+        if a_mant < b_mant:
+            a_exp += 1
 
     # Normalize exponents
     a_exp = max(a_exp, sn_exp)
@@ -548,7 +557,8 @@ def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
 
                 grs = ["001", "010", "011", "100", "101", "110", "111"]
                 for bits in grs:
-                    for exp in [lp_min_sn_exp, tlp_min_sn_exp]:
+                    # Our targets are less than these numbers, so the exponents we wish to reach must be one fewer
+                    for exp in [lp_min_sn_exp - 1, tlp_min_sn_exp - 1]:
                         hashString = str(hp) + str(lp) + str(rounding_mode) + str(grs) + str(exp)
                         convert_grs(hp, lp, exp, bits, "0", rounding_mode, test_f, cover_f, hashString + "0")
                         convert_grs(hp, lp, exp, bits, "1", rounding_mode, test_f, cover_f, hashString + "1")
@@ -563,7 +573,8 @@ def createTests(test_f: TextIO, cover_f: TextIO) -> None:
 
             min_sn_exp = min_exp - m_bits
             t_min_sn_exp = min_sn_exp - 1  # MinSN/2
-            for exp in [min_sn_exp, t_min_sn_exp]:
+            # Our targets are less than these numbers, so the exponents we wish to reach must be one fewer
+            for exp in [min_sn_exp - 1, t_min_sn_exp - 1]:
                 for sign in [0, 1]:
                     grs = ["001", "010", "011", "100", "101", "110", "111"]
 

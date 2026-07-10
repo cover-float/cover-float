@@ -1573,9 +1573,13 @@ std::pair<int, std::string> reference_model(
             case FMT_BF16: {
                 softFloat_setRoundingMode(softfloat_round_odd);
                 float32_t af_32 = f128_to_f32(af);
+                // Save them for later
+                intermResult_t temp_interm_results = softfloat_intermediateResult;
                 softFloat_setRoundingMode(rm);
 
                 bfloat16_t resultf = f32_to_bf16(af_32);
+                softfloat_intermediateResult = temp_interm_results;
+
                 FLOAT16_TO_MP(result, resultf);
                 break;
             }
@@ -2248,7 +2252,7 @@ std::pair<int, std::string> reference_model(
             break;
         }
         case FMT_QUAD: {
-            mp::uint256_t sig = fracF128UI64(result >> 64);
+            mp::cpp_int sig = fracF128UI64(result >> 64);
             sig <<= 64;
             sig |= static_cast<uint64_t>(result);
             uint32_t exp = expF128UI64(result >> 64);
@@ -2259,7 +2263,7 @@ std::pair<int, std::string> reference_model(
             }
             // intermResult.sig64 = static_cast<uint64_t>(sig >> 64);
             // intermResult.sig0 = static_cast<uint64_t>(sig);
-            intermResult.sig = sig << (INTERM_SIG_LENGTH - 128);
+            intermResult.sig = sig << (INTERM_SIG_LENGTH - 2 - 112);
 
             intermResult.exp = exp;
 

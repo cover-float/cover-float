@@ -49,6 +49,11 @@ def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         if constants.INT_SIGNED[int_fmt]:
             # - Max Int
             tv = generate_test_vector(
+                constants.OP_CIF, 1 << int_bits | 1, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
+            )
+            run_and_store_test_vector(tv, test_f, cover_f)
+            # IntMin (maximum negative int)
+            tv = generate_test_vector(
                 constants.OP_CIF, 1 << int_bits, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
             )
             run_and_store_test_vector(tv, test_f, cover_f)

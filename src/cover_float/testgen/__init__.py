@@ -16,6 +16,7 @@
 import cover_float.testgen.B1 as B1
 import cover_float.testgen.B2 as B2
 import cover_float.testgen.B3 as B3
+import cover_float.testgen.B4 as B4
 import cover_float.testgen.B5 as B5
 import cover_float.testgen.B6 as B6
 import cover_float.testgen.B7 as B7
@@ -28,6 +29,7 @@ import cover_float.testgen.B13 as B13
 import cover_float.testgen.B14 as B14
 import cover_float.testgen.B15 as B15
 import cover_float.testgen.B16 as B16
+import cover_float.testgen.B17 as B17
 import cover_float.testgen.B18 as B18
 import cover_float.testgen.B20 as B20
 import cover_float.testgen.B21 as B21
@@ -41,6 +43,7 @@ __all__ = [
     "B1",
     "B2",
     "B3",
+    "B4",
     "B5",
     "B6",
     "B7",
@@ -53,6 +56,7 @@ __all__ = [
     "B14",
     "B15",
     "B16",
+    "B17",
     "B18",
     "B20",
     "B21",
