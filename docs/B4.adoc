@@ -1,0 +1,766 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 4
+:sectnums:
+:stem: latexmath
+
+== B4: Overflow and Near Overflow
+
+=== 1.0 - Overview
+
+==== Aharoni
+
+Description: This model creates a test case for each of the following constraints on the intermediate result:
+
+. All the numbers in the range [+MaxNorm - 3ulp, +MaxNorm + 3ulp]
+. All the numbers in the range [−MaxNorm − 3 ulp, −MaxNorm + 3 ulp]
+. A number that is larger than +MaxNorm + 3 ulp
+. A number that is smaller than −MaxNorm − 3 ulp
+. One number for every exponent in the range [MaxNorm.exp − 3, MaxNorm.exp + 3] for positive and negative numbers
+
+Case i and ii are treated as one implementation group, with the sign axis looping over {0, 1}. Case iii and iv are likewise treated as one group.
+
+*Number of Tests:* ~ 6 E 3
+
+*Precisions Supported:* BF_16, FP_16, FP_32, FP_64, FP_128
+
+*Operations Supported:* OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB
+
+*Rounding Modes:* RNE, RTZ, RDN, RUP, RMM
+
+*Enable Bits:* not available
+
+NOTE: Operations such as OP_SQRT and pass-through operations like FSGNJ, FSGNJN, FSGNJX, FMIN, FMAX do not pass through the rounding pipeline and produce no pre-rounding intermediate, thus, they are excluded from B4.
+
+==== 1.1 Test Case Organization
+
+* *Group 1 – Aharoni Cases 1 & 2: The ±3 ULP Window*
+** Intermediate constraint: The intermediate falls within [±MaxNorm − 3ulp, ±MaxNorm + 3ulp]
+*** As this is the most sensitive region of the overflow boundary. The rounding mode determines whether the FPU clamps the result to MaxNorm or rounds up to ±Inf.
+** *Sub-group 1A – T_k: integer ULP offsets*
+*** Targets the FPU's overflow detection comparator. The intermediate is placed at the 7 integer-ULP spaced positions near the MaxNorm to exercise proper overflow detection.
+** *Sub-group 1B - LGS: sub-ULP bit position*
+*** Targets the rounding unit's internal logic. The intermediate is placed at each of the 7 combinations of the three bits {L, G, S} that the rounding units read to make its decision.
+
+* *Group 2 – Aharoni Cases 3 & 4: Clear Overflow*
+** Intermediate constraint: The intermediate is clearly above +MaxNorm + 3ulp or clearly below -MaxNorm - 3ulp
+*** The result of this group is always in the unambiguous overflow region, resulting in ±Inf and the overflow flag is always raised regardless of rounding modes.
+
+* *Group 3 – Aharoni Cases 5: Exponent Sweep*
+** Intermediate constraint: One intermediate per exponent value in [MAXNORM_EXP − 3, MAXNORM_EXP + 3]
+*** This group is not concerned with the mantissa, it covers the exponent neighborhood around the MaxNorm.
+*** It confirms that the FPU handles exponent normalization and overflow detection correctly across the +/- 3 exponent band near MAXNORM_EXP.
+
+==== 1.2 Goal of This Model
+
+The B4 model tests three distinct hardware failure modes:
+
+. *Incorrect overflow detection (Group 1A and 2)*
+.. The FPU's comparator fails to correctly identify that the intermediate has exceeded MaxNorm.
+... The T_k sub-group (Group 1A) places the intermediate at exact integer-ULP boundaries where overflow/no-overflow decisions are distinct.
+
+. *Incorrect rounding unit logic (Group 1B)*
+.. The FPU correctly detects the overflow region but computes {L,G,S} incorrectly or applies the wrong rounding logic.
+... The LGS sub-group (Group 1B) places the intermediate at sub-ULP positions that directly exercise every combination of these three bits the rounding unit reads to ensure correct rounding logic is exhibited by the FPU.
+
+. *Incorrect exponent handling near the boundary (Group 3)*
+.. The FPU handles the right significand but applies the wrong exponent adjustments or normalization for intermediates in the +/- 3 exponent range of MaxNorm_exp. The exponent sweep covers this independently of the significand region.
+
+=== 2.0 - Implementation
+
+==== 2.1 Definitions
+
+[cols="2,4",options="header"]
+|===
+| Symbol | Definition
+
+| E
+| Number of exponent bits for the format
+
+| M
+| Number of stored mantissa bits (excludes implicit leading 1)
+
+| bias
+| (2 ^ (E - 1)) - 1
+
+| unbiased_max
+| max_biased - bias
+
+| max_biased
+| (2 ^ E) - 2 — biased exponent of MaxNorm, all-ones biased exponent is reserved for Inf/NaN
+
+| MaxNorm
+| biased_exp = max_biased +
+Mantissa = all ones = (2 ^ M) - 1 +
+The largest finite representable value
+
+| MaxNorm - 1ulp
+| biased_exp = max_biased +
+Mantissa = (2^M) - 2 clears LSB
+
+| ulp_exp
+| unbiased_max - M — base-2 exponent of 1 ULP at MaxNorm
+
+| {L, G, S}
+| Three-bit sample from intermM: +
+L = LSB of stored mantissa +
+G = guard bit (first bit beyond stored mantissa) +
+S = sticky bit (OR of all bits beyond G)
+
+| gs
+| A 2-bit integer ∈ {0, 1, 2, 3} encoding the desired G and S values directly: +
+gs bit 1 → G +
+gs bit 0 → S +
+L is controlled separately through A operand selection. Used in Sub-group 1B construction as B = gs x 2^(sub_ulp_exp).
+
+| sub_ulp_exp
+| = ulp_exp − 2 → the base-2 exponent used for the B operand in Sub-group 1B. Placing B = gs × 2^(sub_ulp_exp) causes gs bit 1 to land at the G position and gs bit 0 to land at the S position in intermM.
+
+| T_k (target intermediate)
+| = MaxNorm + k·ulp for k ∈ {−3, −2, −1, 0, +1, +2, +3} +
+The 7 target intermediate values for case i and ii. Note: the T_{+1}, T_{+2}, T_{+3} exceed MaxNorm and are not representable in the format. They exist only as infinite-precision intermediates. Operand inputs must be constructed such that the exact mathematical result equals T_k before rounding.
+
+| T_k / 2
+| = (MaxNorm + k·ulp) / 2 +
+Always exactly representable for all k in {-3…+3} because halving decrements the biased exponent by 1 (from max_biased to max_biased − 1) without changing the mantissa bits.
+
+| intermX
+| pre-rounding intermediate biased exponent
+
+| intermM
+| pre-rounding intermediate significand (192-bit canonical form captured by Softfloat before any rounding decision)
+|===
+
+Table 2.0 - Definitions
+
+==== 2.1 - The pre-rounding intermediate significand (intermM) / {L, G, S} bit layout
+
+The {L, G, S} bits are represented by:
+
+----
+192-bit intermM field (after stripping implicit leading 1 and left-aligning)
+
+ bit 191                                  bit (192-M)  bit (191-M)  bit (190-M)  bit 0
+    |                                          |            |            |          |
+    v                                          v            v            v          v
+┌───┬───┬───┬───┬─────────────────────────────┬────┬──────┬──────┬──────────────────┐
+│ f │ f │ f │ f │  · · · (M-1 bits) · · ·    │ L  │  G   │  S   │ · · · · · · · · │
+└───┴───┴───┴───┴─────────────────────────────┴────┴──────┴──────┴──────────────────┘
+ ↑                         ↑                    ↑      ↑      ↑
+ MSB of stored             All M-1 bits must    LSB    Guard  Sticky
+ mantissa fraction         be 1 for the         of     bit    bit
+ (= bit just below         guard condition      stored
+ implicit leading 1)       to be satisfied      mantissa
+                           (= we are within
+                           ±3 ULP of MaxNorm)
+----
+
+Figure 2.0 - {LGS} bit layout
+
+The rounding unit reads exactly these three bits to make its decision. For the guard condition to be satisfied, the significand looks like: 1.1111….111_LGS…
+
+==== 2.2 - ULP definitions + T_k
+
+Following Aharoni et al., for a floating-point number b0.b1b2...bk × 2^m:
+
+----
+ulp = 2 ^ (m − k)
+----
+
+where m is the unbiased exponent and k is the number of mantissa bits. At MaxNorm, m = unbiased_max and k = M.
+
+*ULP Values at MaxNorm per format:*
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Format | E | M | unbiased_max | ulp at MaxNorm
+
+| F16  | 5  | 10  | 15    | 2^5
+| BF16 | 8  | 7   | 127   | 2^120
+| F32  | 8  | 23  | 127   | 2^104
+| F64  | 11 | 52  | 1023  | 2^971
+| F128 | 15 | 112 | 16383 | 2^16271
+|===
+
+*Example (F16):*
+
+For F16, MaxNorm = 65504 and ulp = 32. The 7 target intermediates (T_k) are:
+
+[cols="1,1,1",options="header"]
+|===
+| k  | T_k   | Representable?
+
+| ~3 | 65408 | Yes
+| ~2 | 65440 | Yes
+| ~1 | 65472 | Yes
+| 0  | 65504 | Yes (this is MaxNorm)
+| +1 | 65536 | No — intermediates only
+| +2 | 65568 | No — intermediates only
+| +3 | 65600 | No — intermediates only
+|===
+
+
+==== 2.3 - General Procedure
+
+The generator produces three independent groups of test vectors per format, corresponding directly at Aharoni's five constraints:
+
+[cols="2,1,3,1",options="header"]
+|===
+| Group | Aharoni Cases | Intermediate Constraint | Vectors per format
+
+| Group 1A (T_k)
+| 1 & 2
+| T_k for k ∈ {−3..+3}, both signs
+| 560
+
+| Group 1B (LGS arithmetic)
+| 1 & 2
+| 7 non-zero combinations of LGS, both signs
+| 420
+
+| Group 1B (LGS for MUL/DIV)
+| 1 & 2
+| Any applicable 7 non-zero combinations of LGS, both signs
+| 20
+
+| Group 2
+| 3 & 4
+| Clearly above MaxNorm + 3ulp, both signs
+| 80
+
+| Group 3
+| 5
+| One per exponent in [max_biased - 3, max_biased + 3], both signs
+| 560
+
+| *Total per format*
+|
+|
+| *1640*
+|===
+
+For every group, the sign axis loops over {0,1} and the rounding mode axis loops over all five modes: RNE, RTZ, RDN, RUP, RMM.
+
+*Expected Results Reference*
+
+The expected result for each (T_k, rounding mode, sign) combination is fully determined. For positive intermediate:
+
+[cols="1,2,1,1,1,1,1,1",options="header"]
+|===
+| k | Intermediate | RNE | RTZ | RDN | RUP | RMM | Overflow raised?
+
+| -3 | MaxNorm - 3ulp | MaxNorm - 3ulp | same | same | same | same | No
+| -2 | MaxNorm - 2ulp | MaxNorm - 2ulp | same | same | same | same | No
+| -1 | MaxNorm - 1ulp | MaxNorm - 1ulp | same | same | same | same | No
+| 0  | MaxNorm        | MaxNorm        | same | same | same | same | No
+| 1  | MaxNorm + 1ulp | +Inf           | MaxNorm | MaxNorm | +Inf | +Inf | RNE/RUP/RMM
+| 2  | MaxNorm + 2ulp | +Inf           | MaxNorm | MaxNorm | +Inf | +Inf | RNE/RUP/RMM
+| 3  | MaxNorm + 3ulp | +Inf           | MaxNorm | MaxNorm | +Inf | +Inf | RNE/RUP/RMM
+|===
+
+* For negative intermediates - T_k, RDN and RUP swap: RDN rounds to -Inf, RUP clamps to -MaxNorm.
+* k ∈ {−3..0} are exact intermediates that round to themselves under every mode. No overflow flag, no inexact flag.
+* k ∈ {+1, +2, +3} are above MaxNorm. RTZ and RDN (for positive) clamp to MaxNorm and raise the inexact flag but not overflow. RNE, RUP, and RMM round up to +Inf and raise the overflow flag.
+
+There are 7 possible combinations of LGS, thus the rounding decisions for LGS values are:
+
+[cols="1,1,1,1,2,1,1,1,1,1,1",options="header"]
+|===
+| LGS | L | G | S | Position | RNE | RTZ | RDN(+) | RUP(+) | RMM | Overflow raised?
+
+| 001 | 0 | 0 | 1 | MaxNorm - 1ulp +¼ ulp  | MaxNorm - 1ulp | MaxNorm - 1ulp | MaxNorm - 1ulp | MaxNorm | MaxNorm - 1ulp | No
+| 010 | 0 | 1 | 0 | MaxNorm - 1ulp +½ ulp  | MaxNorm - 1ulp | MaxNorm - 1ulp | MaxNorm - 1ulp | MaxNorm | MaxNorm        | No
+| 011 | 0 | 1 | 1 | MaxNorm - 1ulp +¾ ulp  | MaxNorm        | MaxNorm - 1ulp | MaxNorm - 1ulp | MaxNorm | MaxNorm        | No
+| 100 | 1 | 0 | 0 | Exactly MaxNorm         | MaxNorm        | MaxNorm        | MaxNorm        | MaxNorm | MaxNorm        | No
+| 101 | 1 | 0 | 1 | MaxNorm +¼ ulp          | MaxNorm        | MaxNorm        | MaxNorm        | +Inf    | MaxNorm        | RUP only
+| 110 | 1 | 1 | 0 | MaxNorm +½ ulp          | +Inf           | MaxNorm        | MaxNorm        | +Inf    | +Inf           | RNE/RUP/RMM
+| 111 | 1 | 1 | 1 | MaxNorm +¾ ulp          | +Inf           | MaxNorm        | MaxNorm        | +Inf    | +Inf           | RNE/RUP/RMM
+|===
+==== 2.4 - Overlap between T_k and LGS sub-groups
+
+As two sub-groups are created to cover Group 1 test cases, each designed to target different parts of the FPU hardware – rounding logic and overflow detection, we look at any overlaps between test cases and dismiss any repeated vectors.
+
+* T_{0} = MaxNorm = {L, G, S} = {1, 0, 0} are identical intermediates. Both parameterizations place the intermediate at exactly MaxNorm with L = 1, G = 0, S = 0. This is the only true overlap between the two sub-groups, and it is emitted once and counted for both.
+* T_{+1}, T_{+2}, T_{+3} are NOT in the LGS domain. There is no redundancy between T_{+1/+2/+3} and the LGS above-MaxNorm positions (LGS=101, 110, 111), and LGS=001/010/011 sit between T_{-1} and T_0, and LGS=101/110/111 sit between T_{0} and T_{+1}.
+* T_{-1}, T_{-2}, T_{-3} have no LGS equivalents. These are exact representable values below MaxNorm with G=0 and S=0. The LGS=001, 010, 011 positions sit between T_{-1} and T_{0}.
+* T_{+1}, T_{+2}, T_{+3} also contribute to the exp_range coverpoint (case v) alongside Group 3. This overlap is intentional as Sub-group 1A exercises those exponent bins through integer-ULP constructions targeting the overflow detection comparator, while Group 3 uses general overflow constructions with arbitrary mantissas.
+=== 3.0 - Test Case Analysis
+
+==== 3.1 Group 1: Case i & ii – the ±3 ULP Window
+
+Goal: Drive the infinite-precision intermediate into the region [±MaxNorm − 3ulp, ±MaxNorm + 3ulp] using two complementary approaches that probe different layers of the FPU. The sign axis loops over {0, 1} for all sub-groups. Two sub-groups are used together because they probe different layers of the FPU:
+
+* Sub-group 1A (T_k) targets the FPU's overflow detection comparator. The intermediate is placed at integer-ULP positions relative to MaxNorm.
+* Sub-group 1B (LGS) targets the rounding unit's internal {L, G, S} logic. The intermediate is placed at sub-ULP positions that directly exercise every combination of the three bits the rounding units reads, including tie cases invisible to integer-ULP testing.
+
+Operations covered across all Group 1 sub-groups:
+
+* OP_ADD = A + B
+* OP_SUB = A - B
+* OP_MUL = A x B
+* OP_DIV = A / B
+* OP_FMADD = (A x B) + C
+* OP_FMSUB = (A x B) - C
+* OP_FNMADD = -(A x B) - C
+* OP_FNMSUB = -(A x B) + C
+
+===== 3.1.1: Sub-group 1A — T_k: Integer ULP Offsets
+
+Goal: Drive the intermediate to each of the 7 values T_k for k ∈ {−3, −2, −1, 0, 1, 2, 3}, for both signs, under all 5 rounding modes, for each of the 8 operations.
+
+We create vectors for 7 values T_k for k ∈ {−3..+3}, for both signs, under all 5 rounding modes, for each of the 8 operations — OP_ADD, OP_SUB, OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB.
+
+Note: T_{+1}, T_{+2}, T_{+3} exceed MaxNorm and are not representable as input operands. Constructions use T_k/2 or MaxNorm + k·ulp via addition to produce the correct infinite-precision intermediate.
+
+General Construction Method: (T_k)/2 is always representable. T_k itself is not representable for k > 0. Constructions are designed around (T_k)/2 as the primary operand where needed.
+
+====== 3.1.1.1 | OP_ADD = A + B
+
+Define:
+
+* A = MaxNorm
+* B = k·ulp (for k = 0, B = +0.0), k ∈ {−3..+3}
+
+Then:
+
+* Intermediate = A + B = MaxNorm + k·ulp = T_k (exact result, no rounding in operand encoding)
+
+Note: B = k·ulp is always a small normal number within range for all formats and all k ∈ {−3..+3}. The addition is exact because B is k-ULP relative to A and lands in the guard/sticky region of the infinite-precision sum.
+
+For sign = 1: negate A → A = −MaxNorm, intermediate = −T_k.
+
+====== 3.1.1.2 | OP_SUB = A - B
+
+Define:
+
+* A = MaxNorm
+* B = - k·ulp
+
+Then:
+
+* Intermediate = A - B = MaxNorm - (-k·ulp) = T_k
+
+For k = 1: B = -ulp (negative) +
+For k = -1: B = ulp (positive) +
+For k = 0: B = 0
+
+For sign = 1: negate A → intermediate = −T_k.
+
+====== 3.1.1.3 | OP_MUL = A x B
+
+Define:
+
+* A = T_k / 2
+* B = 2.0
+
+Then:
+
+* Intermediate = A x B = (T_k / 2) x 2 = T_k (exact, multiplication by 2 increments biased exponent by 1)
+
+For sign = 1: negate A → A = −(T_k/2), intermediate = −T_k.
+
+NOTE: (T_k)/2 is always representable and 2.0 is always representable.
+
+====== 3.1.1.4 | OP_DIV = A / B
+
+Define:
+
+* A = T_k / 2
+* B = 0.5
+
+Then:
+
+* Intermediate = A x B = (T_k / 2) / 0.5 = T_k (exact, division by 0.5 increments biased exponent by 1)
+
+For sign = 1: negate A → A = −(T_k/2), intermediate = −T_k.
+
+NOTE: we cannot use A = T_k, B = 1.0 for k > 0 because T_k is not representable for those cases.
+
+====== 3.1.1.5 | OP_FMADD = (A x B) + C
+
+Define:
+
+* A = MaxNorm / 2
+* B = 2.0
+* C = k·ulp (for k = 0, C = +0.0)
+
+Then:
+
+* Intermediate = (MaxNorm/2 x 2.0) + k·ulp = MaxNorm + k·ulp = T_k
+
+Product A x B = MaxNorm exactly. The fused addition of C = k·ulp gives T_k as the infinite-precision intermediate.
+
+For sign = 1: negate A → product = −MaxNorm, intermediate = −MaxNorm + k·ulp = −T_{−k}. To target −T_k specifically, we can use k' = −k in C.
+
+====== 3.1.1.6 | OP_FMSUB = (A x B) - C
+
+Define:
+
+* A = MaxNorm / 2
+* B = 2.0
+* C = - k·ulp (for k = 0, C = +0.0; for k = 1, C = −ulp; for k = −1, C = ulp)
+
+Then:
+
+* Intermediate = (MaxNorm/2 × 2.0) − (−k·ulp) = MaxNorm + k·ulp = T_k
+
+For sign = 1: negate A → product = −MaxNorm, intermediate = −MaxNorm − (−k·ulp) = −MaxNorm + k·ulp = −T_{−k}.
+
+====== 3.1.1.7 | OP_FNMADD = -(A x B) - C
+
+To target positive T_k, we need a negative product:
+
+* A = - (MaxNorm / 2)
+* B = 2.0
+* C = - k·ulp
+
+Then:
+
+* Intermediate = - ( -MaxNorm/2 x 2.0) − (−k·ulp) = MaxNorm + k·ulp = T_k
+
+To target negative (-T_k), we need a positive product:
+
+* A = MaxNorm / 2
+* B = 2.0
+* C = k·ulp
+
+Then:
+
+* Intermediate = −(MaxNorm/2 x 2.0) − k·ulp = −MaxNorm − k·ulp = −T_k
+
+====== 3.1.1.8 | OP_FNMSUB = -(A x B) + C
+
+To target positive T_k, we need a negative product:
+
+* A = - (MaxNorm / 2)
+* B = 2.0
+* C = k·ulp
+
+Then:
+
+* Intermediate = - ( -MaxNorm/2 x 2.0) + (−k·ulp) = MaxNorm + k·ulp = T_k
+
+To target negative (-T_k), we need a positive product:
+
+* A = MaxNorm / 2
+* B = 2.0
+* C = - k·ulp
+
+Then:
+
+* Intermediate = −(MaxNorm/2 x 2.0) − k·ulp = −MaxNorm − k·ulp = −T_k
+
+*Total Test Cases for Group 1A:* 7 values of k x 2 signs x 5 rounding modes x 8 operations = *560 per format*
+
+===== 3.1.2: Sub-group 1B (Arithmetic) — LGS: Sub-ULP Bit Positions
+
+Goal: Produce an intermediate where the three bits {L, G, S} have specific values.
+
+This subgroup exercises all 7 non-zero LGS bins at the MaxNorm exponent boundary with the 5 rounding modes and 6 arithmetic operations — OP_ADD, OP_SUB, OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB.
+
+(OP_MUL and OP_DIV are handled separately in Sub-group 1B (MUL/DIV) because they cannot independently set G and S bits. See section 3.1.3.)
+
+*General Construction Method:*
+
+[cols="1,1,1,1,1,1,1,2",options="header"]
+|===
+| Config | use_m1ulp | LGS sample | L | G | S | gs | Position
+
+| 1 | True  | 001 | 0 | 0 | 1 | 1 | MaxNorm - 1ulp +¼ ulp
+| 2 | True  | 010 | 0 | 1 | 0 | 2 | MaxNorm - 1ulp +½ ulp
+| 3 | True  | 011 | 0 | 1 | 1 | 3 | MaxNorm - 1ulp +¾ ulp
+| 4 | False | 100 | 1 | 0 | 0 | 0 | Exactly MaxNorm
+| 5 | False | 101 | 1 | 0 | 1 | 1 | MaxNorm +¼ ulp
+| 6 | False | 110 | 1 | 1 | 0 | 2 | MaxNorm +½ ulp
+| 7 | False | 111 | 1 | 1 | 1 | 3 | MaxNorm +¾ ulp
+|===
+
+gs = A 2-bit integer ∈ {0, 1, 2, 3} encoding the desired G and S values: +
+E.g. gs bit 1 → G, gs bit 0 → S, and L is controlled separately through A operand selection. B = gs x 2^(sub_ulp_exp).
+
+For each of the 7 LGS configurations, define:
+
+* A_lgs = MaxNorm if use_m1ulp = False, or MaxNorm−1ulp if use_m1ulp = True
+* B_lgs = _gs_b (gs, sign, E, M, bias)
+
+*A Operand selection (A_lgs):* A sets the {L} bit.
+
+MaxNorm has mantissa = all ones = 111…111 (M ones). Its LSB is 1, so L = 1. +
+MaxNorm - 1ulp has mantissa = all ones minus one = 111…110 (M-1 ones, then a zero). Its LSB is 0 so L = 0.
+
+We use the use_m1ulp method to set the L bit:
+
+* use_m1ulp = False
+** A = MaxNorm -> mantissa = all ones
+** L = 1
+* use_m1ulp = True
+** A = MaxNorm - 1ulp -> mantissa = all ones with LSB cleared
+** L = 0
+
+*B Operand construction (B_lgs):* B sets the {G} and {S} bit.
+
+B is constructed as: B = gs x 2^(sub_ulp_exp), where sub_ulp_exp = ulp_exp - 2.
+
+This works by tracing where B's bits land when it is added with A. Recall that value of MaxNorm is: 1.111…111 x 2^(unbiased_max).
+
+gs is a 2-bit integer where bit 1 encodes G and bit 0 encodes S directly. B is a sub-ULP value — smaller than 1 ULP at MaxNorm's magnitude — so when added to A it does not shift A's exponent. Its bits land exactly in the G and S positions of the intermediate:
+
+----
+gs in binary:  bit1  bit0
+                ↓     ↓
+Multiply by 2^(ulp_exp - 2):
+  gs bit 1  →  value 2^(ulp_exp - 1)  →  G position  ✓
+  gs bit 0  →  value 2^(ulp_exp - 2)  →  S position  ✓
+----
+
+Therefore: {L, G, S} = {A_mantissa_LSB, gs bit 1, gs bit 0}
+
+*Example for F16, LGS=110, OP_ADD, sign = 0:*
+
+Define the format parameters:
+
+----
+E = 5,   M = 10,   bias = 15
+max_biased   = (1 << 5) - 2  = 30
+unbiased_max = 30 - 15       = 15
+ulp_exp      = 15 - 10       = 5    →  1 ULP at MaxNorm = 2^5 = 32
+sub_exp      = 5 - 2         = 3    →  sub_ulp = 2^3 = 8
+----
+
+This means:
+
+* L = 1 -> use A = MaxNorm
+* G = 1, S = 0 -> gs = 2 (binary 10, bit 1 = 1, bit 0 = 0)
+
+====== 3.1.2.1 | OP_ADD = A + B
+
+Positive intermediate +(A + B):
+
+* A = +A_lgs, B = +B_lgs
+* Intermediate = A_lgs + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = −A_lgs, B = −B_lgs
+* Intermediate = −A_lgs + (−B_lgs) = −(A + B)
+
+Note: The addition is exact in infinite precision because B_lgs is sub-ULP relative to A_lgs. B's bits land in the G and S positions without shifting A's exponent. The guard condition is satisfied by construction since both MaxNorm and MaxNorm−1ulp have M−1 leading ones in the mantissa.
+
+====== 3.1.2.2 | OP_SUB = A − B
+
+Positive intermediate +(A + B):
+
+* A = +A_lgs, B = −B_lgs
+* Intermediate = A_lgs − (−B_lgs) = A_lgs + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = −A_lgs, B = +B_lgs
+* Intermediate = −A_lgs − B_lgs = −(A + B)
+
+====== 3.1.2.3 | OP_FMADD = (A x B) + C
+
+FMADD uses 1.0 as the multiplier so the product equals A_lgs exactly. C plays the role of the sub-ULP addend.
+
+Positive intermediate +(A + B):
+
+* A = +A_lgs, B = 1.0, C = +B_lgs
+* Intermediate = (A_lgs × 1.0) + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = −A_lgs, B = 1.0, C = −B_lgs
+* Intermediate = (−A_lgs × 1.0) + (−B_lgs) = −(A + B)
+
+====== 3.1.2.4 | OP_FMSUB = (A x B) − C
+
+Positive intermediate +(A + B):
+
+* A = +A_lgs, B = 1.0, C = −B_lgs
+* Intermediate = (A_lgs × 1.0) − (−B_lgs) = A_lgs + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = −A_lgs, B = 1.0, C = +B_lgs
+* Intermediate = (−A_lgs × 1.0) − B_lgs = −(A + B)
+
+====== 3.1.2.5 | OP_FNMADD = -(A x B) - C
+
+A negative product is required to reach positive T_k without C needing to equal 2·MaxNorm (which is not representable).
+
+Positive intermediate +(A + B):
+
+* A = −A_lgs, B = 1.0, C = −B_lgs
+* Intermediate = −(−A_lgs × 1.0) − (−B_lgs) = A_lgs + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = +A_lgs, B = 1.0, C = +B_lgs
+* Intermediate = −(A_lgs × 1.0) − B_lgs = −(A + B)
+
+====== 3.1.2.6 | OP_FNMSUB = -(A x B) + C
+
+Positive intermediate +(A + B):
+
+* A = −A_lgs, B = 1.0, C = +B_lgs
+* Intermediate = −(−A_lgs × 1.0) + B_lgs = A_lgs + B_lgs = +(A + B)
+
+Negative intermediate −(A + B):
+
+* A = +A_lgs, B = 1.0, C = −B_lgs
+* Intermediate = −(A_lgs × 1.0) + (−B_lgs) = −(A + B)
+
+*Total Test Cases for Group 1B (Arithmetic):* 7 LGS configs x 2 signs x 5 rounding modes x 6 operations = *420 per format*
+
+===== 3.1.3: Sub-group 1B (MUL/DIV Supplement) — LGS=100 Only
+
+Goal: Cover the op_mul and op_div bins in the covergroup cross product at the MaxNorm exponent boundary.
+
+OP_MUL and OP_DIV cannot independently set the G and S bits of the intermediate. They are restricted to LGS=100 (exact MaxNorm) only and are handled in a dedicated supplement loop separate from the main LGS arithmetic loop.
+
+Why MUL and DIV are separated from the main LGS loop:
+
+The main LGS loop works because ADD, SUB, and the FMA family can structure the intermediate as A + B, where a tiny sub-ULP value B independently populates G and S without disturbing A's exponent. MUL and DIV do not have this structural freedom:
+
+* For OP_MUL: the only multiplier that keeps the intermediate at MAXNORM_EXP without shifting the exponent is 1.0. Any other multiplier either shifts the exponent out of the MaxNorm band or produces a product whose guard and sticky bits cannot be cleanly targeted.
+* For OP_DIV: the same constraint applies. Only a divisor of 1.0 preserves the exponent and produces G = 0, S = 0.
+
+The result in both cases is always LGS=100 — exact MaxNorm with no rounding bits. LGS=100 is already covered by config (False, gs=0) in the main arithmetic loop. This supplement does not add new LGS coverage. Its sole purpose is to satisfy the op_mul and op_div bins in the covergroup cross product.
+
+====== 3.1.3.1 | OP_MUL = A x B
+
+Define:
+
+* A = MaxNorm (sign = 0 or 1)
+* B = 1.0
+
+Then:
+
+* Intermediate = MaxNorm x 1.0 = MaxNorm -> LGS = 100 (G = 0, S = 0)
+
+For sign = 1: A = −MaxNorm, intermediate = −MaxNorm.
+
+====== 3.1.3.2 | OP_DIV = A / B
+
+Define:
+
+* A = MaxNorm (sign = 0 or 1)
+* B = 1.0
+
+Then:
+
+* Intermediate = MaxNorm / 1.0 = MaxNorm -> LGS = 100 (G = 0, S = 0)
+
+For sign = 1: A = −MaxNorm, intermediate = −MaxNorm.
+
+*Total Test Cases for Group 1B (MUL/DIV):* 1 LGS configs x 2 signs x 5 rounding modes x 2 operations = *20 per format*
+
+==== 3.2 Group 2: Case iii & iv – clear overflow
+
+Goal: Drive the intermediate clearly above MaxNorm + 3 ulp (positive) or below −MaxNorm − 3ulp (negative). One construction per operation per sign. The result is always ±Inf and the overflow flag is always raised regardless of rounding mode.
+
+Operand construction per operation: All constructions target 2·MaxNorm as the intermediate, which is well above MaxNorm + 3 ulp for all formats.
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| Operation | A | B | C | Intermediate
+
+| OP_ADD    | MaxNorm    | MaxNorm  | N/A      | 2·MaxNorm
+| OP_SUB    | MaxNorm    | -MaxNorm | N/A      | 2·MaxNorm
+| OP_MUL    | MaxNorm    | 2.0      | N/A      | 2·MaxNorm
+| OP_DIV    | MaxNorm    | 0.5      | N/A      | 2·MaxNorm
+| OP_FMADD  | MaxNorm/2  | 2.0      | MaxNorm  | 2·MaxNorm
+| OP_FMSUB  | MaxNorm/2  | 2.0      | -MaxNorm | 2·MaxNorm
+| OP_FNMADD | -MaxNorm/2 | 2.0      | -MaxNorm | 2·MaxNorm
+| OP_FNSUB  | -MaxNorm/2 | 2.0      | MaxNorm  | 2·MaxNorm
+|===
+
+For sign = 1: negate the dominant operand in each construction to target −2·MaxNorm.
+
+*Total Test Cases for Group 2:* 1 construction x 2 signs x 5 rounding modes x 8 operations = *80 per format*
+
+==== 3.3 Group 3: Case v – the exponent sweep
+
+Goal: Exercise one intermediate per exponent value in [max_biased − 3, max_biased + 3], for both signs, all rounding modes, all 8 operations. The mantissa value is not constrained — only the exponent matters.
+
+Define d = target biased exponent - max_biased, thus d ∈ {−3, −2, −1, 0, +1, +2, +3}.
+
+===== 3.3.1 | Case 1: d ≤ 0 (exponents at or below MaxNorm.exp)
+
+A normal number at biased exponent max_biased + d exists and is representable. Construct A with that biased exponent and mantissa of all-ones. Then, we use a neutral second operand to pass the intermediate through with the exponent unchanged.
+
+[cols="1,1,1,1",options="header"]
+|===
+| Operation | A | B | C
+
+| OP_ADD    | A  | 0   | N/A
+| OP_SUB    | A  | 0   | N/A
+| OP_MUL    | A  | 1.0 | N/A
+| OP_DIV    | A  | 1.0 | N/A
+| OP_FMADD  | A  | 1.0 | 0
+| OP_FMSUB  | A  | 1.0 | 0
+| OP_FNMADD | -A | 1.0 | 0
+| OP_FNSUB  | -A | 1.0 | 0
+|===
+
+For sign = 1: negate A in each construction.
+
+===== 3.3.2 | Case 2: d > 0 (exponents above MaxNorm.exp)
+
+No representable finite number has a biased exponent above max_biased. The intermediate must be produced via overflow arithmetic. The intermediate exponent will be max_biased + d.
+
+The canonical construction is FMUL(MaxNorm, 2^d). For the other operations, equivalent constructions are used:
+
+- B is a floating point value where its biased exp = max_biased + d - 1
+
+[cols="1,1,1,1",options="header"]
+|===
+| Operation | A | B | C
+
+| OP_ADD    | MaxNorm  | B      | N/A
+| OP_SUB    | MaxNorm  | B      | N/A
+| OP_MUL    | MaxNorm  | 2^d    | N/A
+| OP_DIV    | MaxNorm  | 2^(-d) | N/A
+| OP_FMADD  | MaxNorm  | 2^d    | 0
+| OP_FMSUB  | MaxNorm  | 2^d    | 0
+| OP_FNMADD | -MaxNorm | 2^d    | 0
+| OP_FNSUB  | -MaxNorm | 2^d    | 0
+|===
+
+For sign = 1: negate the dominant operand.
+
+*Total Test Cases for Group 3:* 7 exponents x 2 signs x 5 rounding modes x 8 operations = *560 per format*
+
+=== 4.0 - Structural Impossibilities and Coverage Expectations
+
+This section is about the structurally unreachable combinations that should be ignored in the SystemVerilog covergroup.
+
+=== 5.0 - Test Count Breakdown
+
+*Per Format:*
+
+[cols="2,1,1,1,1,1,1",options="header"]
+|===
+| Group | Cases | k/d/LGS values | Signs | RMs | OPs | Subtotal
+
+| Group 1 | i, ii | 7(k) + 7(LGS) | 2 | 5 | 8 | 1000
+| Group 2 | iii, iv | 1 | 2 | 5 | 8 | 80
+| Group 3 | v | 7 | 2 | 5 | 8 | 560
+| *Total* | | | | | | *1640*
+|===
+
+*Grand total:*
+
+[cols="1,1",options="header"]
+|===
+| Format | Vectors per format
+
+| F16  | 1640
+| BF16 | 1640
+| F32  | 1640
+| F64  | 1640
+| F128 | 1640
+| *Total* | *8200*
+|===
+
+NOTE: Aharoni reports ~2 E 5 for B4. Our count of 8 E 3 is lower because we follow the spec literally — one construction per case per operation rather than enumerating all possible input combinations that could produce the target intermediate. The coverage intent is identical: every (intermediate region, operation, rounding mode, sign) combination is exercised exactly once per format.
