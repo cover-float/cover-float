@@ -86,7 +86,7 @@ def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             f1 = generate_float(0, exp_a, sigA ^ (1 << nf), fmt)
             f2 = generate_float(0, exp_b, sigB ^ (1 << nf), fmt)
 
-            if random.random() < 0.5:
+            if random.random() < 0.5 and not is_subtraction:
                 f1, f2 = f2, f1
 
             tv = generate_test_vector(op, f1, f2, 0, fmt, fmt, constants.ROUND_MAX)
@@ -207,7 +207,7 @@ def two_ones_multiplicands(fmt: str) -> dict[int, tuple[int, int]]:
         target = 1 << (2 * nf + 1)
         target |= 1 << low_one
 
-        factors = factorint(target)
+        factors = cached_factorint(target)
         f1, f2 = factors_to_bit_width(factors, target, nf + 1)
 
         if f1 * f2 == target:
@@ -335,7 +335,7 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             for _ in range(100):
                 # Logic taken from B3.py
                 signA = random.randint(0, 1)
-                signB = random.randint(0, 1)
+                signB = signA if op in [constants.OP_FMADD, constants.OP_FMSUB] else signA ^ 1
 
                 sigA_initial = random.randint(0, (1 << constants.MANTISSA_BITS[fmt]) - 1)
                 sigB_initial = random.randint(0, (1 << constants.MANTISSA_BITS[fmt]) - 1)
@@ -431,14 +431,12 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 actual_extra_bits = interm_mantissa[constants.MANTISSA_BITS[fmt] :]
                 expected_extra_bits = bin(target)[2:].zfill(constants.MANTISSA_BITS[fmt] + 1)
 
-                actual_extra_bits = actual_extra_bits.strip("0")
-                expected_extra_bits = expected_extra_bits.strip("0")
+                actual_extra_bits = actual_extra_bits.rstrip("0")
+                expected_extra_bits = expected_extra_bits.rstrip("0")
 
                 if actual_extra_bits == expected_extra_bits:
                     store_cover_vector(result, test_f, cover_f)
                     break
-                if actual_extra_bits[1:] == expected_extra_bits[1:]:
-                    logger.exception("Failure in FMA Test Generation, failed to create the expected bits")
             else:
                 logger.exception("Failure to generate a Guard=0 Case in FMA Testgen")
 
@@ -517,7 +515,7 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         placements: list[int] = []
 
         with logger.progress_bar(status=f"{fmt} FMA Target Placements", show_m_of_n=True) as pbar:
-            for target_placement in pbar.track(range(1, 2 * constants.MANTISSA_BITS[fmt])):
+            for target_placement in pbar.track(range(1, 2 * constants.MANTISSA_BITS[fmt] + 1)):
                 # We want the lowest possible exponent difference
                 shift_amount = max(3, target_placement - constants.MANTISSA_BITS[fmt] + 1)
                 target_location = target_placement - shift_amount
@@ -594,6 +592,12 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                     signB ^= 1
 
                 signC = 0
+
+                if effective_subtraction:
+                    # Ensure a positive result by flipping product and addend signs
+                    # (logic is for product > C)
+                    signA ^= 1
+                    signC ^= 1
 
                 floatA = generate_float(signA, mul_exp1, sigA ^ (1 << constants.MANTISSA_BITS[fmt]), fmt)
                 floatB = generate_float(signB, mul_exp2, sigB ^ (1 << constants.MANTISSA_BITS[fmt]), fmt)
