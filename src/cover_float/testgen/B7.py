@@ -390,8 +390,10 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                     # Then its effective subtraction
                     if sticky_bits > target:
                         sigC_initial = sticky_bits - target
-                    else:
+                    elif sticky_bits < target:
                         sigC_initial = sticky_bits - target + (1 << constants.MANTISSA_BITS[fmt])
+                    else:  # sticky_bits == target
+                        sigC_initial = 0
 
                     sigC = sigC_initial | (1 << constants.MANTISSA_BITS[fmt])
 

@@ -922,6 +922,7 @@ function automatic logic [127:0] effective_fraction (
     input logic [7:0]   fmt
 );
     int frac_bits;
+    int e_bits;
     int e_lower;
     int min_norm_exp;
     logic [127:0] frac_field;
@@ -935,31 +936,37 @@ function automatic logic [127:0] effective_fraction (
     case (fmt)
         FMT_HALF: begin
             frac_bits    = F16_M_BITS;
+            e_bits       = F16_E_BITS;
             e_lower      = F16_E_LOWER;
             min_norm_exp = F16_MIN_NORM_EXP;
         end
         FMT_BF16: begin
             frac_bits    = BF16_M_BITS;
+            e_bits       = BF16_E_BITS;
             e_lower      = BF16_E_LOWER;
             min_norm_exp = BF16_MIN_NORM_EXP;
         end
         FMT_SINGLE: begin
             frac_bits    = F32_M_BITS;
+            e_bits       = F32_E_BITS;
             e_lower      = F32_E_LOWER;
             min_norm_exp = F32_MIN_NORM_EXP;
         end
         FMT_DOUBLE: begin
             frac_bits    = F64_M_BITS;
+            e_bits       = F64_E_BITS;
             e_lower      = F64_E_LOWER;
             min_norm_exp = F64_MIN_NORM_EXP;
         end
         FMT_QUAD: begin
             frac_bits    = F128_M_BITS;
+            e_bits       = F128_E_BITS;
             e_lower      = F128_E_LOWER;
             min_norm_exp = F128_MIN_NORM_EXP;
         end
         default: begin
             frac_bits    = F32_M_BITS;
+            e_bits       = F32_E_BITS;
             e_lower      = F32_E_LOWER;
             min_norm_exp = F32_MIN_NORM_EXP;
         end
@@ -974,7 +981,7 @@ function automatic logic [127:0] effective_fraction (
     // ---------------------------------------------
     // extract exponent
     // ---------------------------------------------
-    exp_field = (val >> e_lower) & ((1 << (frac_bits + 1)) - 1); // any exponent width
+    exp_field = (val >> e_lower) & ((1 << e_bits) - 1); // any exponent width
 
     // ---------------------------------------------
     // normal number → return fraction as-is
