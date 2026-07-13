@@ -196,97 +196,158 @@
 
 
 `define SAMPLE_CGS \
+    case (active_cg) \
     `ifdef COVER_B1 \
-        B1_cg.sample(); \
+        B1_ACTIVE: begin \
+            B1_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B2 \
-        B2_cg.sample(); \
+        B2_ACTIVE: begin \
+            B2_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B3 \
-        B3_cg.sample(); \
+        B3_ACTIVE: begin \
+            B3_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B4 \
-        B4_cg.sample(); \
+        B4_ACTIVE: begin \
+            B4_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B5 \
-        B5_cg.sample(); \
+        B5_ACTIVE: begin \
+            B5_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B6 \
-        B6_cg.sample(); \
+        B6_ACTIVE: begin \
+            B6_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B7 \
-        B7_cg.sample(); \
+        B7_ACTIVE: begin \
+            B7_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B8 \
-        B8_cg.sample(); \
+        B8_ACTIVE: begin \
+            B8_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B9 \
-        B9_cg.sample(); \
+        B9_ACTIVE: begin \
+            B9_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B10 \
-        B10_cg.sample(); \
+        B10_ACTIVE: begin \
+            B10_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B11 \
-        B11_cg.sample(); \
+        B11_ACTIVE: begin \
+            B11_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B12 \
-        B12_cg.sample(); \
+        B12_ACTIVE: begin \
+            B12_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B13 \
-        B13_cg.sample(); \
+        B13_ACTIVE: begin \
+            B13_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B14 \
-        B14_cg.sample(); \
+        B14_ACTIVE: begin \
+            B14_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B15 \
-        B15_cg.sample(); \
+        B15_ACTIVE: begin \
+            B15_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B16 \
-        B16_cg.sample(); \
+        B16_ACTIVE: begin \
+            B16_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B17 \
-        B17_cg.sample(); \
+        B17_ACTIVE: begin \
+            B17_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B18 \
-        B18_cg.sample(); \
+        B18_ACTIVE: begin \
+            B18_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B19 \
-        B19_cg.sample(); \
+        B19_ACTIVE: begin \
+            B19_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B20 \
-        B20_cg.sample(); \
+        B20_ACTIVE: begin \
+            B20_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B21 \
-        B21_cg.sample(); \
+        B21_ACTIVE: begin \
+            B21_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B22 \
-        B22_cg.sample(); \
+        B22_ACTIVE: begin \
+            B22_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B23 \
-        B23_cg.sample(); \
+        B23_ACTIVE: begin \
+            B23_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B24 \
-        B24_cg.sample(); \
+        B24_ACTIVE: begin \
+            B24_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B25 \
-        B25_cg.sample(); \
+        B25_ACTIVE: begin \
+            B25_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B26 \
-        B26_cg.sample(); \
+        B26_ACTIVE: begin \
+            B26_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B27 \
-        B27_cg.sample(); \
+        B27_ACTIVE: begin \
+            B27_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B28 \
-        B28_cg.sample(); \
+        B28_ACTIVE: begin \
+            B28_cg.sample(); \
+        end \
     `endif \
     `ifdef COVER_B29 \
-        B29_cg.sample(); \
+        B29_ACTIVE: begin \
+            B29_cg.sample(); \
+        end \
     `endif \
+    endcase \
 
 
 `define SCAN_COVERVECTOR_FILES \
     `ifdef COVER_B1 \
+        coverage_inst.active_cg = coverfloat_coverage::B1_ACTIVE; \
         fd = $fopen("../tests/covervectors/B1_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -296,6 +357,7 @@
     `endif \
  \
     `ifdef COVER_B2 \
+        coverage_inst.active_cg = coverfloat_coverage::B2_ACTIVE; \
         fd = $fopen("../tests/covervectors/B2_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -305,6 +367,7 @@
     `endif \
  \
     `ifdef COVER_B3 \
+        coverage_inst.active_cg = coverfloat_coverage::B3_ACTIVE; \
         fd = $fopen("../tests/covervectors/B3_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -314,6 +377,7 @@
     `endif \
  \
     `ifdef COVER_B4 \
+        coverage_inst.active_cg = coverfloat_coverage::B4_ACTIVE; \
         fd = $fopen("../tests/covervectors/B4_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -323,6 +387,7 @@
     `endif \
  \
     `ifdef COVER_B5 \
+        coverage_inst.active_cg = coverfloat_coverage::B5_ACTIVE; \
         fd = $fopen("../tests/covervectors/B5_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -332,6 +397,7 @@
     `endif \
  \
     `ifdef COVER_B6 \
+        coverage_inst.active_cg = coverfloat_coverage::B6_ACTIVE; \
         fd = $fopen("../tests/covervectors/B6_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -341,6 +407,7 @@
     `endif \
  \
     `ifdef COVER_B7 \
+        coverage_inst.active_cg = coverfloat_coverage::B7_ACTIVE; \
         fd = $fopen("../tests/covervectors/B7_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -350,6 +417,7 @@
     `endif \
  \
     `ifdef COVER_B8 \
+        coverage_inst.active_cg = coverfloat_coverage::B8_ACTIVE; \
         fd = $fopen("../tests/covervectors/B8_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -359,6 +427,7 @@
     `endif \
  \
     `ifdef COVER_B9 \
+        coverage_inst.active_cg = coverfloat_coverage::B9_ACTIVE; \
         fd = $fopen("../tests/covervectors/B9_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -368,6 +437,7 @@
     `endif \
  \
     `ifdef COVER_B10 \
+        coverage_inst.active_cg = coverfloat_coverage::B10_ACTIVE; \
         fd = $fopen("../tests/covervectors/B10_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -377,6 +447,7 @@
     `endif \
  \
     `ifdef COVER_B11 \
+        coverage_inst.active_cg = coverfloat_coverage::B11_ACTIVE; \
         fd = $fopen("../tests/covervectors/B11_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -386,6 +457,7 @@
     `endif \
  \
     `ifdef COVER_B12 \
+        coverage_inst.active_cg = coverfloat_coverage::B12_ACTIVE; \
         fd = $fopen("../tests/covervectors/B12_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -395,6 +467,7 @@
     `endif \
  \
     `ifdef COVER_B13 \
+        coverage_inst.active_cg = coverfloat_coverage::B13_ACTIVE; \
         fd = $fopen("../tests/covervectors/B13_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -404,6 +477,7 @@
     `endif \
  \
     `ifdef COVER_B14 \
+        coverage_inst.active_cg = coverfloat_coverage::B14_ACTIVE; \
         fd = $fopen("../tests/covervectors/B14_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -413,6 +487,7 @@
     `endif \
  \
     `ifdef COVER_B15 \
+        coverage_inst.active_cg = coverfloat_coverage::B15_ACTIVE; \
         fd = $fopen("../tests/covervectors/B15_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -422,6 +497,7 @@
     `endif \
  \
     `ifdef COVER_B16 \
+        coverage_inst.active_cg = coverfloat_coverage::B16_ACTIVE; \
         fd = $fopen("../tests/covervectors/B16_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -431,6 +507,7 @@
     `endif \
  \
     `ifdef COVER_B17 \
+        coverage_inst.active_cg = coverfloat_coverage::B17_ACTIVE; \
         fd = $fopen("../tests/covervectors/B17_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -440,6 +517,7 @@
     `endif \
  \
     `ifdef COVER_B18 \
+        coverage_inst.active_cg = coverfloat_coverage::B18_ACTIVE; \
         fd = $fopen("../tests/covervectors/B18_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -449,6 +527,7 @@
     `endif \
  \
     `ifdef COVER_B19 \
+        coverage_inst.active_cg = coverfloat_coverage::B19_ACTIVE; \
         fd = $fopen("../tests/covervectors/B19_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -458,6 +537,7 @@
     `endif \
  \
     `ifdef COVER_B20 \
+        coverage_inst.active_cg = coverfloat_coverage::B20_ACTIVE; \
         fd = $fopen("../tests/covervectors/B20_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -467,6 +547,7 @@
     `endif \
  \
     `ifdef COVER_B21 \
+        coverage_inst.active_cg = coverfloat_coverage::B21_ACTIVE; \
         fd = $fopen("../tests/covervectors/B21_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -476,6 +557,7 @@
     `endif \
  \
     `ifdef COVER_B22 \
+        coverage_inst.active_cg = coverfloat_coverage::B22_ACTIVE; \
         fd = $fopen("../tests/covervectors/B22_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -485,6 +567,7 @@
     `endif \
  \
     `ifdef COVER_B23 \
+        coverage_inst.active_cg = coverfloat_coverage::B23_ACTIVE; \
         fd = $fopen("../tests/covervectors/B23_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -494,6 +577,7 @@
     `endif \
  \
     `ifdef COVER_B24 \
+        coverage_inst.active_cg = coverfloat_coverage::B24_ACTIVE; \
         fd = $fopen("../tests/covervectors/B24_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -503,6 +587,7 @@
     `endif \
  \
     `ifdef COVER_B25 \
+        coverage_inst.active_cg = coverfloat_coverage::B25_ACTIVE; \
         fd = $fopen("../tests/covervectors/B25_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -512,6 +597,7 @@
     `endif \
  \
     `ifdef COVER_B26 \
+        coverage_inst.active_cg = coverfloat_coverage::B26_ACTIVE; \
         fd = $fopen("../tests/covervectors/B26_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -521,6 +607,7 @@
     `endif \
  \
     `ifdef COVER_B27 \
+        coverage_inst.active_cg = coverfloat_coverage::B27_ACTIVE; \
         fd = $fopen("../tests/covervectors/B27_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -530,6 +617,7 @@
     `endif \
  \
     `ifdef COVER_B28 \
+        coverage_inst.active_cg = coverfloat_coverage::B28_ACTIVE; \
         fd = $fopen("../tests/covervectors/B28_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
@@ -539,6 +627,7 @@
     `endif \
  \
     `ifdef COVER_B29 \
+        coverage_inst.active_cg = coverfloat_coverage::B29_ACTIVE; \
         fd = $fopen("../tests/covervectors/B29_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
