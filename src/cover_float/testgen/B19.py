@@ -1,3 +1,18 @@
+# Copyright (C) 2025-26 Harvey Mudd College
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, any work distributed under the
+# License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+
 # B19 - Compare: Different Input Fields Relations
 # Aharoni et al.
 #
@@ -8,12 +23,12 @@
 # Total vectors: 2700 (108 per format x op, across 5 formats and 5 operations)
 
 import random
-from pathlib import Path
 from typing import TextIO
 
 import cover_float.common.constants as const
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
+from cover_float.testgen.model import register_model
 
 OPS = [const.OP_FEQ, const.OP_FLT, const.OP_FLE, const.OP_MIN, const.OP_MAX]
 
@@ -284,31 +299,18 @@ def generate_b19_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
     """Generate all B19 test vectors for a given format."""
     for op in OPS:
         random.seed(reproducible_hash(f"B19 {fmt} {op}"))
-        c1 = _case_1_normal_x_normal(fmt, op, test_f, cover_f)
-        c2 = _case_2_normal_x_subnormal(fmt, op, test_f, cover_f)
-        c3 = _case_3_subnormal_x_normal(fmt, op, test_f, cover_f)
-        c4 = _case_4_subnormal_x_subnormal(fmt, op, test_f, cover_f)
-        c5 = _case_5_zero_x_normal(fmt, op, test_f, cover_f)
-        c6 = _case_6_normal_x_zero(fmt, op, test_f, cover_f)
-        c7 = _case_7_zero_x_subnormal(fmt, op, test_f, cover_f)
-        c8 = _case_8_subnormal_x_zero(fmt, op, test_f, cover_f)
-        c9 = _case_9_zero_x_zero(fmt, op, test_f, cover_f)
-        total = c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9
-        print(f"  {op}: c1={c1} c2={c2} c3={c3} c4={c4} c5={c5} c6={c6} c7={c7} c8={c8} c9={c9} total={total}")
+        _c1 = _case_1_normal_x_normal(fmt, op, test_f, cover_f)
+        _c2 = _case_2_normal_x_subnormal(fmt, op, test_f, cover_f)
+        _c3 = _case_3_subnormal_x_normal(fmt, op, test_f, cover_f)
+        _c4 = _case_4_subnormal_x_subnormal(fmt, op, test_f, cover_f)
+        _c5 = _case_5_zero_x_normal(fmt, op, test_f, cover_f)
+        _c6 = _case_6_normal_x_zero(fmt, op, test_f, cover_f)
+        _c7 = _case_7_zero_x_subnormal(fmt, op, test_f, cover_f)
+        _c8 = _case_8_subnormal_x_zero(fmt, op, test_f, cover_f)
+        _c9 = _case_9_zero_x_zero(fmt, op, test_f, cover_f)
 
 
-def main() -> None:
-    """Main entry point for B19 test generation."""
-    print("Generating B19 test vectors...")
-    with (
-        Path("./tests/testvectors/B19_tv.txt").open("w") as test_f,
-        Path("./tests/covervectors/B19_cv.txt").open("w") as cover_f,
-    ):
-        for fmt in const.FLOAT_FMTS:
-            print(f"Format: {fmt}")
-            generate_b19_tests(test_f, cover_f, fmt)
-    print("Done!")
-
-
-if __name__ == "__main__":
-    main()
+@register_model("B19")
+def main(test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt in const.FLOAT_FMTS:
+        generate_b19_tests(test_f, cover_f, fmt)
