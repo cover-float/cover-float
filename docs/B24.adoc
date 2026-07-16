@@ -1,0 +1,135 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+== B24: CvtFP2Int: Underflow
+
+Aharoni et al.
+
+=== Description
+
+This model creates boundary cases for the `CvtFP2Int` rounding-to-integer step that cause major loss of accuracy near zero or near stem:[\pm 1]. Under the symmetric reading of the Aharoni cases (see Design Choices), a test case is created for each of:
+
+. stem:[\pm 0]
+. stem:[\pm \tfrac{1}{4}] (binary stem:[0.01])
+. stem:[\pm \tfrac{1}{2}] (binary stem:[0.1])
+. stem:[\pm \tfrac{3}{4}] (binary stem:[0.11])
+. stem:[\pm 1]
+. stem:[\pm 1.25] (binary stem:[1.01])
+. stem:[\pm 1.5] (binary stem:[1.1])
+. stem:[\pm 1.75] (binary stem:[1.11])
+
+*Source Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Destination Integer Formats:* `INT`, `UINT`, `LONG`, `ULONG`
+
+*Operations Supported:* `CFI`
+
+*Rounding Mode:* All five (RNE, RTZ, RDN, RUP, RMM)
+
+*Number of tests:* 1,600 (see <<test-count-breakdown>>)
+
+== Background
+
+For `CvtFP2Int`, "underflow" is a misnomer inherited from the arithmetic models — there is no subnormal-result phenomenon, since the destination is an integer. The relevant boundary is the *round-to-zero / round-to-one transition* and the *round-to-one / round-to-two transition*: small-magnitude inputs whose rounded result flips between stem:[0], stem:[\pm 1], and stem:[\pm 2] depending on the rounding mode and the exact fractional value.
+
+The eight magnitudes sweep two rounding-boundary regions:
+
+[cols="1,2,3", options="header"]
+|===
+| Region | Inputs | What's tested
+
+| Near 0     | stem:[\pm 0, \pm\tfrac14, \pm\tfrac12, \pm\tfrac34] | round-to-0 vs. round-to-1; the stem:[\pm\tfrac12] tie
+| Near stem:[\pm 1] | stem:[\pm 1, \pm 1.25, \pm 1.5, \pm 1.75]    | round-to-1 vs. round-to-2; the stem:[\pm 1.5] tie
+|===
+
+The two regions also exercise the LSB / Guard / Sticky selection at different exponents — stem:[E=-2,-1] for the near-0 region, stem:[E=0] for the near-1 region — and together verify:
+
+* The fraction-only path (stem:[\|x\| < 1], no integer bits): round-up-to-one and zero detection.
+* The one-integer-bit path (stem:[1 \le \|x\| < 2]).
+* RNE tie-to-even at stem:[\pm\tfrac12] and stem:[\pm 1.5].
+* The directed-rounding sign asymmetry: stem:[\mathrm{RDN}(0.5)=0] but stem:[\mathrm{RDN}(-0.5)=-1]; stem:[\mathrm{RUP}(0.5)=1] but stem:[\mathrm{RUP}(-0.5)=0].
+* The interaction of RM and sign with the RISC-V negative-to-unsigned deviation.
+
+All eight magnitudes are *exactly representable* in every source format (each needs at most 2 fraction bits), so input construction is bit-exact and there is no rounding during construction.
+
+=== Definitions
+
+`Round-to-zero region`:: Inputs with stem:[\|x\| < 1]; the result is stem:[0] or stem:[\pm 1].
+`Round-to-one region`:: Inputs with stem:[1 \le \|x\| < 2]; the result is stem:[\pm 1] or stem:[\pm 2].
+
+== Design Choices and Impossible Cases
+
+. *Symmetric reading of cases (vi)-(viii).* Aharoni writes the near-zero cases with stem:[\pm] (e.g. "stem:[\pm 0 \pm \tfrac14]") but the near-one cases with stem:[+] (e.g. "stem:[\pm 1 + \tfrac14]"). Taken literally, case (vi) is stem:[\{+1.25,\,-0.75\}], (vii) is stem:[\{+1.5,\,-0.5\}], (viii) is stem:[\{+1.75,\,-0.25\}] — and the negative branch (stem:[-0.75,-0.5,-0.25]) *exactly duplicates* cases (ii)-(iv), while the region just below stem:[-1] (stem:[-1.25,-1.5,-1.75]) is never tested. We adopt the *symmetric* reading stem:[\pm 1.25, \pm 1.5, \pm 1.75], which (a) introduces no duplicates, (b) exercises the stem:[\pm 1.5] tie under RNE for both signs, and (c) exercises the directed-rounding asymmetry symmetrically near stem:[\pm 1].
++
+[NOTE]
+====
+*Open item for review.* This is a deliberate departure from the literal text, chosen for cleaner and more complete coverage. If the team prefers strict spec fidelity, cases (vi)-(viii) should instead emit stem:[\{+1.25,-0.75\},\{+1.5,-0.5\},\{+1.75,-0.25\}] and the near-stem:[(-1)] region would be dropped. The generator and covergroup both currently assume the symmetric reading.
+====
+
+. *All five rounding modes.* Aharoni specifies "Rounding Mode: All", and RM is the model's primary axis — RNE / RTZ / RDN / RUP / RMM each produce different results at stem:[\pm\tfrac12], stem:[\pm 1.5], and in the directed-rounding cases. Exact-integer inputs (stem:[\pm 0, \pm 1]) are RM-invariant but are still emitted under all five for uniformity.
+
+. *Exact construction, no randomization.* All sixteen input values (8 magnitudes stem:[\times] 2 signs) are exact constants, top-justified into the source fraction field. No RNG is used.
+
+. *Impossible / unreachable cases: none.* Every magnitude is exactly representable in every source format, and every (sign, magnitude, destination, RM) combination is generated, so every covergroup bin is reachable.
+
+== Test Procedure
+
+For each `(src, dest, RM)`, generate exactly 16 vectors — one per (magnitude, sign). Construction:
+
+[cols="2,3", options="header"]
+|===
+| Magnitude | Construction (sign applied separately)
+
+| stem:[0]    | biased exp = 0, fraction = 0
+| stem:[\tfrac14] | unbiased exp = stem:[-2], fraction = 0
+| stem:[\tfrac12] | unbiased exp = stem:[-1], fraction = 0
+| stem:[\tfrac34] | unbiased exp = stem:[-1], top fraction bit = 1
+| stem:[1]    | unbiased exp = stem:[0], fraction = 0
+| stem:[1.25] | unbiased exp = stem:[0], top-2 fraction bits = `01`
+| stem:[1.5]  | unbiased exp = stem:[0], top-2 fraction bits = `10`
+| stem:[1.75] | unbiased exp = stem:[0], top-2 fraction bits = `11`
+|===
+
+Top-justified fraction = stem:[\text{top} \ll (N_f - \text{bits})], so the recipe is format-general across all five source widths. SoftFloat computes the expected result under the test RM; RISC-V deviation post-processing is applied for the negative-to-unsigned cases.
+
+== Expected Results
+
+Rounded integer result per magnitude under each RM (positive inputs shown):
+
+[cols="1,1,1,1,1,1", options="header"]
+|===
+| Input | RNE | RTZ | RDN | RUP | RMM
+
+| stem:[+0]    | 0 | 0 | 0 | 0 | 0
+| stem:[+0.25] | 0 | 0 | 0 | 1 | 0
+| stem:[+0.5]  | 0 | 0 | 0 | 1 | 1
+| stem:[+0.75] | 1 | 0 | 0 | 1 | 1
+| stem:[+1]    | 1 | 1 | 1 | 1 | 1
+| stem:[+1.25] | 1 | 1 | 1 | 2 | 1
+| stem:[+1.5]  | 2 | 1 | 1 | 2 | 2
+| stem:[+1.75] | 2 | 1 | 1 | 2 | 2
+|===
+
+For negative inputs, RDN and RUP swap roles (stem:[\mathrm{RDN}(-0.25)=-1], stem:[\mathrm{RUP}(-0.25)=0]); RNE, RMM, and RTZ are sign-symmetric.
+
+
+[#test-count-breakdown]
+== Test Count Breakdown
+
+[cols="2,1", options="header"]
+|===
+| Axis | Cardinality
+
+| Magnitudes               | 8
+| Signs                    | 2
+| Source FP formats        | 5
+| Destination integer fmts | 4
+| Rounding modes           | 5
+|===
+
+*Total vectors:* stem:[8 \times 2 \times 5 \times 4 \times 5 = 1{,}600].
+
+This exceeds the textbook count of 106 and Aharoni's stem:[1\times10^2] estimate. The expansion comes from systematically crossing all four RISC-V integer destinations stem:[\times] five rounding modes — both axes are essential to exercising the deviation-2 path and the directed-rounding asymmetry; dropping either would leave hardware paths uncovered.
