@@ -176,7 +176,11 @@ def _case_4_subnormal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: Te
 
     for frac1, frac2 in [
         (af, lsb),  # exp >, sig >
+        (msb, af >> 1),  # exp >, sig <
+        (msb, lsb),  # exp >, sig =
         (lsb, af),  # exp <, sig <
+        (af >> 1, msb),  # exp <, sig >
+        (lsb, msb),  # exp <, sig =
         (ALL_ONES, msb),  # exp =, sig >
         (msb, ALL_ONES),  # exp =, sig <
         (af, af),  # exp =, sig =  (same any_frac)
