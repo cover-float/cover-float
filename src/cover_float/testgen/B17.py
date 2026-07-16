@@ -21,6 +21,7 @@ import logging
 import random
 from typing import TextIO, cast
 
+from cover_float.common.config import Config
 import cover_float.common.constants as constants
 import cover_float.common.log as log
 from cover_float.common.util import (
@@ -58,7 +59,9 @@ def mul_sigs_with_trailing(
     return (0, 0)
 
 
-def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_case(
+    op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     # cancellation = INTERM_X - max(ADDEND, MULTIPLICATION_RESULT)
     # In practice, this means that we need an addend and a multiplication result with the same exponent
     # Thus, max(ADDEND, MULTIPLICATION_RESULT) = INTERM_X - cancellation
@@ -262,7 +265,7 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
             f"B17 Generated Wrong Cancellation: Expected: {cancellation}, actual: {actual_cancellation}"
         )
 
-        store_cover_vector(cv, test_f, cover_f)
+        store_cover_vector(cv, test_f, cover_f, config)
         return
 
     raise ValueError(
@@ -271,7 +274,7 @@ def generate_case(op: str, fmt: str, subnorm_exp: int, cancellation: int, test_f
 
 
 @register_model("B17")
-def generate(test_f: TextIO, cover_f: TextIO) -> None:
+def generate(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         for op in [constants.OP_FMADD, constants.OP_FMSUB, constants.OP_FNMADD, constants.OP_FNMSUB]:
             random.seed(reproducible_hash(f"B17 {fmt} {op}"))
@@ -281,4 +284,4 @@ def generate(test_f: TextIO, cover_f: TextIO) -> None:
                     max_cancel = 1 if subnorm_exp != -constants.MANTISSA_BITS[fmt] + 1 else 0
 
                     for cancellation in range(min_cancel, max_cancel + 1):
-                        generate_case(op, fmt, subnorm_exp, cancellation, test_f, cover_f)
+                        generate_case(op, fmt, subnorm_exp, cancellation, test_f, cover_f, config)

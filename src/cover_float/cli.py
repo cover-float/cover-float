@@ -14,40 +14,81 @@
 # and limitations under the License.
 
 import argparse
-import logging
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
+from rich import print as rprint
 
 import cover_float.common.log as log
 import cover_float.testgen as tg
-from cover_float.common.constants import config
 from cover_float.common.util import SingleThreadedExecutor
-from cover_float.reference import run_test_vector
+from cover_float.common.config import Config
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_file", type=str, help="Path to the input test vector file")
-    parser.add_argument("output_file", type=str, help="Path to the output cover vector file")
-    parser.add_argument(
-        "--suppress-error-check",
-        action="store_true",
-        help="Suppress error checking between expected and actual results",
-    )
-    args = parser.parse_args()
+    config = parse_args()
+    success = testgen(config)
 
-    with Path(args.input_file).open("r") as infile, Path(args.output_file).open("w") as outfile:
-        for line in infile:
-            line = line.strip()
-            if not line or line.startswith("//"):
-                continue  # Skip empty lines and comments
-            result = run_test_vector(line, args.suppress_error_check)
-            outfile.write(result)
+    # Code 0 if successful
+    exit(not success)
+    
+def testgen(config: Config) -> bool:
+    single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
 
+    if single_thread:
+        executor = SingleThreadedExecutor()
+    else:
+        executor = ProcessPoolExecutor() if config.jobs is None else ProcessPoolExecutor(max_workers=config.jobs)
+    
+    tg.discover_and_import_models()
 
-def testgen() -> None:
+    if args.quiet > 0:
+        logging.basicConfig(level=logging.ERROR)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    with log.StatusReporter(config, disable=config.quiet) as logger, executor:
+        futures: list[Future[bool]] = []
+
+        if config.models is None:
+            for model in tg.GLOBAL_MODELS:
+                future = tg.GLOBAL_MODELS[model](config, logger, executor)
+                if future is not None:
+                    futures.append(future)
+        else:
+            for model in config.models:
+                if model in tg.GLOBAL_MODELS:
+                    future = tg.GLOBAL_MODELS[model](config, logger, executor)
+                    if future is not None:
+                        futures.append(future)
+
+        if len(futures) == 0:
+            if not config.silent:
+                rprint(f"[bold green]✓ No work to be done for {'cover-float' if not config.models else ', '.join(config.models)} [/]")
+            return True
+
+        success = True
+        if config.quiet and not config.silent:
+            with Progress(
+                TextColumn("{task.description}"),
+                BarColumn(),
+                MofNCompleteColumn(),
+                TimeElapsedColumn(),
+                transient=True,
+            ) as progress:
+                for future in progress.track(
+                    as_completed(futures), total=len(futures), description="[cyan]Generating Cover-Float Tests"
+                ):
+                    success &= future.result()
+            rprint(f"[bold green]✓ Generated {len(futures)} cover-float model(s)[/]")
+        else:
+            for future in as_completed(futures):
+                success &= future.result()
+
+        return success
+
+def parse_args() -> Config:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
@@ -75,54 +116,15 @@ def testgen() -> None:
 
     output_dir = Path(args.output_dir)
     single_thread = args.single_thread or (args.models is not None and len(args.models) < 2)
-    config.FULL_COVERAGE_TESTGEN = not args.partial_output
-    config.QUIET = args.quiet > 0
-    config.RELEASE = args.only_processed_vectors
-    if args.quiet > 0:
-        logging.basicConfig(level=logging.ERROR)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    jobs = 1 if single_thread else args.jobs
 
-    if single_thread:
-        executor = SingleThreadedExecutor()
-    else:
-        executor = ProcessPoolExecutor() if args.jobs is None else ProcessPoolExecutor(max_workers=args.jobs)
-
-    with log.StatusReporter(disable=(args.quiet > 0)) as logger, executor:
-        futures: list[Future[bool]] = []
-
-        if args.models is None:
-            for model in tg.model.GLOBAL_MODELS:
-                future = tg.model.GLOBAL_MODELS[model](output_dir, logger, executor)
-                if future is not None:
-                    futures.append(future)
-        else:
-            for model in args.models:
-                if model in tg.model.GLOBAL_MODELS:
-                    future = tg.model.GLOBAL_MODELS[model](output_dir, logger, executor)
-                    if future is not None:
-                        futures.append(future)
-
-        if len(futures) == 0:
-            if args.quiet < 2:
-                print(f"No work to be done for {'cover-float' if not args.models else ', '.join(args.models)}")
-            return
-
-        success = True
-        if args.quiet == 1:
-            with Progress(
-                TextColumn("{task.description}"),
-                BarColumn(),
-                MofNCompleteColumn(),
-                TimeElapsedColumn(),
-            ) as progress:
-                for future in progress.track(
-                    as_completed(futures), total=len(futures), description="[cyan]Generating Cover-Float Tests"
-                ):
-                    success &= future.result()
-        else:
-            for future in as_completed(futures):
-                success &= future.result()
-
-        if not success:
-            exit(1)
+    return Config(
+        output_dir=output_dir,
+        full_coverage_testgen=not args.partial_output,
+        quiet=args.quiet > 0,
+        silent=args.quiet > 1,
+        release=args.only_processed_vectors,
+        jobs=jobs,
+        models=args.models,
+        single_thread=single_thread
+    )

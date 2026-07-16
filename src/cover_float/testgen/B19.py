@@ -26,6 +26,7 @@ import random
 from typing import TextIO
 
 import cover_float.common.constants as const
+from cover_float.common.config import Config
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
@@ -70,6 +71,7 @@ def _emit(
     op: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     s1: int,
     bexp1: int,
     frac1: int,
@@ -83,6 +85,7 @@ def _emit(
         f"{op}_{const.ROUND_NEAR_EVEN}_{hex1}_{hex2}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
         test_f,
         cover_f,
+        config,
     )
 
 
@@ -91,7 +94,7 @@ def _emit(
 # ---------------------------------------------------------------------------
 
 
-def _case_1_normal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_1_normal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 1: +/-Normal x +/-Normal.  9 cells x 4 sign combos = 36."""
     min_nb, max_nb, frac_max = _fmt_params(fmt)
     Z = 0  # all zeros
@@ -107,7 +110,7 @@ def _case_1_normal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) 
         bexp2 = _any_exp(fmt)
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, max_nb, frac1, s2, bexp2, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, max_nb, frac1, s2, bexp2, frac2)
                 count += 1
 
     # Exp <: bexp1 = min_norm_bexp, bexp2 = any exp
@@ -119,7 +122,7 @@ def _case_1_normal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) 
         bexp2 = _any_exp(fmt)
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, min_nb, frac1, s2, bexp2, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, min_nb, frac1, s2, bexp2, frac2)
                 count += 1
 
     # Exp =: bexp1 = bexp2 = any exp (same value)
@@ -131,13 +134,13 @@ def _case_1_normal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) 
         bexp = _any_exp(fmt)
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, bexp, frac1, s2, bexp, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, bexp, frac1, s2, bexp, frac2)
                 count += 1
 
     return count
 
 
-def _case_2_normal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_2_normal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 2: +/-Normal x +/-SubNormal.  3 cells x 4 sign combos = 12."""
     af = _any_frac(fmt)
     bexp1 = _any_exp(fmt)
@@ -152,13 +155,13 @@ def _case_2_normal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextI
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, bexp1, frac1, s2, 0, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, bexp1, frac1, s2, 0, frac2)
                 count += 1
 
     return count
 
 
-def _case_3_subnormal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_3_subnormal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 3: +/-SubNormal x +/-Normal.  3 cells x 4 sign combos = 12."""
     _, _, frac_max = _fmt_params(fmt)
     af = _any_frac(fmt)
@@ -174,13 +177,13 @@ def _case_3_subnormal_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextI
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, 0, frac1, s2, bexp2, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, 0, frac1, s2, bexp2, frac2)
                 count += 1
 
     return count
 
 
-def _case_4_subnormal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_4_subnormal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 4: +/-SubNormal x +/-SubNormal.  5 cells x 4 sign combos = 20."""
     _, _, frac_max = _fmt_params(fmt)
     af = _any_frac(fmt)
@@ -202,13 +205,13 @@ def _case_4_subnormal_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: Te
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, 0, frac1, s2, 0, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, 0, frac1, s2, 0, frac2)
                 count += 1
 
     return count
 
 
-def _case_5_zero_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_5_zero_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 5: +/-Zero x +/-Normal.  2 cells x 4 sign combos = 8."""
     af = _any_frac(fmt)
     bexp2 = _any_exp(fmt)
@@ -220,13 +223,13 @@ def _case_5_zero_x_normal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) ->
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, 0, 0, s2, bexp2, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, 0, 0, s2, bexp2, frac2)
                 count += 1
 
     return count
 
 
-def _case_6_normal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_6_normal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 6: +/-Normal x +/-Zero.  2 cells x 4 sign combos = 8."""
     af = _any_frac(fmt)
     bexp1 = _any_exp(fmt)
@@ -238,13 +241,13 @@ def _case_6_normal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) ->
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, bexp1, frac1, s2, 0, 0)
+                _emit(fmt, op, test_f, cover_f, config, s1, bexp1, frac1, s2, 0, 0)
                 count += 1
 
     return count
 
 
-def _case_7_zero_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_7_zero_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 7: +/-Zero x +/-Subnormal.  1 cell x 4 sign combos = 4."""
     af = _any_frac(fmt)
     count = 0
@@ -256,13 +259,13 @@ def _case_7_zero_x_subnormal(fmt: str, op: str, test_f: TextIO, cover_f: TextIO)
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, 0, 0, s2, 0, frac2)
+                _emit(fmt, op, test_f, cover_f, config, s1, 0, 0, s2, 0, frac2)
                 count += 1
 
     return count
 
 
-def _case_8_subnormal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_8_subnormal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 8: +/-Subnormal x +/-Zero.  1 cell x 4 sign combos = 4."""
     af = _any_frac(fmt)
     count = 0
@@ -274,18 +277,18 @@ def _case_8_subnormal_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO)
     ]:
         for s1 in (0, 1):
             for s2 in (0, 1):
-                _emit(fmt, op, test_f, cover_f, s1, 0, frac1, s2, 0, 0)
+                _emit(fmt, op, test_f, cover_f, config, s1, 0, frac1, s2, 0, 0)
                 count += 1
 
     return count
 
 
-def _case_9_zero_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> int:
+def _case_9_zero_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO, config: Config) -> int:
     """Case 9: +/-Zero x +/-Zero.  1 cell x 4 sign combos = 4."""
     count = 0
     for s1 in (0, 1):
         for s2 in (0, 1):
-            _emit(fmt, op, test_f, cover_f, s1, 0, 0, s2, 0, 0)
+            _emit(fmt, op, test_f, cover_f, config, s1, 0, 0, s2, 0, 0)
             count += 1
     return count
 
@@ -295,22 +298,22 @@ def _case_9_zero_x_zero(fmt: str, op: str, test_f: TextIO, cover_f: TextIO) -> i
 # ---------------------------------------------------------------------------
 
 
-def generate_b19_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b19_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     """Generate all B19 test vectors for a given format."""
     for op in OPS:
         random.seed(reproducible_hash(f"B19 {fmt} {op}"))
-        _c1 = _case_1_normal_x_normal(fmt, op, test_f, cover_f)
-        _c2 = _case_2_normal_x_subnormal(fmt, op, test_f, cover_f)
-        _c3 = _case_3_subnormal_x_normal(fmt, op, test_f, cover_f)
-        _c4 = _case_4_subnormal_x_subnormal(fmt, op, test_f, cover_f)
-        _c5 = _case_5_zero_x_normal(fmt, op, test_f, cover_f)
-        _c6 = _case_6_normal_x_zero(fmt, op, test_f, cover_f)
-        _c7 = _case_7_zero_x_subnormal(fmt, op, test_f, cover_f)
-        _c8 = _case_8_subnormal_x_zero(fmt, op, test_f, cover_f)
-        _c9 = _case_9_zero_x_zero(fmt, op, test_f, cover_f)
+        _c1 = _case_1_normal_x_normal(fmt, op, test_f, cover_f, config)
+        _c2 = _case_2_normal_x_subnormal(fmt, op, test_f, cover_f, config)
+        _c3 = _case_3_subnormal_x_normal(fmt, op, test_f, cover_f, config)
+        _c4 = _case_4_subnormal_x_subnormal(fmt, op, test_f, cover_f, config)
+        _c5 = _case_5_zero_x_normal(fmt, op, test_f, cover_f, config)
+        _c6 = _case_6_normal_x_zero(fmt, op, test_f, cover_f, config)
+        _c7 = _case_7_zero_x_subnormal(fmt, op, test_f, cover_f, config)
+        _c8 = _case_8_subnormal_x_zero(fmt, op, test_f, cover_f, config)
+        _c9 = _case_9_zero_x_zero(fmt, op, test_f, cover_f, config)
 
 
 @register_model("B19")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in const.FLOAT_FMTS:
-        generate_b19_tests(test_f, cover_f, fmt)
+        generate_b19_tests(test_f, cover_f, config, fmt)

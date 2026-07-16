@@ -25,6 +25,7 @@ import random
 from collections.abc import Generator
 from typing import TYPE_CHECKING, TextIO, cast
 
+from cover_float.common.config import Config
 import cover_float.common.constants as const
 import cover_float.common.log as log
 from cover_float.common.util import factors_to_bit_width, reproducible_hash
@@ -235,9 +236,10 @@ def _emit(
     fmt: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
 ) -> None:
     tv = f"{op}_{rm}_{a}_{b}_{c}_{fmt}_{ZERO_PAD}_{fmt}_00"
-    run_and_store_test_vector(tv, test_f, cover_f)
+    run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 def _emit_convert(
@@ -248,9 +250,10 @@ def _emit_convert(
     target_fmt: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
 ) -> None:
     tv = f"{op}_{rm}_{a}_{ZERO_PAD}_{ZERO_PAD}_{fmt}_{ZERO_PAD}_{target_fmt}_00"
-    run_and_store_test_vector(tv, test_f, cover_f)
+    run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +261,7 @@ def _emit_convert(
 # ---------------------------------------------------------------------------
 
 
-def _group1a_tk(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group1a_tk(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     """
     7 k values x 8 operations x 2 signs x 5 rounding modes = 560 vectors.
 
@@ -313,14 +316,14 @@ def _group1a_tk(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: Te
                 fnmsub_c = neg_k_ulp
 
             for rm in ROUND_MODES:
-                _emit(const.OP_ADD, rm, mn, add_b, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_SUB, rm, mn, sub_b, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_MUL, rm, tk2, two, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_DIV, rm, tk2, half, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_FMADD, rm, hmn, two, fmadd_c, fmt, test_f, cover_f)
-                _emit(const.OP_FMSUB, rm, hmn, two, fmsub_c, fmt, test_f, cover_f)
-                _emit(const.OP_FNMADD, rm, hmn_op, two, fnmadd_c, fmt, test_f, cover_f)
-                _emit(const.OP_FNMSUB, rm, hmn_op, two, fnmsub_c, fmt, test_f, cover_f)
+                _emit(const.OP_ADD, rm, mn, add_b, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_SUB, rm, mn, sub_b, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_MUL, rm, tk2, two, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_DIV, rm, tk2, half, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_FMADD, rm, hmn, two, fmadd_c, fmt, test_f, cover_f, config)
+                _emit(const.OP_FMSUB, rm, hmn, two, fmsub_c, fmt, test_f, cover_f, config)
+                _emit(const.OP_FNMADD, rm, hmn_op, two, fnmadd_c, fmt, test_f, cover_f, config)
+                _emit(const.OP_FNMSUB, rm, hmn_op, two, fnmsub_c, fmt, test_f, cover_f, config)
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +331,7 @@ def _group1a_tk(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: Te
 # ---------------------------------------------------------------------------
 
 
-def _group1b_arithmetic(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group1b_arithmetic(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     """
     7 LGS configs x 6 operations x 2 signs x 5 rounding modes = 420 vectors.
 
@@ -391,12 +394,12 @@ def _group1b_arithmetic(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cov
                 c_fnmsub = b_lgs_neg
 
             for rm in ROUND_MODES:
-                _emit(const.OP_ADD, rm, a_add, b_add, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_SUB, rm, a_sub, b_sub, ZERO_PAD, fmt, test_f, cover_f)
-                _emit(const.OP_FMADD, rm, a_fmadd, one, c_fmadd, fmt, test_f, cover_f)
-                _emit(const.OP_FMSUB, rm, a_fmsub, one, c_fmsub, fmt, test_f, cover_f)
-                _emit(const.OP_FNMADD, rm, a_fnmadd, one, c_fnmadd, fmt, test_f, cover_f)
-                _emit(const.OP_FNMSUB, rm, a_fnmsub, one, c_fnmsub, fmt, test_f, cover_f)
+                _emit(const.OP_ADD, rm, a_add, b_add, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_SUB, rm, a_sub, b_sub, ZERO_PAD, fmt, test_f, cover_f, config)
+                _emit(const.OP_FMADD, rm, a_fmadd, one, c_fmadd, fmt, test_f, cover_f, config)
+                _emit(const.OP_FMSUB, rm, a_fmsub, one, c_fmsub, fmt, test_f, cover_f, config)
+                _emit(const.OP_FNMADD, rm, a_fnmadd, one, c_fnmadd, fmt, test_f, cover_f, config)
+                _emit(const.OP_FNMSUB, rm, a_fnmsub, one, c_fnmsub, fmt, test_f, cover_f, config)
 
 
 # ---------------------------------------------------------------------------
@@ -442,7 +445,7 @@ def _generate_group1b_mul_factors(
         yield (a, b)
 
 
-def _group1b_mul_div(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group1b_mul_div(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     """
     1 LGS config x 2 operations x 2 signs x 5 rounding modes = 20 vectors.
 
@@ -458,11 +461,11 @@ def _group1b_mul_div(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
     for sign in (0, 1):
         mn = _maxnorm(sign, E, M)
         for rm in ROUND_MODES:
-            _emit(const.OP_DIV, rm, mn, one, ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_DIV, rm, mn, one, ZERO_PAD, fmt, test_f, cover_f, config)
 
     for rm in ROUND_MODES:
         for a, b in _generate_group1b_mul_factors(fmt, E, M, bias, rm):
-            _emit(const.OP_MUL, rm, a, b, ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_MUL, rm, a, b, ZERO_PAD, fmt, test_f, cover_f, config)
 
 
 def generate_exact_mul_group1b(fmt: str, lsb_zero: bool, bits: int, nf: int) -> tuple[int, int]:
@@ -525,7 +528,9 @@ def generate_inexact_mul_group1b(fmt: str, lsb_zero: bool, bits: int, nf: int) -
 # ---------------------------------------------------------------------------
 
 
-def _group2_clear_overflow(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group2_clear_overflow(
+    fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     """
     8 operations x 2 signs x 5 rounding modes = 80 vectors.
 
@@ -555,21 +560,21 @@ def _group2_clear_overflow(fmt: str, E: int, M: int, bias: int, test_f: TextIO, 
         mn_op = _maxnorm(1 - sign, E, M)  # opposite-sign MaxNorm, used only for SUB
         for rm in ROUND_MODES:
             # ADD: ±MaxNorm + ±MaxNorm = ±2*MaxNorm
-            _emit(const.OP_ADD, rm, mn, mn, ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_ADD, rm, mn, mn, ZERO_PAD, fmt, test_f, cover_f, config)
             # SUB: ±MaxNorm - (∓MaxNorm) = ±2*MaxNorm
-            _emit(const.OP_SUB, rm, mn, mn_op, ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_SUB, rm, mn, mn_op, ZERO_PAD, fmt, test_f, cover_f, config)
             # MUL: ±MaxNorm x 2.0 = ±2*MaxNorm
-            _emit(const.OP_MUL, rm, mn, two, ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_MUL, rm, mn, two, ZERO_PAD, fmt, test_f, cover_f, config)
             # DIV: ±MaxNorm / 0.5 = ±2*MaxNorm
-            _emit(const.OP_DIV, rm, mn, _half_fp(E, M, bias), ZERO_PAD, fmt, test_f, cover_f)
+            _emit(const.OP_DIV, rm, mn, _half_fp(E, M, bias), ZERO_PAD, fmt, test_f, cover_f, config)
             # FMADD: (±Mn/2 x 2) + ±Mn = ±2*Mn
-            _emit(const.OP_FMADD, rm, hmn, two, mn, fmt, test_f, cover_f)
+            _emit(const.OP_FMADD, rm, hmn, two, mn, fmt, test_f, cover_f, config)
             # FMSUB: (±Mn/2 x 2) - (∓Mn) = ±2*Mn
-            _emit(const.OP_FMSUB, rm, hmn, two, mn_op, fmt, test_f, cover_f)
+            _emit(const.OP_FMSUB, rm, hmn, two, mn_op, fmt, test_f, cover_f, config)
             # FNMADD: -(∓Mn/2 x 2) - (∓Mn) = ±Mn + ±Mn = ±2*Mn
-            _emit(const.OP_FNMADD, rm, hmn_op, two, mn_op, fmt, test_f, cover_f)
+            _emit(const.OP_FNMADD, rm, hmn_op, two, mn_op, fmt, test_f, cover_f, config)
             # FNMSUB: -(∓Mn/2 x 2) + (±Mn) = ±Mn + ±Mn = ±2*Mn
-            _emit(const.OP_FNMSUB, rm, hmn_op, two, mn, fmt, test_f, cover_f)
+            _emit(const.OP_FNMSUB, rm, hmn_op, two, mn, fmt, test_f, cover_f, config)
 
 
 def _generate_group2_mul_factors(
@@ -589,7 +594,7 @@ def _generate_group2_mul_factors(
 # ---------------------------------------------------------------------------
 
 
-def _group3_exp_sweep(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group3_exp_sweep(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     """
     7 exponents x 8 operations x 2 signs x 5 rounding modes = 560 vectors.
 
@@ -631,16 +636,16 @@ def _group3_exp_sweep(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover
                     a = a_neg if sign == 1 else a_pos  # dominant operand
                     an = a_pos if sign == 1 else a_neg  # negated dominant (for FN* ops)
 
-                    _emit(const.OP_ADD, rm, a, ZERO_PAD, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_SUB, rm, a, ZERO_PAD, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_MUL, rm, a, one, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_DIV, rm, a, one, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FMADD, rm, a, one, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FMSUB, rm, a, one, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_ADD, rm, a, ZERO_PAD, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_SUB, rm, a, ZERO_PAD, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_MUL, rm, a, one, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_DIV, rm, a, one, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FMADD, rm, a, one, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FMSUB, rm, a, one, ZERO_PAD, fmt, test_f, cover_f, config)
                     # FNMADD: -(an x 1) - 0 = -an.  For sign=0: an=a_neg, so -an = +a_pos ✓
                     #                                 For sign=1: an=a_pos, so -an = -a_pos ✓
-                    _emit(const.OP_FNMADD, rm, an, one, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FNMSUB, rm, an, one, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_FNMADD, rm, an, one, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FNMSUB, rm, an, one, ZERO_PAD, fmt, test_f, cover_f, config)
 
                 else:  # d > 0
                     scale = _pow2(d, E, M, bias)  # +2^d
@@ -658,19 +663,19 @@ def _group3_exp_sweep(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover
                     # ADD: MaxNorm + MaxNorm (reaches d=1 intermediate; structural
                     #      impossibility for d>1, covergroup excludes those bins)
                     mn_for_add = mn_neg if sign == 1 else mn
-                    _emit(const.OP_ADD, rm, mn_for_add, mn_for_add, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_ADD, rm, mn_for_add, mn_for_add, ZERO_PAD, fmt, test_f, cover_f, config)
                     # SUB: MaxNorm - (-MaxNorm) = 2*MaxNorm
                     mn_for_sub_b = mn if sign == 1 else mn_neg
-                    _emit(const.OP_SUB, rm, mn_for_add, mn_for_sub_b, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_SUB, rm, mn_for_add, mn_for_sub_b, ZERO_PAD, fmt, test_f, cover_f, config)
 
-                    _emit(const.OP_MUL, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_DIV, rm, a, scale_inv, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FMADD, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FMSUB, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_MUL, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_DIV, rm, a, scale_inv, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FMADD, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FMSUB, rm, a, scale, ZERO_PAD, fmt, test_f, cover_f, config)
                     # FNMADD: -(an x 2^d) - 0.  For sign=0: an=mn_neg, -(-Mnx2^d)=+Mnx2^d ✓
                     #                             For sign=1: an=mn,    -(+Mnx2^d)=-Mnx2^d ✓
-                    _emit(const.OP_FNMADD, rm, an, scale, ZERO_PAD, fmt, test_f, cover_f)
-                    _emit(const.OP_FNMSUB, rm, an, scale, ZERO_PAD, fmt, test_f, cover_f)
+                    _emit(const.OP_FNMADD, rm, an, scale, ZERO_PAD, fmt, test_f, cover_f, config)
+                    _emit(const.OP_FNMSUB, rm, an, scale, ZERO_PAD, fmt, test_f, cover_f, config)
 
 
 def _generate_group3_mul_factors(
@@ -713,7 +718,7 @@ def get_mul_inputs(fmt: str, rm: str) -> Generator[tuple[str, str], None, None]:
     yield from _generate_group3_mul_factors(fmt, E, M, bias, rm)
 
 
-def _group1_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group1_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # Generate CFF Tests between MaxNorm - 3ulp and MaxNorm + 3ulp
 
     for target in const.FLOAT_FMTS:
@@ -733,10 +738,10 @@ def _group1_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
 
             a = _fp_hex(sign, exp + bias, mantissa, E, M)
 
-            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f, config)
 
 
-def _group2_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group2_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # A Random Number Larger than MaxNorm + 3 ulp
 
     for target in const.FLOAT_FMTS:
@@ -755,10 +760,10 @@ def _group2_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
 
             a = _fp_hex(sign, exp + bias, mantissa, E, M)
 
-            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f, config)
 
 
-def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO) -> None:
+def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # Numbers with exponent in the range MaxNorm.Exp +- 3
 
     for target in const.FLOAT_FMTS:
@@ -776,7 +781,7 @@ def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
 
             a = _fp_hex(sign, exp + bias, mantissa, E, M)
 
-            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f)
+            _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f, config)
 
 
 # ---------------------------------------------------------------------------
@@ -784,25 +789,25 @@ def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
 # ---------------------------------------------------------------------------
 
 
-def generate_b4_tests_arithmetic(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b4_tests_arithmetic(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     E, M, bias = _fmt_params(fmt)
-    _group1a_tk(fmt, E, M, bias, test_f, cover_f)
-    _group1b_arithmetic(fmt, E, M, bias, test_f, cover_f)
-    _group1b_mul_div(fmt, E, M, bias, test_f, cover_f)
-    _group2_clear_overflow(fmt, E, M, bias, test_f, cover_f)
-    _group3_exp_sweep(fmt, E, M, bias, test_f, cover_f)
+    _group1a_tk(fmt, E, M, bias, test_f, cover_f, config)
+    _group1b_arithmetic(fmt, E, M, bias, test_f, cover_f, config)
+    _group1b_mul_div(fmt, E, M, bias, test_f, cover_f, config)
+    _group2_clear_overflow(fmt, E, M, bias, test_f, cover_f, config)
+    _group3_exp_sweep(fmt, E, M, bias, test_f, cover_f, config)
 
 
-def generate_b4_tests_converts(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b4_tests_converts(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     E, M, bias = _fmt_params(fmt)
-    _group1_converts(fmt, E, M, bias, test_f, cover_f)
-    _group2_converts(fmt, E, M, bias, test_f, cover_f)
-    _group3_converts(fmt, E, M, bias, test_f, cover_f)
+    _group1_converts(fmt, E, M, bias, test_f, cover_f, config)
+    _group2_converts(fmt, E, M, bias, test_f, cover_f, config)
+    _group3_converts(fmt, E, M, bias, test_f, cover_f, config)
 
 
 @register_model("B4")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in const.FLOAT_FMTS:
         random.seed(reproducible_hash(f"B4 {fmt}"))
-        generate_b4_tests_arithmetic(test_f, cover_f, fmt)
-        generate_b4_tests_converts(test_f, cover_f, fmt)
+        generate_b4_tests_arithmetic(test_f, cover_f, config, fmt)
+        generate_b4_tests_converts(test_f, cover_f, config, fmt)

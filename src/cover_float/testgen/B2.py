@@ -42,6 +42,7 @@ from cover_float.common.constants import (
     OP_SQRT,
     OP_SUB,
 )
+from cover_float.common.config import Config
 from cover_float.common.util import (
     decimal_components_to_hex,
     generate_test_vector,
@@ -184,7 +185,7 @@ class Generator:
 
 
 @register_model("B2")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in FLOAT_FMTS:
         gen = Generator(fmt)
 
@@ -207,29 +208,29 @@ def main(test_f: TextIO, cover_f: TextIO) -> None:
 
                     a, b, c = gen.gen_add(desired, base_e, maxnorm, sign)
                     vec = generate_test_vector(OP_ADD, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                    run_and_store_test_vector(vec, test_f, cover_f)
+                    run_and_store_test_vector(vec, test_f, cover_f, config)
 
                     a, b, c = gen.gen_sub(desired, base_e, maxnorm, sign)
                     vec = generate_test_vector(OP_SUB, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                    run_and_store_test_vector(vec, test_f, cover_f)
+                    run_and_store_test_vector(vec, test_f, cover_f, config)
 
                     a, b, c = gen.gen_mul(desired, maxnorm, sign)
                     vec = generate_test_vector(OP_MUL, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                    run_and_store_test_vector(vec, test_f, cover_f)
+                    run_and_store_test_vector(vec, test_f, cover_f, config)
 
                     a, b, c = gen.gen_div(desired, maxnorm, sign)
                     vec = generate_test_vector(OP_DIV, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                    run_and_store_test_vector(vec, test_f, cover_f)
+                    run_and_store_test_vector(vec, test_f, cover_f, config)
 
                     if sign == 0 and base == "One":
                         a, b, c = gen.gen_sqrt(desired)
                         vec = generate_test_vector(OP_SQRT, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
+                        run_and_store_test_vector(vec, test_f, cover_f, config)
 
                     for op in [OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB]:
                         a, b, c = gen.gen_fma(op, desired, base_e, maxnorm)
                         vec = generate_test_vector(op, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                        run_and_store_test_vector(vec, test_f, cover_f)
+                        run_and_store_test_vector(vec, test_f, cover_f, config)
 
             # for -0 cases
             if base == "Zero":
@@ -238,9 +239,9 @@ def main(test_f: TextIO, cover_f: TextIO) -> None:
                 seed(reproducible_hash(f"{fmt}_zero_add_1"))
                 a, b, c = gen.gen_add(desired, 0, False, 1)
                 vec = generate_test_vector(OP_ADD, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                run_and_store_test_vector(vec, test_f, cover_f)
+                run_and_store_test_vector(vec, test_f, cover_f, config)
 
                 seed(reproducible_hash(f"{fmt}_zero_sub_1"))
                 a, b, c = gen.gen_sub(desired, 0, False, 1)
                 vec = generate_test_vector(OP_SUB, int(a, 16), int(b, 16), int(c, 16), fmt, fmt)
-                run_and_store_test_vector(vec, test_f, cover_f)
+                run_and_store_test_vector(vec, test_f, cover_f, config)

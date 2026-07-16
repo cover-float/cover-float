@@ -26,6 +26,7 @@ import logging
 import random
 from typing import TextIO, cast
 
+from cover_float.common.config import Config
 import cover_float.common.constants as const
 import cover_float.common.log as log
 from cover_float.common.util import reproducible_hash
@@ -46,7 +47,7 @@ def decimalComponentsToHex(fmt: str, sign: int, biased_exp: int, mantissa: int) 
     return h_complete
 
 
-def generate_b14_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b14_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     p = const.MANTISSA_BITS[fmt] + 1
     min_u, max_u = const.UNBIASED_EXP[fmt]
     bias = const.BIAS[fmt]
@@ -112,10 +113,11 @@ def generate_b14_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 f"{op}_{const.ROUND_NEAR_EVEN}_{hex_a}_{hex_b}_{hex_c}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
 
 
 @register_model("B14")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in const.FLOAT_FMTS:
-        generate_b14_tests(test_f, cover_f, fmt)
+        generate_b14_tests(test_f, cover_f, config, fmt)

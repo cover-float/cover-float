@@ -13,9 +13,7 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-# Commonly Use Constants
-
-from dataclasses import dataclass
+# Commonly Used Constants
 
 # Operation codes for test vectors
 
@@ -153,14 +151,3 @@ COVER_VECTOR_WIDTH_HEX = 302
 COVER_VECTOR_WIDTH_HEX_WITH_SEPARATORS = COVER_VECTOR_WIDTH_HEX + 12
 INTER_SIGNIFICAND_LENGTH = (3 * 112) + 4
 RFI_DECIMAL_POINT = INTER_SIGNIFICAND_LENGTH // 2
-
-
-@dataclass
-class Config:
-    FULL_COVERAGE_TESTGEN: bool = True
-    CACHE_DIR: str = "build/cache"
-    QUIET: bool = False
-    RELEASE: bool = False
-
-
-config = Config()

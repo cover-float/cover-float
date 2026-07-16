@@ -22,6 +22,7 @@ import random
 from random import seed
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     EXPONENT_BIAS,
     EXPONENT_BITS,
@@ -105,6 +106,7 @@ def convert_grs(
     rounding_mode: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     hashString: str,
 ) -> None:
     hashval = reproducible_hash(hashString)
@@ -152,7 +154,7 @@ def convert_grs(
 
     input_fp = generate_FP(hp_e_bits, sign, input_exp, input_mant_bin, hp_e_bias)
     run_and_store_test_vector(
-        f"{OP_CFF}_{rounding_mode}_{input_fp}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
+        f"{OP_CFF}_{rounding_mode}_{input_fp}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f, config
     )
 
 
@@ -346,6 +348,7 @@ def mul_div_grs_gen(
     sign: int,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     hashEnding: str,
     genTests: bool,
 ) -> tuple[str, str]:
@@ -399,7 +402,10 @@ def mul_div_grs_gen(
 
     if genTests:
         run_and_store_test_vector(
-            f"{operation}_{rounding_mode}_{a}_{b}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+            f"{operation}_{rounding_mode}_{a}_{b}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+            test_f,
+            cover_f,
+            config,
         )
 
     return (a, b)
@@ -415,6 +421,7 @@ def fma_gen(
     addend_pattern: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     hashEnding: str,
 ) -> None:
     m_bits = MANTISSA_BITS[precision]
@@ -463,6 +470,7 @@ def fma_gen(
         mul_sign,
         test_f,
         cover_f,
+        config,
         hashEnding,
         False,
     )
@@ -478,13 +486,14 @@ def fma_gen(
     c_bin_mant = f"{c_mant:0{m_bits}b}"
     c = generate_FP(e_bits, str(c_sign), c_exp, c_bin_mant, e_bias)
     run_and_store_test_vector(
-        f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+        f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f, config
     )
 
 
 def div_grs_mant(
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     grs: str,
     g_bit_pos: int,
     precision: str,
@@ -535,12 +544,15 @@ def div_grs_mant(
     b_fp = generate_FP(e_bits, str(b_sign), b_exp_norm, b, e_bias)
 
     run_and_store_test_vector(
-        f"{OP_DIV}_{rounding_mode}_{b_fp}_{a_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+        f"{OP_DIV}_{rounding_mode}_{b_fp}_{a_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+        test_f,
+        cover_f,
+        config,
     )
     return a_fp, b_fp
 
 
-def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
+def convertTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # All conversion tests:
     for i_hp in range(len(B6_FMTS)):
         hp = B6_FMTS[i_hp]
@@ -560,11 +572,11 @@ def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
                     # Our targets are less than these numbers, so the exponents we wish to reach must be one fewer
                     for exp in [lp_min_sn_exp - 1, tlp_min_sn_exp - 1]:
                         hashString = str(hp) + str(lp) + str(rounding_mode) + str(grs) + str(exp)
-                        convert_grs(hp, lp, exp, bits, "0", rounding_mode, test_f, cover_f, hashString + "0")
-                        convert_grs(hp, lp, exp, bits, "1", rounding_mode, test_f, cover_f, hashString + "1")
+                        convert_grs(hp, lp, exp, bits, "0", rounding_mode, test_f, cover_f, config, hashString + "0")
+                        convert_grs(hp, lp, exp, bits, "1", rounding_mode, test_f, cover_f, config, hashString + "1")
 
 
-def createTests(test_f: TextIO, cover_f: TextIO) -> None:
+def createTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for rounding_mode in ROUNDING_MODES:
         for precision in B6_FMTS:
             # precision = FMT_HALF
@@ -580,10 +592,10 @@ def createTests(test_f: TextIO, cover_f: TextIO) -> None:
 
                     for grs_bin in grs:
                         mul_div_grs_gen(
-                            OP_MUL, precision, rounding_mode, grs_bin, exp, sign, test_f, cover_f, "1/2", True
+                            OP_MUL, precision, rounding_mode, grs_bin, exp, sign, test_f, cover_f, config, "1/2", True
                         )
                         mul_div_grs_gen(
-                            OP_DIV, precision, rounding_mode, grs_bin, exp, sign, test_f, cover_f, "1/2", True
+                            OP_DIV, precision, rounding_mode, grs_bin, exp, sign, test_f, cover_f, config, "1/2", True
                         )
                         for operation in FMA_OPS:
                             fma_gen(
@@ -596,11 +608,12 @@ def createTests(test_f: TextIO, cover_f: TextIO) -> None:
                                 "min_sn",
                                 test_f,
                                 cover_f,
+                                config,
                                 "pos_1",
                             )
 
 
 @register_model("B6")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    convertTests(test_f, cover_f)
-    createTests(test_f, cover_f)
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    convertTests(test_f, cover_f, config)
+    createTests(test_f, cover_f, config)

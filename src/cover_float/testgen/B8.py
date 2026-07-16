@@ -20,6 +20,7 @@ import logging
 import random
 from typing import Optional, TextIO, cast
 
+from cover_float.common.config import Config
 import cover_float.common.constants as constants
 import cover_float.common.log as log
 from cover_float.common.util import (
@@ -144,7 +145,9 @@ def generate_exponents(fmt: str, *, subtract: bool = False) -> tuple[int, int]:
     return exp1, exp2
 
 
-def generate_div_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, target_bits: Optional[int] = None) -> None:
+def generate_div_tests(
+    fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config, target_bits: Optional[int] = None
+) -> None:
     seed = reproducible_hash(f"B8 DIV {fmt} {rm}")
     random.seed(seed)
 
@@ -173,12 +176,12 @@ def generate_div_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, targe
             result = run_test_vector(tv)
             info = extract_rounding_info(result)
             if check_div_result(result, target, target_bits) and info["Guard"] == guard and info["LSB"] == lsb:
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
             else:
                 logger.exception(f"Div Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
 
 
-def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     seed = reproducible_hash(f"B8 MUL {fmt} {rm}")
     random.seed(seed)
 
@@ -207,7 +210,7 @@ def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> No
                 f2 = generate_float(sign2, exp2, s2 & ((1 << nf) - 1), fmt)
 
                 tv = generate_test_vector(constants.OP_MUL, f1, f2, 0, fmt, fmt, rm)
-                run_and_store_test_vector(tv, test_f, cover_f)
+                run_and_store_test_vector(tv, test_f, cover_f, config)
                 break
             else:
                 logger.exception(
@@ -215,7 +218,7 @@ def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> No
                 )
 
 
-def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     seed = reproducible_hash(f"B8 ADD SUB {fmt} {rm}")
     random.seed(seed)
     # To maximize the extra bits lengths, we know that we need to align one of the addends
@@ -288,7 +291,7 @@ def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
                     rounding_bits[:total_rounding_bits] == target_bits
                     and rounding_bits[total_rounding_bits:].count("1") == 0
                 ):
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                 else:
                     logger.exception(
                         f"Add/Sub Generation Failed, fmt={fmt}, op={op}, guard={guard}, lsb={lsb}, "
@@ -296,7 +299,7 @@ def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
                     )
 
 
-def generate_fma_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_fma_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     seed = reproducible_hash(f"B8 FMA {fmt} {rm}")
     random.seed(seed)
 
@@ -376,7 +379,7 @@ def generate_fma_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> No
                         rounding_bits[:total_rounding_bits] == target_bits
                         and rounding_bits[total_rounding_bits:].count("1") == 0
                     ):
-                        store_cover_vector(result, test_f, cover_f)
+                        store_cover_vector(result, test_f, cover_f, config)
                         break
                     else:
                         logger.exception(
@@ -385,7 +388,7 @@ def generate_fma_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> No
                         )
 
 
-def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # These are pretty simple, we just want the maximum possible overhang for each type of conversion
     nf = constants.MANTISSA_BITS[fmt]
     exp_min, exp_max = constants.BIASED_EXP[fmt]
@@ -447,7 +450,7 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
                 if (
                     int(rounding_bits, 2) == target and rounding_bits[target_nf + maximal_overhang :].count("1") == 0
                 ) or (fmt == constants.FMT_QUAD and target_fmt == constants.FMT_BF16):
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                 else:
                     logger.exception(
                         f"CFF/CFI Generation Failed, fmt={fmt}, target_fmt={target_fmt}, lsb={lsb}, guard={guard}, "
@@ -487,7 +490,7 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
                 if (
                     int(rounding_bits, 2) == target and rounding_bits[from_bits:].count("1") == 0
                 ) or fmt == constants.FMT_BF16:
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                 else:
                     logger.exception(
                         f"CIF Generation Failed, from_fmt={from_fmt}, fmt={fmt}, lsb={lsb}, guard={guard}, "
@@ -496,11 +499,11 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO) -
 
 
 @register_model("B8")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         for rm in constants.ROUNDING_MODES:
-            generate_div_tests(fmt, rm, test_f, cover_f)
-            generate_mul_tests(fmt, rm, test_f, cover_f)
-            generate_add_sub_tests(fmt, rm, test_f, cover_f)
-            generate_fma_tests(fmt, rm, test_f, cover_f)
-            generate_convert_tests(fmt, rm, test_f, cover_f)
+            generate_div_tests(fmt, rm, test_f, cover_f, config)
+            generate_mul_tests(fmt, rm, test_f, cover_f, config)
+            generate_add_sub_tests(fmt, rm, test_f, cover_f, config)
+            generate_fma_tests(fmt, rm, test_f, cover_f, config)
+            generate_convert_tests(fmt, rm, test_f, cover_f, config)

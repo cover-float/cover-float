@@ -13,10 +13,17 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-from cover_float.testgen.discover_models import discover_and_import_models
-from cover_float.testgen.model import GLOBAL_MODELS
+from __future__ import annotations
+from dataclasses import dataclass
+from pathlib import Path
 
-__all__ = [
-    "discover_and_import_models",
-    "GLOBAL_MODELS",
-]
+@dataclass
+class Config:
+    output_dir: Path
+    full_coverage_testgen: bool = True
+    quiet: bool = False
+    silent: bool = False
+    release: bool = False
+    jobs: int | None = None
+    models: list[str] | None = None
+    single_thread: bool = False

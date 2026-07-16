@@ -20,12 +20,13 @@ import random
 from typing import TextIO
 
 import cover_float.common.constants as constants
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
 
 
-def generate_B22(test_f: TextIO, cover_f: TextIO) -> None:
+def generate_B22(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # Seed the RNG for deterministic mantissas
     seed = reproducible_hash("B22")
     random.seed(seed)
@@ -51,7 +52,7 @@ def generate_B22(test_f: TextIO, cover_f: TextIO) -> None:
                 fraction = random.getrandbits(nf)
                 f_low = generate_float(sign, e_low, fraction, src_fmt)
                 tv = generate_test_vector(constants.OP_CFI, f_low, 0, 0, src_fmt, dest_fmt, constants.ROUND_NEAR_EVEN)
-                run_and_store_test_vector(tv, test_f, cover_f)
+                run_and_store_test_vector(tv, test_f, cover_f, config)
 
                 # Mid region: -3 <= E <= int_width + 3
                 # For each integer exponent in this range
@@ -62,7 +63,7 @@ def generate_B22(test_f: TextIO, cover_f: TextIO) -> None:
                     tv = generate_test_vector(
                         constants.OP_CFI, f_mid, 0, 0, src_fmt, dest_fmt, constants.ROUND_NEAR_EVEN
                     )
-                    run_and_store_test_vector(tv, test_f, cover_f)
+                    run_and_store_test_vector(tv, test_f, cover_f, config)
 
                 # High region: E > int_width + 3
                 # Pick E_High = int_width + 4, only if reachable
@@ -73,9 +74,9 @@ def generate_B22(test_f: TextIO, cover_f: TextIO) -> None:
                     tv = generate_test_vector(
                         constants.OP_CFI, f_high, 0, 0, src_fmt, dest_fmt, constants.ROUND_NEAR_EVEN
                     )
-                    run_and_store_test_vector(tv, test_f, cover_f)
+                    run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B22")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    generate_B22(test_f, cover_f)
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    generate_B22(test_f, cover_f, config)

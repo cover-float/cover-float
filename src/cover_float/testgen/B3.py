@@ -17,6 +17,7 @@ import logging
 import random
 from typing import Optional, TextIO, cast
 
+from cover_float.common.config import Config
 import cover_float.common.constants as common
 import cover_float.common.log as log
 from cover_float.common.util import (
@@ -60,7 +61,7 @@ def get_significand_from_float(float_: int, fmt: str) -> int:
     return float_ & mask | (1 << common.MANTISSA_BITS[fmt])
 
 
-def write_fma_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_fma_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     FMA_OPS = [
         common.OP_FMADD,
         common.OP_FMSUB,
@@ -226,7 +227,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
                 if rounding in to_cover:
                     to_cover.remove(rounding)
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
 
                     # This means we're done
                     if len(to_cover) == 0:
@@ -238,7 +239,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 )
 
 
-def write_add_sub_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_add_sub_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     ops = [
         common.OP_ADD,
         common.OP_SUB,
@@ -298,7 +299,7 @@ def write_add_sub_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
                 info = extract_rounding_info(result)
                 if info == target:
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                 else:
                     logger.exception(
                         f"AddSub test generation failed: op={op}, target={target}, last_digits={last_digits}, "
@@ -306,7 +307,7 @@ def write_add_sub_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                     )
 
 
-def write_mul_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_mul_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     targets = [
         {
             "Sign": (x & 1),
@@ -359,7 +360,7 @@ def write_mul_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
             if info in goals:
                 goals.remove(info)
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
 
                 if len(goals) == 0:
                     break
@@ -369,7 +370,7 @@ def write_mul_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
             )
 
 
-def write_sqrt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_sqrt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     """
     SQRT is fun. LSB  = 1 and Guard = 1 is impossible. We know this because
     consider squaring a number with guard = 1 and an m bit mantissa
@@ -439,10 +440,10 @@ def write_sqrt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 logger.exception(f"sqrt float should have been: {gen_square:x}, was {float_:x}")
                 return
         else:
-            store_cover_vector(result, test_f, cover_f)
+            store_cover_vector(result, test_f, cover_f, config)
 
 
-def write_div_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_div_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     """
     We can generate guard = 1, sticky = 0, unlike square root, but the machinery is going to be
     very specific. When sticky = 0, we have an exact result. This means that the given quotient
@@ -554,13 +555,13 @@ def write_div_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 )
             else:
                 goals.remove(info)
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
 
                 if len(goals) == 0:
                     break
 
 
-def write_cvt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     cvt_ops_targets = {
         common.OP_CFI: common.INT_FMTS,
         common.OP_CIF: common.INT_FMTS,
@@ -647,7 +648,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                     )
                 elif info in goals:
                     goals.remove(info)
-                    store_cover_vector(results, test_f, cover_f)
+                    store_cover_vector(results, test_f, cover_f, config)
 
                     if len(goals) == 0:
                         break
@@ -687,7 +688,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
                 if info in goals:
                     goals.remove(info)
-                    store_cover_vector(results, test_f, cover_f)
+                    store_cover_vector(results, test_f, cover_f, config)
 
                     if len(goals) == 0:
                         break
@@ -730,28 +731,28 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
 
                 if info in goals:
                     goals.remove(info)
-                    store_cover_vector(results, test_f, cover_f)
+                    store_cover_vector(results, test_f, cover_f, config)
 
                     if len(goals) == 0:
                         break
             else:
-                logger.exception(
+                raise ValueError(
                     f"CIF Test Gen Failed: fmt={fmt}, from={target_fmt}, mode={mode}, remaining_goals={goals}"
                 )
 
 
 @register_model("B3")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     random.seed(reproducible_hash("B3"))
 
     # These are going to be for sticky = 0
     for fmt in common.FLOAT_FMTS:
-        write_add_sub_tests(test_f, cover_f, fmt)
-        write_mul_tests(test_f, cover_f, fmt)
-        write_div_tests(test_f, cover_f, fmt)
-        write_sqrt_tests(test_f, cover_f, fmt)
-        write_fma_tests(test_f, cover_f, fmt)
-        write_cvt_tests(test_f, cover_f, fmt)
+        write_add_sub_tests(test_f, cover_f, config, fmt)
+        write_mul_tests(test_f, cover_f, config, fmt)
+        write_div_tests(test_f, cover_f, config, fmt)
+        write_sqrt_tests(test_f, cover_f, config, fmt)
+        write_fma_tests(test_f, cover_f, config, fmt)
+        write_cvt_tests(test_f, cover_f, config, fmt)
 
     targets = [
         {
@@ -782,7 +783,7 @@ def main(test_f: TextIO, cover_f: TextIO) -> None:
 
                     if rounding_results in cover_goals:
                         cover_goals.remove(rounding_results)
-                        store_cover_vector(cv, test_f, cover_f)
+                        store_cover_vector(cv, test_f, cover_f, config)
 
                     if len(cover_goals) == 0:
                         break

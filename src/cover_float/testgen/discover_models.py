@@ -13,10 +13,12 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-from cover_float.testgen.discover_models import discover_and_import_models
-from cover_float.testgen.model import GLOBAL_MODELS
+from pathlib import Path
+from importlib import import_module
 
-__all__ = [
-    "discover_and_import_models",
-    "GLOBAL_MODELS",
-]
+def discover_and_import_models() -> None:
+    model_dir = Path(__file__).parent
+
+    for py_file in model_dir.glob("*.py"):
+        if py_file.stem.startswith("B"):
+            import_module(f"cover_float.testgen.{py_file.stem}")

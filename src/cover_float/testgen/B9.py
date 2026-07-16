@@ -20,6 +20,7 @@ import random
 from pathlib import Path
 from typing import TextIO
 
+from cover_float.common.config import Config
 import cover_float.common.constants as constants
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
@@ -193,7 +194,7 @@ class B9SignificandGenerator:
             file.write(f"bins bin_{i:02d} = {{ 'b{sig.zfill(self.nf)} }}; \n")
 
 
-def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     exp_min, exp_max = constants.BIASED_EXP[fmt]
     exp_max -= constants.BIAS[fmt]
     exp_min -= constants.BIAS[fmt]
@@ -215,14 +216,14 @@ def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO) -> 
                 float2 = generate_float(sign2, exp2, int(sig2, 2), fmt) if op not in B9_1SRC else 0
 
                 tv = generate_test_vector(op, float1, float2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
-                run_and_store_test_vector(tv, test_f, cover_f)
+                run_and_store_test_vector(tv, test_f, cover_f, config)
 
                 if op in B9_1SRC:
                     break  # Don't over generate tests
 
 
 @register_model("B9")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         generator = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], fmt + "b9")
 
@@ -237,4 +238,4 @@ def main(test_f: TextIO, cover_f: TextIO) -> None:
 
         with bins_path.open("w") as generated_coverage:
             sigs = generator.generate(generated_coverage)
-            B9_generator(sigs, fmt, test_f, cover_f)
+            B9_generator(sigs, fmt, test_f, cover_f, config)
