@@ -14,76 +14,17 @@
 # and limitations under the License.
 
 import argparse
-from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from rich import print as rprint
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
-
-import cover_float.common.log as log
-import cover_float.testgen as tg
-from cover_float.common.config import Config
-from cover_float.common.util import SingleThreadedExecutor
+from cover_float import Config, generate
 
 
 def main() -> None:
     config = parse_args()
-    success = testgen(config)
+    success = generate(config)
 
     # Code 0 if successful
     exit(not success)
-
-
-def testgen(config: Config) -> bool:
-    single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
-
-    if single_thread:
-        executor = SingleThreadedExecutor()
-    else:
-        executor = ProcessPoolExecutor() if config.jobs is None else ProcessPoolExecutor(max_workers=config.jobs)
-
-    tg.discover_and_import_models()
-
-    with log.StatusReporter(config, disable=config.quiet) as logger, executor:
-        futures: list[Future[bool]] = []
-
-        if config.models is None:
-            for model in tg.GLOBAL_MODELS:
-                future = tg.GLOBAL_MODELS[model](config, logger, executor)
-                if future is not None:
-                    futures.append(future)
-        else:
-            for model in config.models:
-                if model in tg.GLOBAL_MODELS:
-                    future = tg.GLOBAL_MODELS[model](config, logger, executor)
-                    if future is not None:
-                        futures.append(future)
-
-        if len(futures) == 0:
-            if not config.silent:
-                display_name = "cover-float" if not config.models else ", ".join(config.models)
-                rprint(f"[bold green]✓ No work to be done for {display_name} [/]")
-            return True
-
-        success = True
-        if config.quiet and not config.silent:
-            with Progress(
-                TextColumn("{task.description}"),
-                BarColumn(),
-                MofNCompleteColumn(),
-                TimeElapsedColumn(),
-                transient=True,
-            ) as progress:
-                for future in progress.track(
-                    as_completed(futures), total=len(futures), description="[cyan]Generating Cover-Float Tests"
-                ):
-                    success &= future.result()
-            rprint(f"[bold green]✓ Generated {len(futures)} cover-float model(s)[/]")
-        else:
-            for future in as_completed(futures):
-                success &= future.result()
-
-        return success
 
 
 def parse_args() -> Config:
