@@ -22,18 +22,14 @@
 # result and the addend in a fused multiply-add (FMA) operation. The shift is
 # defined as S = unbiased_exp(A*B) - unbiased_exp(C).
 
-import logging
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as const
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B14"))
 
 OPS = [const.OP_FMADD, const.OP_FMSUB, const.OP_FNMADD, const.OP_FNMSUB]
 

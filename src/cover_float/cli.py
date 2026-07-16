@@ -17,13 +17,13 @@ import argparse
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 from rich import print as rprint
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 
 import cover_float.common.log as log
 import cover_float.testgen as tg
-from cover_float.common.util import SingleThreadedExecutor
 from cover_float.common.config import Config
+from cover_float.common.util import SingleThreadedExecutor
 
 
 def main() -> None:
@@ -32,7 +32,8 @@ def main() -> None:
 
     # Code 0 if successful
     exit(not success)
-    
+
+
 def testgen(config: Config) -> bool:
     single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
 
@@ -40,13 +41,8 @@ def testgen(config: Config) -> bool:
         executor = SingleThreadedExecutor()
     else:
         executor = ProcessPoolExecutor() if config.jobs is None else ProcessPoolExecutor(max_workers=config.jobs)
-    
-    tg.discover_and_import_models()
 
-    if args.quiet > 0:
-        logging.basicConfig(level=logging.ERROR)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    tg.discover_and_import_models()
 
     with log.StatusReporter(config, disable=config.quiet) as logger, executor:
         futures: list[Future[bool]] = []
@@ -65,7 +61,8 @@ def testgen(config: Config) -> bool:
 
         if len(futures) == 0:
             if not config.silent:
-                rprint(f"[bold green]✓ No work to be done for {'cover-float' if not config.models else ', '.join(config.models)} [/]")
+                display_name = "cover-float" if not config.models else ", ".join(config.models)
+                rprint(f"[bold green]✓ No work to be done for {display_name} [/]")
             return True
 
         success = True
@@ -87,6 +84,7 @@ def testgen(config: Config) -> bool:
                 success &= future.result()
 
         return success
+
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser()
@@ -126,5 +124,5 @@ def parse_args() -> Config:
         release=args.only_processed_vectors,
         jobs=jobs,
         models=args.models,
-        single_thread=single_thread
+        single_thread=single_thread,
     )

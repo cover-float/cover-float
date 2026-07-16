@@ -16,13 +16,11 @@
 # B8 (rwolk@hmc.edu)
 
 import itertools
-import logging
 import random
-from typing import Optional, TextIO, cast
+from typing import Optional, TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,
     extract_rounding_info,
@@ -33,8 +31,6 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_and_store_test_vector, run_test_vector, store_cover_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B8"))
 
 
 def mul_sigs_with_trailing(target: int, bit_length: int, fmt: str) -> tuple[int, int]:
@@ -159,8 +155,7 @@ def generate_div_tests(
         for sign, lsb, guard in sign_lsb_guard():
             maybe_result = divideSetRounding(lsb, guard, target, target_bits, fmt)
             if not maybe_result:
-                logger.exception(f"Div Failure for lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
-                continue
+                raise ValueError(f"Div Failure for lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
 
             s1, s2 = maybe_result
 
@@ -178,7 +173,7 @@ def generate_div_tests(
             if check_div_result(result, target, target_bits) and info["Guard"] == guard and info["LSB"] == lsb:
                 store_cover_vector(result, test_f, cover_f, config)
             else:
-                logger.exception(f"Div Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
+                raise ValueError(f"Div Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
 
 
 def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
@@ -213,7 +208,7 @@ def generate_mul_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, confi
                 run_and_store_test_vector(tv, test_f, cover_f, config)
                 break
             else:
-                logger.exception(
+                raise ValueError(
                     f"Mul Generation Failed: fmt={fmt}, lsb={lsb}, guard={guard}, extra_bits={target_sticky}"
                 )
 
@@ -293,7 +288,7 @@ def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
                 ):
                     store_cover_vector(result, test_f, cover_f, config)
                 else:
-                    logger.exception(
+                    raise ValueError(
                         f"Add/Sub Generation Failed, fmt={fmt}, op={op}, guard={guard}, lsb={lsb}, "
                         f"extra_bits:{target_sticky}"
                     )
@@ -382,7 +377,7 @@ def generate_fma_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, confi
                         store_cover_vector(result, test_f, cover_f, config)
                         break
                     else:
-                        logger.exception(
+                        raise ValueError(
                             f"FMA Generation Failed, fmt={fmt}, op={op}, guard={guard}, lsb={lsb},"
                             f" extra_bits:{sticky_target}"
                         )
@@ -452,7 +447,7 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
                 ) or (fmt == constants.FMT_QUAD and target_fmt == constants.FMT_BF16):
                     store_cover_vector(result, test_f, cover_f, config)
                 else:
-                    logger.exception(
+                    raise ValueError(
                         f"CFF/CFI Generation Failed, fmt={fmt}, target_fmt={target_fmt}, lsb={lsb}, guard={guard}, "
                         f"extra_bits={extra_bits:b}"
                     )
@@ -492,7 +487,7 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
                 ) or fmt == constants.FMT_BF16:
                     store_cover_vector(result, test_f, cover_f, config)
                 else:
-                    logger.exception(
+                    raise ValueError(
                         f"CIF Generation Failed, from_fmt={from_fmt}, fmt={fmt}, lsb={lsb}, guard={guard}, "
                         f"extra_bits={extra_bits:b}"
                     )

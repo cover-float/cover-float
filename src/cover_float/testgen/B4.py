@@ -20,14 +20,12 @@
 #   Total: 1640 / format * 5 formats = 8200 vectors.
 
 import itertools
-import logging
 import random
 from collections.abc import Generator
-from typing import TYPE_CHECKING, TextIO, cast
+from typing import TYPE_CHECKING, TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as const
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import factors_to_bit_width, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
@@ -37,8 +35,6 @@ if TYPE_CHECKING:
     def factorint(n: int) -> dict[int, int]: ...
 else:
     from sympy import factorint
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B4"))
 
 ZERO_PAD = "0" * 32
 

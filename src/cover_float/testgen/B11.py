@@ -23,20 +23,16 @@
 # the interesting shift ranges, so short and long shifts: [-3, 3], [nf, nf-3], and [-nf, -nf+3]
 
 import itertools
-import logging
 import random
 from pathlib import Path
-from typing import TextIO, cast
+from typing import TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.B9 import B9SignificandGenerator
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B11"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 B11_OPS = [constants.OP_ADD, constants.OP_SUB]
 
@@ -120,7 +116,7 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
         seed = reproducible_hash(fmt + "b11")
         random.seed(seed)
 
-        logger.status(f"Generating {fmt} Sigs & Shifts")
+        get_model_logger("B11").status(f"Generating {fmt} Sigs & Shifts")
         bins_path = Path(
             "coverage",
             "covergroups",

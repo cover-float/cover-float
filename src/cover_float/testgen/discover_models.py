@@ -13,8 +13,9 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-from pathlib import Path
 from importlib import import_module
+from pathlib import Path
+
 
 def discover_and_import_models() -> None:
     model_dir = Path(__file__).parent

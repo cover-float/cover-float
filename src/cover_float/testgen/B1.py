@@ -13,17 +13,13 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-import logging
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as const
-import cover_float.common.log as log
 from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector
 from cover_float.reference import run_and_store_test_vector
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 SRC1_OPS = [const.OP_SQRT, const.OP_CLASS, const.OP_RFI]
 
@@ -303,7 +299,7 @@ def write1SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, ch
     print("// 1 source operations, all basic type input combinations", file=test_f)
     # print("//", file=f)
     for op in SRC1_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
         for i in choices:
             val = BASIC_TYPES[fmt][i]
@@ -320,7 +316,7 @@ def writeCvtTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, cho
     print("// 1 source convert operations, all basic type input and result format combinations", file=test_f)
     # print("//", file=f)
     for op in CVT_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
         fmts = const.FLOAT_FMTS if op == const.OP_CFF else const.INT_FMTS
         for resultFmt in fmts:
@@ -341,7 +337,7 @@ def write2SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, ch
 
     print("// 2 source operations, all basic type input combinations", file=test_f)
     for op in SRC2_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         for i in choices:
             val1 = BASIC_TYPES[fmt][i]
             for j in choices:
@@ -357,7 +353,7 @@ def write3SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, ch
 
     print("// 3 source operations, all basic type input combinations", file=test_f)
     for op in SRC3_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         for i in choices:
             val1 = BASIC_TYPES[fmt][i]
             for j in choices:

@@ -5,13 +5,11 @@ Created: 4/28/2026
 Last Modified: 4/28/2026
 """
 
-import logging
 import random
 from dataclasses import dataclass
 from random import seed
-from typing import TextIO, cast
+from typing import TextIO
 
-import cover_float.common.log as log
 from cover_float.common.config import Config
 from cover_float.common.constants import (
     BIAS,
@@ -33,8 +31,6 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B16"))
 
 OPS = [OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB]
 SOLVER_OPS = {

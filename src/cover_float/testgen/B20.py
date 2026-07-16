@@ -15,19 +15,16 @@
 
 # B20 (rwolk@g.hmc.edu)
 
-import logging
 import math
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash, unpack_test_vector
 from cover_float.reference import run_and_store_test_vector, run_test_vector, store_cover_vector
 from cover_float.testgen.model import register_model
 
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
 
 def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # Generally, we want to look for two significands, sig1 and sig2 where
@@ -61,10 +58,9 @@ def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config
         # Extract Number of trailing zeros for verification
         generated_trailing_zeros = len(bin(res)) - len(bin(res).rstrip("0"))
         if generated_trailing_zeros != trailing_zeros:
-            logger.exception(
+            raise ValueError(
                 f"Failed to Generate A Div Result for format {fmt} with exactly {trailing_zeros} trailing_zeros"
             )
-            continue
 
         exp1, exp2 = random.randint(min_exp, max_exp), random.randint(min_exp, max_exp)
         while not min_exp < exp1 - exp2 < max_exp:
@@ -120,10 +116,9 @@ def generate_sqrt_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Confi
         mantissa |= 1 << nf
 
         if mantissa != answer:
-            logger.exception(
+            raise ValueError(
                 f"Failed to Generate a SQRT Value for format: {fmt} and number of trailing zeros: {trailing_zeros}"
             )
-            continue
 
         store_cover_vector(result, test_f, cover_f, config)
 

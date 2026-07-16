@@ -17,13 +17,11 @@
 
 from __future__ import annotations
 
-import logging
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,
     generate_float,
@@ -32,9 +30,7 @@ from cover_float.common.util import (
     unpack_test_vector,
 )
 from cover_float.reference import run_test_vector, store_cover_vector
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B17"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 
 def mul_sigs_with_trailing(
@@ -278,7 +274,7 @@ def generate(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         for op in [constants.OP_FMADD, constants.OP_FMSUB, constants.OP_FNMADD, constants.OP_FNMSUB]:
             random.seed(reproducible_hash(f"B17 {fmt} {op}"))
-            with logger.progress_bar(f"{fmt} Subnorm Exp for {op}", show_m_of_n=True) as pbar:
+            with get_model_logger("B17").progress_bar(f"{fmt} Subnorm Exp for {op}", show_m_of_n=True) as pbar:
                 for subnorm_exp in pbar.track(range(-constants.MANTISSA_BITS[fmt] + 1, 1)):
                     min_cancel = -(2 * constants.MANTISSA_BITS[fmt] + 1)
                     max_cancel = 1 if subnorm_exp != -constants.MANTISSA_BITS[fmt] + 1 else 0

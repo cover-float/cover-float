@@ -13,13 +13,11 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-import logging
 import random
-from typing import Optional, TextIO, cast
+from typing import Optional, TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as common
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import (
     extract_rounding_info,
     generate_float,
@@ -30,8 +28,6 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_test_vector, store_cover_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B3"))
 
 SRC1_OPS = [common.OP_SQRT]
 
@@ -211,7 +207,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
 
                 fields = unpack_test_vector(result)
                 if (sigA * sigB) != fields.fma_pre_addition:
-                    logger.exception(
+                    raise ValueError(
                         "FMA PreAddition is being Incorrectly Calculated, Please Investigate"
                         f" {in1:x} * {in2:x} + {in3:x}"
                     )
@@ -219,7 +215,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 rounding = extract_rounding_info(result)
 
                 if rounding["Sticky"] != 0:
-                    logger.exception(
+                    raise ValueError(
                         "FMA Sticky Bit Generation Failed! This should not happen, please investigate "
                         f"Inputs: signA={signA}, sigA={sigA:#x}, expA={expA}, signB={signB}, sigB={sigB:#x}, "
                         f"expB={expB}, fmt={fmt}, op={op}"
@@ -234,7 +230,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                         break
             else:
                 # This catches a for loop that does not break, i.e. we don't hit every goal
-                logger.exception(
+                raise ValueError(
                     f"FMA Generation Failed for fmt={fmt}, mode={mode}, with to_cover={to_cover} goals remaining"
                 )
 
@@ -301,7 +297,7 @@ def write_add_sub_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: st
                 if info == target:
                     store_cover_vector(result, test_f, cover_f, config)
                 else:
-                    logger.exception(
+                    raise ValueError(
                         f"AddSub test generation failed: op={op}, target={target}, last_digits={last_digits}, "
                         f"A={A}, B={B}"
                     )
@@ -365,7 +361,7 @@ def write_mul_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 if len(goals) == 0:
                     break
         else:
-            logger.exception(
+            raise ValueError(
                 f"Failed to generate mul cover_vectors for fmt={fmt}, mode={mode}. Remaining cases {goals}"
             )
 
@@ -427,9 +423,7 @@ def write_sqrt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) 
         info = extract_rounding_info(result)
 
         if info not in targets:
-            logger.exception(
-                f"sqrt generation sticky bit generation failed, please investigate: mantissa={mantissa:x}, exp={exp}"
-            )
+            msg = f"sqrt generation sticky bit generation failed, please investigate: mantissa={mantissa:x}, exp={exp}"
 
             float_2 = generate_float(0, exp, mantissa & mask, fmt)
             tv_mul = generate_test_vector(common.OP_MUL, float_2, float_2, 0, fmt, fmt)
@@ -437,8 +431,9 @@ def write_sqrt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) 
             gen_square = int(result_mul.split("_")[-6], 16)
 
             if float_ != gen_square:
-                logger.exception(f"sqrt float should have been: {gen_square:x}, was {float_:x}")
-                return
+                msg += f" sqrt float should have been: {gen_square:x}, was {float_:x}"
+
+            raise ValueError(msg)
         else:
             store_cover_vector(result, test_f, cover_f, config)
 
@@ -512,11 +507,10 @@ def write_div_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
             sig_quotient = (sig1_64) // sig2
 
             if sig_quotient * sig2 != sig1_64:
-                logger.exception(
+                raise ValueError(
                     f"Failed to generate exact division result, please investigate: target={target} K={K}, "
                     f"odd_factors={odd_factors}, sig1={sig1:x}, sig2={sig2:x}"
                 )
-                continue
 
             # We want an additional shift to get the lsb into guard
             # So, lsb --> mantissa + 1
@@ -549,7 +543,7 @@ def write_div_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
             """
 
             if info != target:
-                logger.exception(
+                raise ValueError(
                     f"Failed to generate exact division result, please investigate: target={target}, K={K}, "
                     f"odd_factors={odd_factors}, sig1={sig1:x}, sig2={sig2:x}"
                 )
@@ -642,7 +636,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 }
 
                 if expected_result != info:
-                    logger.exception(
+                    raise ValueError(
                         f"CFI Generation Unexpected Value, fmt={fmt}, target={target_fmt}, mode={mode},"
                         f"cvt_from={cvt_from:x}"
                     )
@@ -653,7 +647,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                     if len(goals) == 0:
                         break
             else:
-                logger.exception(
+                raise ValueError(
                     f"CFI Generation Failed: fmt={fmt}, target={target_fmt}, mode={mode}, remaining_goals={goals}"
                 )
 
@@ -693,7 +687,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                     if len(goals) == 0:
                         break
             else:
-                logger.exception(
+                raise ValueError(
                     f"CFF Generation Failed: fmt={fmt}, target_fmt={target_fmt}, mode={mode}, remaining_goals={goals}"
                 )
 
@@ -788,6 +782,6 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
                     if len(cover_goals) == 0:
                         break
                 else:
-                    logger.exception(
+                    raise ValueError(
                         f"Sticky=1 Random Generation Miss: op={op}, fmt={fmt}, goals_remaining={cover_goals}"
                     )

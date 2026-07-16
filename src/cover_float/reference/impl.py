@@ -17,8 +17,8 @@ from typing import TextIO
 
 import cover_float._reference
 import cover_float._unmodified_reference
-from cover_float.common.constants import TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS
 from cover_float.common.config import Config
+from cover_float.common.constants import TEST_VECTOR_WIDTH_HEX_WITH_SEPARATORS
 
 
 def run_and_store_test_vector(test_vector: str, test_file: TextIO, cover_file: TextIO, config: Config) -> None:

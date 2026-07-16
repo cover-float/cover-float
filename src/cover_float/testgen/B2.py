@@ -20,12 +20,11 @@ Created:         April 8, 2026
 Last Edited:     April 10, 2026
 """
 
-import logging
 import random
 from random import seed
-from typing import Callable, TextIO, cast
+from typing import Callable, TextIO
 
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     BIAS,
     BIASED_EXP,
@@ -42,7 +41,6 @@ from cover_float.common.constants import (
     OP_SQRT,
     OP_SUB,
 )
-from cover_float.common.config import Config
 from cover_float.common.util import (
     decimal_components_to_hex,
     generate_test_vector,
@@ -51,8 +49,6 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B2"))
 
 ZERO = "0" * 32
 

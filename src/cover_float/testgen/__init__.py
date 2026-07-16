@@ -17,6 +17,6 @@ from cover_float.testgen.discover_models import discover_and_import_models
 from cover_float.testgen.model import GLOBAL_MODELS
 
 __all__ = [
-    "discover_and_import_models",
     "GLOBAL_MODELS",
+    "discover_and_import_models",
 ]

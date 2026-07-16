@@ -22,14 +22,15 @@ import logging
 import logging.handlers
 import os
 import re
+from collections.abc import Generator
 from pathlib import Path
 from queue import Queue
-from typing import Any, Callable, TextIO, Generator
+from typing import Any, Callable, TextIO
 
 from rich.progress import TaskID
 
-from cover_float.common.config import Config
 import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.scripts.postprocess import postprocess_testvectors
 
 GLOBAL_MODELS: dict[
@@ -38,6 +39,8 @@ GLOBAL_MODELS: dict[
 GLOBAL_MODEL_FUNCTIONS: dict[str, Callable[[Config, TextIO, TextIO], None]] = {}
 
 PARTIAL_OUTPUT_MESSAGE = "# Generated With --partial-output\n"
+
+_MODEL_LOGGERS: dict[str, log.ModelAdapter] = {}
 
 
 class MPLoggingHandler(logging.Handler):
@@ -58,6 +61,10 @@ class MPLoggingHandler(logging.Handler):
         )
 
 
+def get_model_logger(model: str) -> log.ModelAdapter:
+    return _MODEL_LOGGERS[model]
+
+
 def _run_model_by_name(
     model_name: str,
     config: Config,
@@ -70,23 +77,16 @@ def _run_model_by_name(
     tv_stamp_path = config.output_dir / ".stamp" / f"{model_name}_tv.stamp"
     cv_stamp_path = config.output_dir / ".stamp" / f"{model_name}_cv.stamp"
 
-    model_logger = logging.getLogger(model_name)
-
-    if isinstance(model_logger, log.ModelLogger):
-        model_logger.task_id = task_id
-        model_logger.msg_queue = logging_queue
+    model_logger = logging.getLogger(__name__ + " " + model_name)
+    model_logger_adapter = log.ModelAdapter(model_logger, task_id, logging_queue)
+    _MODEL_LOGGERS[model_name] = model_logger_adapter
 
     model_logger.handlers = []
     model_logger.propagate = False
-
-    # Handle Status Updates
-    handler = MPLoggingHandler(logging_queue, task_id)
-    handler.addFilter(log.OnlyStatusFilter())
-    model_logger.addHandler(handler)
+    model_logger.setLevel(log.log_level_from_config(config))
 
     # Handle Other Updates
     general_handler = logging.handlers.QueueHandler(logging_queue)
-    general_handler.addFilter(log.ExcludeStatusFilter())
     model_logger.addHandler(general_handler)
 
     try:
@@ -100,16 +100,17 @@ def _run_model_by_name(
             test_vectors_dir = config.output_dir / "testvectors"
             readable_vectors_dir = config.output_dir / "readable"
             processed_vectors_dir = config.output_dir / "processed"
-            postprocess_testvectors(model_name, model_logger_adapter, test_vectors_dir, processed_vectors_dir, readable_vectors_dir, config)
+            postprocess_testvectors(
+                model_name, model_logger_adapter, test_vectors_dir, processed_vectors_dir, readable_vectors_dir, config
+            )
 
         tv_stamp_path.parent.mkdir(parents=True, exist_ok=True)
         tv_stamp_path.touch()
         if not config.release:
             cv_stamp_path.parent.mkdir(parents=True, exist_ok=True)
             cv_stamp_path.touch()
-    except Exception as e:
-        logger = logging.getLogger(model_name)
-        logger.exception(f"[bold red]Fatal Error in {model_name}[/] ", exc_info=e, extra={"markup": True})
+    except Exception:
+        model_logger.exception(f"[bold red]Fatal Error in {model_name}[/] ", extra={"markup": True})
         return False
     return True
 

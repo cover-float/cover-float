@@ -19,12 +19,11 @@
 from __future__ import annotations
 
 import csv
-import logging
 import os
 import pathlib
 import time
 from dataclasses import dataclass
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.log as log
 from cover_float.common import constants
@@ -106,13 +105,12 @@ NO_ROUNDING_MODE_OPS = ["fclass", "feq", "fle", "flt", "fmax", "fmin", "fsgnj", 
 
 def postprocess_testvectors(
     model: str,
+    logger: log.ModelAdapter,
     test_vector_location: pathlib.Path,
     processed_vectors_dir: pathlib.Path,
     readable_vectors_dir: pathlib.Path,
     config: Config,
 ) -> None:
-    logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger(model))
-
     test_vector_file = test_vector_location / f"{model}_tv.txt"
     readable_vectors_file = (
         readable_vectors_dir / f"{model}_parsed.txt" if not config.release else pathlib.Path(os.devnull)

@@ -28,10 +28,9 @@ Currently supports
 - Flags: 'x' if a flag is raised and '' if none
 """
 
-import logging
 import time
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 import cover_float.common.log as log
 from cover_float.reference import run_test_vector_unmodified, verify_test_vector
@@ -291,9 +290,7 @@ def format_output(parsed: dict[str, Any]) -> str:
     return f"{base} -> {parsed['result']} ({parsed['res_fmt_name']}){flags}"
 
 
-def auto_parse(model_name: str, output_dir: str) -> None:
-    logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger(model_name))
-
+def auto_parse(model_name: str, output_dir: str, logger: log.ModelAdapter) -> None:
     input_path = Path(output_dir) / "testvectors" / f"{model_name}_tv.txt"
     output_path = Path(output_dir) / "readable" / f"{model_name}_parsed.txt"
 

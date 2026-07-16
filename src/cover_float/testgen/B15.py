@@ -18,16 +18,14 @@
 from __future__ import annotations
 
 import itertools
-import logging
 import pickle
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, BinaryIO, TextIO, cast
+from typing import TYPE_CHECKING, BinaryIO, TextIO
 
-from cover_float.common.config import Config
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,
     factors_to_bit_width,
@@ -37,9 +35,7 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.B9 import B9SignificandGenerator
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B15"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 if TYPE_CHECKING:
     # This block is seen by Pyright but ignored at runtime
@@ -405,7 +401,9 @@ class B15SignificandGenerator:
 
         hits = 0
         for attempt in range(10000):
-            logger.status(f"Generating {self.fmt} Sparse Zeros: Generated: {hits}/10, Attempts: {attempt}")
+            get_model_logger("B15").status(
+                f"Generating {self.fmt} Sparse Zeros: Generated: {hits}/10, Attempts: {attempt}"
+            )
             target = (1 << (2 * self.nf + 2)) - 1
             for _ in range(min(8, self.nf // 2)):
                 p2 = random.randint(1, 2 * self.nf)
@@ -467,11 +465,10 @@ class B15SignificandGenerator:
 
             sig1_pattern = "10" * (teeth_length) + "1" * internal_ones_count + "01" * teeth_length
             if len(sig1_pattern) > self.nf + 1:
-                logger.exception(
+                raise ValueError(
                     f"Invalid Arrangement for Long Run of Ones, offset={offset}, run_length={run_length} "
                     f"Generated Sig1: {sig1_pattern}, length={len(sig1_pattern)}"
                 )
-                continue
 
             sig1_pattern += "0" * (self.nf + 1 - len(sig1_pattern))
             sig1 = int(sig1_pattern, 2)
@@ -535,7 +532,7 @@ class B15SignificandGenerator:
                         self.sigs.append(B15Significand(sig1, sig2, target))
                         break
                 else:
-                    logger.exception("Long Run Zeros Failed (factoring)")
+                    raise ValueError("Long Run Zeros Failed (factoring)")
             elif run_length + offset - self.nf < 20:
                 # We can generally get away with the stochastic search here (limitation still exists for nf=112)
                 best = 2 * self.nf, 0, 0
@@ -573,7 +570,7 @@ class B15SignificandGenerator:
                         best = score, sig1, sig2
 
                 if best[0] != 0:
-                    logger.exception(f"Long Run Zeros Failed for {self.fmt}")
+                    raise ValueError(f"Long Run Zeros Failed for {self.fmt}")
 
                 sig1 = bin(best[1])[3:]
                 sig2 = bin(best[2])[3:]
@@ -581,6 +578,7 @@ class B15SignificandGenerator:
                 self.sigs.append(B15Significand(sig1, sig2, res))
 
     def generate(self, file: TextIO, *, cache_file_path: Path | None = None) -> list[tuple[str, str]]:
+        logger = get_model_logger("B15")
         if cache_file_path and cache_file_path.exists():
             logger.info(f"Retrieving Cached Significands from {cache_file_path}")
             with cache_file_path.open("rb") as cache:
@@ -750,6 +748,7 @@ def interesting_shift_ranges(low_shifts: int, shifts_from_edge: int, fmt: str) -
 
 @register_model("B15")
 def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    logger = get_model_logger("B15")
     for fmt in constants.FLOAT_FMTS:
         hashval = reproducible_hash(fmt + "b15")
         random.seed(hashval)
