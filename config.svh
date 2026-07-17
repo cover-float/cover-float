@@ -22,8 +22,8 @@
 `define COVER_B4
 `define COVER_B5
 `define COVER_B6
-// `define COVER_B7
-// `define COVER_B8
+`define COVER_B7
+`define COVER_B8
 `define COVER_B9
 `define COVER_B10
 `define COVER_B11

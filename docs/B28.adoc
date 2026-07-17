@@ -1,0 +1,183 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+== B28: RFI: Special Values
+
+Aharoni et al.
+
+=== Description
+
+This model tests the conversion of a floating point number to an integral value,
+represented in floating-point format. A test case will be created for each of the
+following inputs:
+
+. stem:[+0]
+. A random number in the range stem:[(+0, +1)]
+. stem:[+1]
+. Every value in the range stem:[(1.00, 10.11\]] (binary), i.e. stem:[\{1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75\}]
+. A random number in the range stem:[(+1, +1.11\ldots11 \times 2^p)]
+. stem:[+1.11\ldots11 \times 2^p] (the "MaxIntFP" boundary)
+. stem:[+\infty]
+. QNaN
+. SNaN
+. stem:[-0]
+. A random number in the range stem:[(-1, -0)]
+. stem:[-1]
+. Every value in the range stem:[[-10.11, -1.00)] (binary), i.e. stem:[\{-2.75, -2.5, -2.25, -2.0, -1.75, -1.5, -1.25\}]
+. A random number in the range stem:[(-1.11\ldots11 \times 2^p, -1)]
+. stem:[-1.11\ldots11 \times 2^p]
+. stem:[-\infty]
+
+*Number of tests:* 140 (28 per format x 5 formats)
+
+*Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Operations Supported:* `RFI`
+
+*Rounding Mode:* Round Nearest to Even (RNE) only
+
+=== Operation dynamics
+
+RFI is a rounding operation whose rounding position is *exponent-addressed* rather than fixed at the end of the significand. For a normal value latexmath:[\pm 1.f \times 2^{e}] with `M` stored fraction bits, the binary point sits `e` positions to the right of the hidden bit: fraction bits `[M−1 : M−e]` are integral, and bits `[M−e−1 : 0]` are fractional. The unbiased exponent alone determines the split — no other field participates.
+
+== Definitions
+
+`p`:: Precision: number of significant bits including the hidden leading 1. stem:[p = N_f + 1].
+`N_f`:: Number of fraction bits in the format (10 for F16, 7 for BF16, 23 for F32, 52 for F64, 112 for F128).
+`bias`:: Exponent bias of the format (15, 127, 127, 1023, 16383 for F16, BF16, F32, F64, F128).
+`E`:: Unbiased exponent of a normal float, stem:[E = E_{biased} - bias].
+`MaxIntFP`:: The value stem:[(2 - 2^{-N_f}) \cdot 2^p = 2^{p+1} - 2]. This is the largest floating-point value whose magnitude is strictly below stem:[2^{p+1}] and whose mantissa is fully populated. In bits: sign-bit, biased exponent stem:[bias + p], fraction all-ones.
+`QNaN`:: Quiet NaN. Encoding: biased exponent all-ones, fraction MSB = 1, remaining fraction bits = 0.
+`SNaN`:: Signaling NaN. Encoding: biased exponent all-ones, fraction MSB = 0, fraction LSB = 1.
+
+=== Worked example: F32 MaxIntFP
+
+For F32, stem:[N_f = 23], stem:[p = 24], stem:[bias = 127].
+
+* Biased exponent of MaxIntFP: stem:[127 + 24 = 151] (`0x97`)
+* Fraction: 23 ones (`0x7FFFFF`)
+* Bit pattern: `0x4FFFFFFE` (positive), `0xCFFFFFFE` (negative)
+* Decimal value: stem:[2^{25} - 2 = 33{,}554{,}430]
+
+This is the largest F32 value whose mantissa uses every bit of precision while remaining at or below stem:[2^{p+1}]. Above this magnitude the spacing between consecutive floats becomes stem:[\ge 4], so MaxIntFP marks the upper edge of the "fully integral, fully precise" region for F32.
+
+== Design Choices & Impossible Cases
+
+. *Rounding Mode: RNE only.* Per the Aharoni convention, models that do not list a rounding mode default to round-to-nearest-even. B29 ("RFI: Rounding") is the dedicated model for sweeping all five rounding modes, so B28 keeps the rounding axis fixed and varies the input value. This avoids cross-coverage redundancy with B29 and keeps the vector count tight.
+
+. *NaN split into QNaN and SNaN.* Aharoni lists "NaN" as a single category, but RFI hardware handles QNaN and SNaN through *distinct paths*: SNaN raises the Invalid (NV) flag, QNaN does not (IEEE 754-2019 §5.3.1). Testing both is necessary to verify the SNaN-detection logic and the flag-generation path. Both produce a quiet-NaN result.
+
+. *One random draw per range.* Aharoni's spec uses singular phrasing ("_a_ random number in the range"). One seeded draw per range is sufficient to hit the region; exhaustive sweep of these ranges is the responsibility of B29 (which sweeps rounding boundaries) and B1 (which covers basic types). The seed for the model is fixed at `0xB28_C0DE` for byte-stable output.
+
+. *No subnormal vs. normal distinction in the (+0, +1) range.* The random draw in this range may land on either a subnormal or a normal value. Both should round to stem:[\pm 0] under RNE (since stem:[|x| < 0.5] rounds toward 0, and stem:[0.5 \le |x| < 1] rounds to stem:[\pm 0] under tie-to-even). A B1 cross already exercises Zero/MinSubNorm/MaxSubNorm/MinNorm pass-throughs, so B28 does not subdivide.
+
+. *Quarter-step values are exact.* The seven values stem:[\{1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75\}] are all exactly representable in every supported format (they fit within 4 mantissa bits). Each is constructed by direct bit assignment, not by float arithmetic, to guarantee byte-exact output across formats.
+
+. *No sign mirror for NaN.* QNaN and SNaN are listed once each. The sign bit of a NaN is not architecturally meaningful for RFI in IEEE 754-2019 (the canonical-NaN result is implementation-defined), and Aharoni's spec lists NaN once, not twice. Sign-bit propagation through NaN is the responsibility of B27.
+
+. *Impossible cases.* None. All 28 logical inputs per format have valid bit-pattern realizations.
+
+== Test Procedure
+
+=== Construction recipe per category
+
+For each format `fmt` with parameters stem:[(N_f, p, bias)]:
+
+[cols="1,2,3", options="header"]
+|===
+| Cat. | Input | Construction
+
+| 1, 10
+| stem:[\pm 0]
+| sign, biased_exp = 0, fraction = 0
+
+| 2, 11
+| Random in stem:[(\pm 0, \pm 1)]
+| sign, biased_exp uniform in stem:[[0, bias-1\]], fraction uniform in stem:[[1, 2^{N_f}-1\]] (avoid the exact stem:[\pm 0] and stem:[\pm 1] endpoints)
+
+| 3, 12
+| stem:[\pm 1]
+| sign, biased_exp = bias, fraction = 0
+
+| 4, 13
+| Quarter-steps stem:[\pm \{1.25, \ldots, 2.75\}]
+| 7 exact bit patterns each. Constructed as: sign, biased_exp ∈ {bias, bias+1}, fraction = the appropriate top-2 mantissa bits zero-extended.
+
+| 5, 14
+| Random in stem:[(\pm 1, \pm \text{MaxIntFP})]
+| sign, biased_exp uniform in stem:[[bias+1, bias+p-1\]], fraction uniform random. This stays strictly inside the open interval.
+
+| 6, 15
+| stem:[\pm \text{MaxIntFP}]
+| sign, biased_exp = bias + p, fraction = all-ones.
+
+| 7, 16
+| stem:[\pm\infty]
+| sign, biased_exp = all-ones, fraction = 0.
+
+| 8
+| QNaN
+| sign = 0, biased_exp = all-ones, fraction MSB = 1, rest = 0.
+
+| 9
+| SNaN
+| sign = 0, biased_exp = all-ones, fraction MSB = 0, fraction LSB = 1.
+|===
+
+=== Quarter-step bit patterns
+
+The seven values stem:[\{1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75\}] map to the following (sign, biased_exp, fraction-top-bits) tuples in any IEEE 754 binary format. The fraction below shows only the top two bits; remaining stem:[N_f - 2] bits are zero.
+
+[cols="1,1,1,2", options="header"]
+|===
+| Decimal | Binary | biased_exp | fraction (top 2 bits)
+
+| stem:[1.25] | stem:[1.01_2]  | bias     | `01`
+| stem:[1.5]  | stem:[1.1_2]   | bias     | `10`
+| stem:[1.75] | stem:[1.11_2]  | bias     | `11`
+| stem:[2.0]  | stem:[1.0_2 \times 2^1]  | bias + 1 | `00`
+| stem:[2.25] | stem:[1.001_2 \times 2^1] | bias + 1 | `00` (with bit 2 set, depends on stem:[N_f \ge 3])
+| stem:[2.5]  | stem:[1.01_2 \times 2^1]  | bias + 1 | `01`
+| stem:[2.75] | stem:[1.011_2 \times 2^1] | bias + 1 | `01` (with bit 2 set)
+|===
+
+For stem:[\pm 2.25] and stem:[\pm 2.75], the third mantissa bit is also set; the recipe is: write stem:[1.bbb_2 \times 2^E], left-justify the fractional bits stem:[bbb] into the stem:[N_f]-bit mantissa field, and set biased_exp = bias + stem:[E]. All seven values fit within stem:[N_f \ge 3] mantissa bits, satisfied by every supported format (BF16 has stem:[N_f = 7]).
+
+=== Random number generation
+
+A single seed is used for the entire generator. Each "random in range" category consumes exactly one biased_exp draw and one fraction draw, in the order listed in the table above. This ensures byte-for-byte deterministic output across runs and across machines.
+
+
+== Test Count Breakdown
+
+[cols="2,1", options="header"]
+|===
+| Category | Vectors per format
+
+| stem:[\pm 0] (2 cases)                                       | 2
+| Random in stem:[(\pm 0, \pm 1)] (2 cases)                    | 2
+| stem:[\pm 1] (2 cases)                                       | 2
+| Quarter-steps positive (7) + negative (7)                    | 14
+| Random in stem:[(\pm 1, \pm\text{MaxIntFP})] (2 cases)       | 2
+| stem:[\pm\text{MaxIntFP}] (2 cases)                          | 2
+| stem:[\pm\infty] (2 cases)                                   | 2
+| QNaN + SNaN                                                  | 2
+| *Total per format*                                           | *28*
+|===
+
+[cols="1,1", options="header"]
+|===
+| Format | Vectors
+
+| BF16   | 28
+| F16    | 28
+| F32    | 28
+| F64    | 28
+| F128   | 28
+| *Total* | *140*
+|===
+
+This is consistent with Aharoni's stated estimate of stem:[1 \times 10^2] for B28.
