@@ -20,9 +20,42 @@ class coverfloat_coverage;
 
     virtual coverfloat_interface CFI;
 
+    enum {
+        B1_ACTIVE,
+        B2_ACTIVE,
+        B3_ACTIVE,
+        B4_ACTIVE,
+        B5_ACTIVE,
+        B6_ACTIVE,
+        B7_ACTIVE,
+        B8_ACTIVE,
+        B9_ACTIVE,
+        B10_ACTIVE,
+        B11_ACTIVE,
+        B12_ACTIVE,
+        B13_ACTIVE,
+        B14_ACTIVE,
+        B15_ACTIVE,
+        B16_ACTIVE,
+        B17_ACTIVE,
+        B18_ACTIVE,
+        B19_ACTIVE,
+        B20_ACTIVE,
+        B21_ACTIVE,
+        B22_ACTIVE,
+        B23_ACTIVE,
+        B24_ACTIVE,
+        B25_ACTIVE,
+        B26_ACTIVE,
+        B27_ACTIVE,
+        B28_ACTIVE,
+        B29_ACTIVE
+    } active_cg;
+
     // constructor (initializes covergroups)
     function new (virtual coverfloat_interface CFI);
         this.CFI = CFI;
+        this.active_cg = B1_ACTIVE;
 
         `INIT_CGS
 
