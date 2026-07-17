@@ -1,0 +1,163 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+== B23: CvtFP2Int: Overflow
+
+Aharoni et al.
+
+=== Description
+
+This model creates boundary cases for the float-to-integer rounding that might cause *overflow* — the rounded integer result not fitting in the destination's bit width. A test case is created with inputs equal to the maximum representable integer of the destination format (MaxInt), or close to it:
+
+[arabic, start=1]
+. stem:[\pm\mathit{MaxInt}]
+. stem:[\pm\mathit{MaxInt} \pm \tfrac{1}{4}]
+. stem:[\pm\mathit{MaxInt} \pm \tfrac{1}{2}]
+. stem:[\pm\mathit{MaxInt} \pm \tfrac{3}{4}]
+. stem:[\pm\mathit{MaxInt} \pm 1]
+
+*Source Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Destination Integer Formats:* `INT` (s32), `UINT` (u32), `LONG` (s64), `ULONG` (u64)
+
+*Operations Supported:* `CFI`
+
+*Rounding Mode:* All five (RNE, RTZ, RDN, RUP, RMM)
+
+*Number of tests:* 820 (see <<test-count-breakdown>>)
+
+== Background
+
+`CvtFP2Int` is an align → round → fit pipeline. Overflow is a property of the final *fit* stage: after the source value is aligned and rounded to an integer, the result is rejected if it falls outside the destination's representable range. The boundary depends on signedness:
+
+[cols="2,2,2", options="header"]
+|===
+| Destination | stem:[\mathit{MaxInt}] | stem:[\mathit{MinInt}]
+
+| `INT`  (s32)  | stem:[2^{31} - 1] | stem:[-2^{31}]
+| `UINT` (u32)  | stem:[2^{32} - 1] | stem:[0]
+| `LONG` (s64)  | stem:[2^{63} - 1] | stem:[-2^{63}]
+| `ULONG` (u64) | stem:[2^{64} - 1] | stem:[0]
+|===
+
+The five offset patterns target three distinct rounding-overflow behaviors at the *positive* MaxInt boundary:
+
+* *stem:[\pm\mathit{MaxInt}] exactly* — the boundary itself, no rounding required. Converts to itself when representable.
+* *Fractional perturbations stem:[\pm\tfrac{1}{4},\tfrac{1}{2},\tfrac{3}{4}]* — the rounded result depends on the rounding mode. This is the core of the model: e.g. stem:[\mathit{MaxInt} + \tfrac{1}{2}] rounds *up* to stem:[\mathit{MaxInt}+1] (overflow) under RUP and RNE-away, but *down* to stem:[\mathit{MaxInt}] (in range) under RTZ/RDN. Whether overflow occurs is rounding-mode-dependent precisely in this band.
+* *Integer perturbation stem:[\pm 1]* — the rounded result is unambiguously one integer step outside the range, independent of rounding mode.
+
+== Definitions
+
+`MaxInt`:: Largest integer representable by the destination. See table above.
+`MinInt`:: Most-negative integer (or 0 for unsigned) representable by the destination.
+`E_MaxInt`:: Unbiased exponent of MaxInt: stem:[E = \lfloor\log_2 \mathit{MaxInt}\rfloor]. Equals (destination bit width − 1) for signed, (bit width) − 1 for unsigned as well — concretely 30 (INT), 31 (UINT), 62 (LONG), 63 (ULONG).
+`MaxIntFP(src, dest)`:: The MaxInt of the destination, expressed in the source format. Equals MaxInt exactly only when the source has enough precision; otherwise it is the nearest representable source value.
+`ulp at MaxInt`:: For a source with stem:[N_f] fraction bits, the spacing of representable values at the MaxInt scale is stem:[2^{E - N_f}].
+
+== Design Choices and Impossible Cases
+
+=== Fine vs. coarse sources
+
+The quarter-integer offsets are representable only when the source ulp at the MaxInt scale is stem:[\le \tfrac{1}{4}], i.e. when
+
+[stem]
+++++
+N_f - E_{\mathit{MaxInt}} \ge 2 .
+++++
+
+When this holds the source is *fine* and the full nine-magnitude offset set is emitted. When it fails the source is *coarse*: the quarter offsets collapse onto the ulp grid, and only the two distinct representable values bracketing the boundary are emitted.
+
+.Fine/coarse determination per (source, destination)
+[cols="1,1,1,1,1", options="header"]
+|===
+| Source | INT (E=30) | UINT (E=31) | LONG (E=62) | ULONG (E=63)
+
+| `FP_16`  (Nf=10)  | special | special | special | special
+| `BF_16`  (Nf=7)   | coarse  | coarse  | coarse  | coarse
+| `FP_32`  (Nf=23)  | coarse  | coarse  | coarse  | coarse
+| `FP_64`  (Nf=52)  | *fine*  | *fine*  | coarse  | coarse
+| `FP_128` (Nf=112) | *fine*  | *fine*  | *fine*  | *fine*
+|===
+
+[NOTE]
+====
+`FP_64` is *coarse* for the 64-bit destinations: at stem:[E=62], its ulp is stem:[2^{62-52} = 2^{10} = 1024 \gg \tfrac14]. Only `FP_128` is fine for LONG/ULONG. This is easy to miss because `FP_64` is fine for the 32-bit destinations.
+====
+
+=== F16 cannot reach the MaxInt boundary
+
+`FP_16`'s largest finite value is stem:[(2 - 2^{-10})\cdot 2^{15} = 65{,}504], far below the MaxInt of *every* RISC-V integer destination (the smallest, INT, is stem:[\approx 2.1\times10^9]). Consequences:
+
+* stem:[\pm\mathit{MaxNorm}_{F16}] (65,504) converts *in range* to all four destinations. It does **not** overflow and raises **no NV** — it is included only as an in-range contrast input.
+* The only F16 input that overflows is stem:[\pm\infty], which saturates and raises NV.
+
+So F16 contributes no true MaxInt-boundary case; its overflow behavior is reachable only through the infinity special value.
+
+=== Negative signed overflow is out of spec scope
+
+For signed destinations, stem:[-\mathit{MaxInt} = \mathit{MinInt}+1] (in range) and stem:[-(\mathit{MaxInt}+1) = \mathit{MinInt}] exactly (in range). The most-negative input the stem:[\pm\mathit{MaxInt}\pm\text{offset}] set can produce is therefore stem:[\mathit{MinInt}] itself, which converts cleanly. *True negative overflow* for a signed destination requires an input stem:[< \mathit{MinInt}] (i.e. stem:[-(\mathit{MaxInt}+2)] or beyond), which the Aharoni offset set does not reach.
+
+[NOTE]
+====
+*Open item for review.* As written, B23 fully exercises the positive overflow boundary and the negative→unsigned→0 deviation, but does **not** exercise the negative-signed overflow / stem:[\mathit{MinInt}] saturation tipping point. Closing this would require a MinInt-neighborhood input set symmetric to the MaxInt one. Flagged for the team — analogous to the B24 stem:[\pm1+\tfrac14] notation question.
+====
+
+=== Rounding mode
+
+* *All five rounding modes* are emitted for every input. The fractional offsets are meaningful only across rounding modes (that is where overflow becomes RM-dependent). Integer-valued inputs (stem:[\mathit{MaxInt}\pm1], stem:[\pm\infty]) are rounding-mode-invariant but are still emitted under all five for uniformity.
+
+=== Impossible / structurally unreachable cases
+
+. *F16 MaxInt-boundary cases* — unreachable for all four destinations (see above). Only stem:[\pm\infty] overflows.
+. *Quarter-offset cases on coarse pairs* — for F32(all), BF16(all), F64→LONG, F64→ULONG, the stem:[\pm\tfrac14,\tfrac12,\tfrac34] offsets are not representable and collapse onto the ulp grid. They are not generated.
+
+== Test Procedure
+
+For each `(src, dest)`:
+
+. Compute stem:[E = E_{\mathit{MaxInt}}(\text{dest})].
+. Select the magnitude set:
++
+* *F16:* stem:[\{\pm\infty,\ \pm\mathit{MaxNorm}_{F16}\}].
+* *Fine* (stem:[N_f - E \ge 2]): stem:[\{\mathit{MaxInt},\ \mathit{MaxInt}\pm\tfrac14,\ \pm\tfrac12,\ \pm\tfrac34,\ \pm1\}] — nine magnitudes, constructed by bit arithmetic on the MaxIntFP mantissa.
+* *Coarse:* stem:[\{\mathit{MaxInt}+1=2^{E+1},\ \text{largest representable} < 2^{E+1}\}] — two magnitudes bracketing the boundary.
+. For each magnitude, each of the two signs, and each of the five rounding modes, emit one vector with operation `CFI`, operand `a` = the constructed float, operands `b`,`c` = 0.
+
+The expected integer result and flags are computed by the SoftFloat reference with RISC-V saturation deviations applied in postprocessing.
+
+
+[#test-count-breakdown]
+== Test Count Breakdown
+
+Magnitudes per (src, dest), then stem:[\times\ 2] signs stem:[\times\ 5] rounding modes:
+
+[cols="2,1,1,1", options="header"]
+|===
+| (src, dest) | Magnitudes | Signed values | Vectors
+
+| F16, each of 4 dests        | 2 | 4  | 20  (×4 = 80)
+| BF16, each of 4 (coarse)    | 2 | 4  | 20  (×4 = 80)
+| F32, each of 4 (coarse)     | 2 | 4  | 20  (×4 = 80)
+| F64 → INT (fine)            | 9 | 18 | 90
+| F64 → UINT (fine)           | 9 | 18 | 90
+| F64 → LONG (coarse)         | 2 | 4  | 20
+| F64 → ULONG (coarse)        | 2 | 4  | 20
+| F128, each of 4 (fine)      | 9 | 18 | 90  (×4 = 360)
+|===
+
+.Totals
+[cols="3,1", options="header"]
+|===
+| Group | Vectors
+| F16   | 80
+| BF16  | 80
+| F32   | 80
+| F64   | 220
+| F128  | 360
+| *Grand total* | *820*
+|===
+
+This is well above Aharoni's stem:[5\times10^1] estimate, reflecting per-(src,dest) ulp-aware construction across both signs and all five rounding modes. The thoroughness lives in the golden-model result/flag check; coverage closure (see B23 covergroup) requires only that each proximity bucket be visited.

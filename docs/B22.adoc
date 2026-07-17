@@ -1,0 +1,84 @@
+= Floating Point Model Documentation
+:toc:
+:toclevels: 3
+:sectnums:
+:stem: latexmath
+
+== B22: CvtFP2Int: Special Input Exponents
+
+Aharoni et al.
+
+=== Description
+
+This model creates test cases for each of the following unbiased exponents stem:[E] of the floating-point input to a `CvtFP2Int` conversion:
+
+. Smaller than stem:[-3]
+. All values in the range stem:[[-3,\ \mathit{int\_width} + 3\]]
+. Larger than stem:[\mathit{int\_width} + 3]
+
+For each exponent, two cases (positive and negative) will be randomly chosen. The mantissa is randomized.
+
+*Number of tests:* see <<test-count-breakdown>>
+
+*Source Precisions Supported:* `BF_16`, `FP_16`, `FP_32`, `FP_64`, `FP_128`
+
+*Destination Integer Formats:* `INT` (signed 32-bit), `UINT` (unsigned 32-bit), `LONG` (signed 64-bit), `ULONG` (unsigned 64-bit)
+
+*Operations Supported:* `CFI`
+
+*Rounding Mode:* Round Nearest to Even (RNE) only
+
+== Definitions
+
+`E`:: Unbiased exponent of the input float, stem:[E = E_{biased} - bias].
+`int_width`:: Bit width of the destination integer format. For `INT` and `UINT`, stem:[\mathit{int\_width} = 32]; for `LONG` and `ULONG`, stem:[\mathit{int\_width} = 64].
+`E_max(fmt)`:: Largest unbiased exponent the source format can express in a normal value. stem:[15] for F16, stem:[127] for BF16/F32, stem:[1023] for F64, stem:[16383] for F128.
+`E_min(fmt)`:: Smallest unbiased exponent of a normal value. stem:[1 - bias]. Subnormals share this exponent.
+`Low`, `Mid`, `High`:: The three exponent regions defined above: stem:[E < -3], stem:[E \in [-3,\ \mathit{int\_width}+3\]], stem:[E > \mathit{int\_width} + 3].
+
+== Design Choices & Impossible Cases
+
+. *RNE only.* The rounding mode is fixed to RNE. The B22 model targets *exponent / shift coverage*, not rounding-mode coverage. B23 (overflow) and B24 (underflow) sweep all rounding modes at the boundary cells; B22 keeps the RM axis fixed so that vector counts scale with exponent cells alone, not stem:[5\times].
+
+. *Random mantissas.* Aharoni specifies "two cases (positive and negative) are randomly chosen" per exponent. The mantissa is drawn from a seeded random number generator, the sign bit is iterated as a (positive then negative).
+
+. *Impossible cases.*
++
+* F16 source with High region exponent: structurally unreachable (see point 4).
+* For `UINT`/`ULONG` destinations with negative sign in the High region: the result saturates to 0 (RISC-V deviation 2, Harris §16.5), but the input is still valid. Not impossible — just a special expected-result case (see <<expected-results>>).
+
+== Test Procedure
+
+For each combination `(src, dest, sign)`:
+
+. *Low region* (1 vector): pick stem:[E_{Low} = -4] (or any single exponent in stem:[[E_{min}(\text{src}), -4\]]). Construct: sign, biased_exp = stem:[E_{Low} + bias], fraction = `random()`.
+. *Mid region* (one vector per cell): for each integer stem:[E_k] in stem:[[-3,\ \min(\mathit{int\_width}+3,\ E_{max}(\text{src}))\]], construct: sign, biased_exp = stem:[E_k + bias], fraction = `random()`.
+. *High region* (1 vector, if reachable): pick stem:[E_{High} = \mathit{int\_width} + 4]. Construct only if stem:[E_{High} \le E_{max}(\text{src})]; otherwise skip.
+
+The Python generator iterates `(src, dest, sign, region)` in lexicographic order; the seeded RNG produces deterministic mantissas across runs.
+
+== Test Count Breakdown
+
+For each (src, dest) combination:
+
+[cols="2,1,1,1,1", options="header"]
+|===
+| (src, dest)              | Low | Mid    | High | Per sign
+
+| (BF16, INT/UINT)         | 1   | 39     | 1    | 41
+| (BF16, LONG/ULONG)       | 1   | 71     | 1    | 73
+| (F16, INT/UINT)          | 1   | 19     | 0    | 20
+| (F16, LONG/ULONG)        | 1   | 19     | 0    | 20
+| (F32, INT/UINT)          | 1   | 39     | 1    | 41
+| (F32, LONG/ULONG)        | 1   | 71     | 1    | 73
+| (F64, INT/UINT)          | 1   | 39     | 1    | 41
+| (F64, LONG/ULONG)        | 1   | 71     | 1    | 73
+| (F128, INT/UINT)         | 1   | 39     | 1    | 41
+| (F128, LONG/ULONG)       | 1   | 71     | 1    | 73
+|===
+
+Each row generates *2 signs stem:[\times] 2 dest signedness variants* (e.g., `INT` and `UINT` share the same exponent list). The total per source format pair-row above is therefore stem:[2 \times 2 \times \text{Per sign}].
+
+*Total vectors:* stem:[2 \times 2 \times (41 + 73 + 20 + 20 + 41 + 73 + 41 + 73 + 41 + 73)] = stem:[2 \times 2 \times 496 = 1{,}984].
+
+This matches Aharoni's order-of-magnitude estimate of stem:[2 \times 10^4]; the lower count here reflects the "one vector per coverage cell" discipline (vs. multiple random draws per cell).

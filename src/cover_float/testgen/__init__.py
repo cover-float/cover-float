@@ -29,11 +29,16 @@ import cover_float.testgen.B14 as B14
 import cover_float.testgen.B15 as B15
 import cover_float.testgen.B16 as B16
 import cover_float.testgen.B17 as B17
+import cover_float.testgen.B19 as B19
 import cover_float.testgen.B20 as B20
 import cover_float.testgen.B21 as B21
+import cover_float.testgen.B22 as B22
+import cover_float.testgen.B23 as B23
+import cover_float.testgen.B24 as B24
 import cover_float.testgen.B25 as B25
 import cover_float.testgen.B26 as B26
 import cover_float.testgen.B27 as B27
+import cover_float.testgen.B28 as B28
 import cover_float.testgen.B29 as B29
 import cover_float.testgen.model as model
 
@@ -54,11 +59,16 @@ __all__ = [
     "B15",
     "B16",
     "B17",
+    "B19",
     "B20",
     "B21",
+    "B22",
+    "B23",
+    "B24",
     "B25",
     "B26",
     "B27",
+    "B28",
     "B29",
     "model",
 ]
