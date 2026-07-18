@@ -427,7 +427,6 @@ package coverfloat_pkg;
         end
     endfunction
 
-
     function automatic int get_product_exponent (
         input logic [127:0] a,
         input logic [127:0] b,
