@@ -13,6 +13,7 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
+import multiprocessing
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 
 from rich import print as rprint
@@ -25,14 +26,16 @@ from cover_float.common.util import SingleThreadedExecutor
 
 
 def generate(config: Config) -> bool:
-    single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
+    tg.discover_and_import_models()
 
+    single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
     if single_thread:
         executor = SingleThreadedExecutor()
     else:
-        executor = ProcessPoolExecutor() if config.jobs is None else ProcessPoolExecutor(max_workers=config.jobs)
-
-    tg.discover_and_import_models()
+        initializer = None
+        if multiprocessing.get_start_method() != "fork":  # Default on linux for python < 3.14
+            initializer = tg.discover_and_import_models
+        executor = ProcessPoolExecutor(max_workers=config.jobs, initializer=initializer)
 
     with log.StatusReporter(config, disable=config.quiet) as logger, executor:
         futures: list[Future[bool]] = []
