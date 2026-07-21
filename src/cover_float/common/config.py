@@ -29,3 +29,4 @@ class Config:
     jobs: int | None = None
     models: list[str] | None = None
     single_thread: bool = False
+    no_coverage_generation: bool = False
