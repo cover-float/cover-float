@@ -22,17 +22,14 @@
 # result and the addend in a fused multiply-add (FMA) operation. The shift is
 # defined as S = unbiased_exp(A*B) - unbiased_exp(C).
 
-import logging
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as const
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B14"))
 
 OPS = [const.OP_FMADD, const.OP_FMSUB, const.OP_FNMADD, const.OP_FNMSUB]
 
@@ -46,7 +43,7 @@ def decimalComponentsToHex(fmt: str, sign: int, biased_exp: int, mantissa: int) 
     return h_complete
 
 
-def generate_b14_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def generate_b14_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     p = const.MANTISSA_BITS[fmt] + 1
     min_u, max_u = const.UNBIASED_EXP[fmt]
     bias = const.BIAS[fmt]
@@ -112,10 +109,11 @@ def generate_b14_tests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
                 f"{op}_{const.ROUND_NEAR_EVEN}_{hex_a}_{hex_b}_{hex_c}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
 
 
 @register_model("B14")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in const.FLOAT_FMTS:
-        generate_b14_tests(test_f, cover_f, fmt)
+        generate_b14_tests(test_f, cover_f, config, fmt)

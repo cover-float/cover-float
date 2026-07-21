@@ -20,6 +20,7 @@ import random
 from random import seed
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     BIASED_EXP,
     EXPONENT_BITS,
@@ -94,7 +95,7 @@ def getInput(precision: str, input_key: str, hashString: str) -> str:
     return generate_FP(precision, str(random.randint(0, 1)), exp, mantissa)
 
 
-def genTests(test_f: TextIO, cover_f: TextIO) -> None:
+def genTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for rounding_mode in ROUNDING_MODES:
         for precision in FLOAT_FMTS:
             for op in [OP_DIV, OP_REM]:
@@ -106,9 +107,10 @@ def genTests(test_f: TextIO, cover_f: TextIO) -> None:
                             f"{op}_{rounding_mode}_{a}_{b}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
                             test_f,
                             cover_f,
+                            config,
                         )
 
 
 @register_model("B21")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    genTests(test_f, cover_f)
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    genTests(test_f, cover_f, config)

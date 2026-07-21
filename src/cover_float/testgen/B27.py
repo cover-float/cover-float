@@ -20,12 +20,13 @@ import random
 from typing import TextIO
 
 import cover_float.common.constants as constants
+from cover_float.common.config import Config
 from cover_float.common.util import generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
 
 
-def generate_B27(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_B27(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # We need a QNaN, SNaN, Patterns in Other Bits, and Variations in Sign Bit
 
     for to_fmt in constants.FLOAT_FMTS:
@@ -58,10 +59,10 @@ def generate_B27(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 f |= bits
 
             tv = generate_test_vector(constants.OP_CFF, f, 0, 0, fmt, to_fmt)  # Rounding mode does not matter
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B27")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
-        generate_B27(fmt, test_f, cover_f)
+        generate_B27(fmt, test_f, cover_f, config)

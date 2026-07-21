@@ -24,12 +24,11 @@
 #   This excludes DIV and SQRT as targeting specific sticky values is impossible
 
 import functools
-import logging
 import random
-from typing import TYPE_CHECKING, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Optional, TextIO
 
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,
     factors_to_bit_width,
@@ -38,9 +37,7 @@ from cover_float.common.util import (
     reproducible_hash,
 )
 from cover_float.reference import run_test_vector, store_cover_vector
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B7"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 if TYPE_CHECKING:
     # This block is seen by Pyright but ignored at runtime
@@ -49,7 +46,7 @@ else:
     from sympy import factorint
 
 
-def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(fmt + "add sub" + "b7")
     random.seed(hashval)
 
@@ -99,9 +96,9 @@ def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             rounding_bits = rounding_bits[: nf + is_subtraction]
 
             if int(rounding_bits, 2) != 1 << (nf - extra_bit - 1 + is_subtraction) and rounding_bits.count("1") == 1:
-                logger.exception(f"Add Sub Generation Failed: extra_bit: {extra_bit}, op: {op}")
+                raise ValueError(f"Add Sub Generation Failed: extra_bit: {extra_bit}, op: {op}")
             else:
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
 
 
 def mul_sigs_with_trailing(target: int, bit_length: int, fmt: str) -> tuple[int, int]:
@@ -121,7 +118,7 @@ def mul_sigs_with_trailing(target: int, bit_length: int, fmt: str) -> tuple[int,
     return (0, 0)
 
 
-def mul_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def mul_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(fmt + "mul" + "b7")
     random.seed(hashval)
 
@@ -182,16 +179,16 @@ def mul_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 continue  # This means guard is 1
 
             if expected_shift_left and not hit_with_shift:
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
                 hit_with_shift = True
             elif not expected_shift_left and not hit_without_shift:
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
                 hit_without_shift = True
 
             if hit_with_shift and hit_without_shift:
                 break
         else:
-            logger.exception(
+            raise ValueError(
                 f"Failure to generate mul tests, fmt={fmt}, extra_bit={extra_bit}, hit_with_shift={hit_with_shift}, "
                 f"hit_without_shift={hit_without_shift}"
             )
@@ -311,7 +308,7 @@ def cached_factorint(target: int) -> dict[int, int]:
     return factorint(target)
 
 
-def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(fmt + "fma" + "b7")
     random.seed(hashval)
 
@@ -435,10 +432,10 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 expected_extra_bits = expected_extra_bits.rstrip("0")
 
                 if actual_extra_bits == expected_extra_bits:
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                     break
             else:
-                logger.exception("Failure to generate a Guard=0 Case in FMA Testgen")
+                raise ValueError("Failure to generate a Guard=0 Case in FMA Testgen")
 
         # Now do the addend hanging off of the end of the mantissa
         # This will be the (2nf + 1)th extra bit
@@ -494,10 +491,10 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 ):
                     continue
                 else:
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
                     break
             else:
-                logger.exception(
+                raise ValueError(
                     f"Failure to generate big multiplication, small, far addend for fma with sticky = {overhang_extra}"
                     f" in fmt: {fmt}"
                 )
@@ -514,7 +511,7 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         # the leading one from the multiplication mantissa is in the lsb
         placements: list[int] = []
 
-        with logger.progress_bar(status=f"{fmt} FMA Target Placements", show_m_of_n=True) as pbar:
+        with get_model_logger("B7").progress_bar(status=f"{fmt} FMA Target Placements", show_m_of_n=True) as pbar:
             for target_placement in pbar.track(range(1, 2 * constants.MANTISSA_BITS[fmt] + 1)):
                 # We want the lowest possible exponent difference
                 shift_amount = max(3, target_placement - constants.MANTISSA_BITS[fmt] + 1)
@@ -611,14 +608,13 @@ def fma_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 placement = actual_extra_bits.rfind("1")
 
                 if (placement != target_placement) or actual_extra_bits.count("1") != 1:
-                    logger.exception(f"Failed To Generate C +- Prod Cases for FMA, op={op}, target={target_placement}")
-                    continue
+                    raise ValueError(f"Failed To Generate C +- Prod Cases for FMA, op={op}, target={target_placement}")
                 elif placement not in placements:
                     placements.append(placement)
-                    store_cover_vector(result, test_f, cover_f)
+                    store_cover_vector(result, test_f, cover_f, config)
 
 
-def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # CFF
     nf = constants.MANTISSA_BITS[fmt]
     for from_fmt in constants.FLOAT_FMTS:
@@ -644,11 +640,11 @@ def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             rounding_bits = interm_mantissa[nf:]
 
             if rounding_bits == bin(extra_bits)[2:].zfill(from_nf - nf):
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
             elif fmt == "04" and constants.MANTISSA_BITS[fmt] + extra_bit >= 23:
-                store_cover_vector(result, test_f, cover_f)  # This is just a quirk of how bf16 converts work
+                store_cover_vector(result, test_f, cover_f, config)  # This is just a quirk of how bf16 converts work
             else:
-                logger.exception(f"CFF Generation Failure From: {from_fmt}, To: {fmt}, Extra-Bits: {extra_bits:b}")
+                raise ValueError(f"CFF Generation Failure From: {from_fmt}, To: {fmt}, Extra-Bits: {extra_bits:b}")
 
     # CFI
     for to_fmt in constants.INT_FMTS:
@@ -676,9 +672,9 @@ def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             rounding_bits = interm_mantissa[to_bits : to_bits + frac_bits]
 
             if rounding_bits == bin(frac_part)[2:].zfill(frac_bits):
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
             else:
-                logger.exception(f"CFI Generation Failure From: {fmt}, To: {to_fmt}, Extra-Bits: {frac_part:b}")
+                raise ValueError(f"CFI Generation Failure From: {fmt}, To: {to_fmt}, Extra-Bits: {frac_part:b}")
 
     # CIF
     for from_fmt in constants.INT_FMTS:
@@ -704,7 +700,7 @@ def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             rounding_bits = interm_mantissa[nf:]
 
             if rounding_bits.count("1") == 1 and rounding_bits.find("1") == extra_bit:
-                store_cover_vector(result, test_f, cover_f)
+                store_cover_vector(result, test_f, cover_f, config)
             elif (
                 from_fmt in [constants.FMT_INT, constants.FMT_UINT]
                 and fmt == constants.FMT_BF16
@@ -714,15 +710,15 @@ def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 and fmt == constants.FMT_BF16
                 and extra_bit + constants.MANTISSA_BITS[fmt] >= constants.MANTISSA_BITS[constants.FMT_DOUBLE]
             ):
-                store_cover_vector(result, test_f, cover_f)  # Softfloat quirk makes it not track correctly here
+                store_cover_vector(result, test_f, cover_f, config)  # Softfloat quirk makes it not track correctly here
             else:
-                logger.exception(f"CIF Generation Failure From: {from_fmt}, To: {fmt}, Extra-Bit: {extra_bit}")
+                raise ValueError(f"CIF Generation Failure From: {from_fmt}, To: {fmt}, Extra-Bit: {extra_bit}")
 
 
 @register_model("B7")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
-        add_sub_tests(fmt, test_f, cover_f)
-        mul_tests(fmt, test_f, cover_f)
-        fma_tests(fmt, test_f, cover_f)
-        convert_tests(fmt, test_f, cover_f)
+        add_sub_tests(fmt, test_f, cover_f, config)
+        mul_tests(fmt, test_f, cover_f, config)
+        fma_tests(fmt, test_f, cover_f, config)
+        convert_tests(fmt, test_f, cover_f, config)

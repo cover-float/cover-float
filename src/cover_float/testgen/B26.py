@@ -19,12 +19,13 @@ import random
 from typing import TextIO
 
 import cover_float.common.constants as constants
+from cover_float.common.config import Config
 from cover_float.common.util import generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
 
 
-def generate_B26(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_B26(int_fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     bits = constants.INT_MAX_EXPS[int_fmt]
 
     for float_fmt in constants.FLOAT_FMTS:
@@ -35,7 +36,7 @@ def generate_B26(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             tv = generate_test_vector(
                 constants.OP_CIF, unsigned, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
             )
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
 
             if constants.INT_SIGNED[int_fmt]:
                 signed = -(1 << msb | random.getrandbits(msb)) if msb != -1 else 0
@@ -45,10 +46,10 @@ def generate_B26(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 tv = generate_test_vector(
                     constants.OP_CIF, unsigned, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
                 )
-                run_and_store_test_vector(tv, test_f, cover_f)
+                run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B26")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.INT_FMTS:
-        generate_B26(fmt, test_f, cover_f)
+        generate_B26(fmt, test_f, cover_f, config)

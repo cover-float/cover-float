@@ -21,6 +21,7 @@ import random
 from random import seed
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     BIASED_EXP,
     EXPONENT_BITS,
@@ -44,7 +45,7 @@ def decimalComponentsToHex(fmt: str, biased_exp: int) -> str:
     return h_complete
 
 
-def innerTest(test_f: TextIO, cover_f: TextIO, op: str) -> None:
+def innerTest(test_f: TextIO, cover_f: TextIO, config: Config, op: str) -> None:
     for fmt in FLOAT_FMTS:
         p = MANTISSA_BITS[fmt] + 1
         min_exp = BIASED_EXP[fmt][0]
@@ -65,6 +66,7 @@ def innerTest(test_f: TextIO, cover_f: TextIO, op: str) -> None:
                 f"{op}_{ROUND_NEAR_EVEN}_{complete_a}_{complete_b}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
 
             b_exp += 1  # Final statement, increments 1 over
@@ -81,12 +83,13 @@ def innerTest(test_f: TextIO, cover_f: TextIO, op: str) -> None:
                 f"{op}_{ROUND_NEAR_EVEN}_{complete_a}_{complete_b}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
 
             b_exp -= 1  # Final statement, decrements 1 under
 
 
-def outerTest(isTestOne: bool, test_f: TextIO, cover_f: TextIO, op: str) -> None:
+def outerTest(isTestOne: bool, test_f: TextIO, cover_f: TextIO, config: Config, op: str) -> None:
     for fmt in FLOAT_FMTS:
         p = MANTISSA_BITS[fmt] + 1
         min_exp = BIASED_EXP[fmt][0]
@@ -109,18 +112,20 @@ def outerTest(isTestOne: bool, test_f: TextIO, cover_f: TextIO, op: str) -> None
                 f"{op}_{ROUND_NEAR_EVEN}_{complete_a}_{complete_b}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
         else:
             run_and_store_test_vector(
                 f"{op}_{ROUND_NEAR_EVEN}_{complete_b}_{complete_a}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
                 test_f,
                 cover_f,
+                config,
             )
 
 
 @register_model("B10")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for op in [OP_ADD, OP_SUB]:
-        outerTest(True, test_f, cover_f, op)  # Test #1
-        innerTest(test_f, cover_f, op)  # Test #2
-        outerTest(False, test_f, cover_f, op)  # Test #3
+        outerTest(True, test_f, cover_f, config, op)  # Test #1
+        innerTest(test_f, cover_f, config, op)  # Test #2
+        outerTest(False, test_f, cover_f, config, op)  # Test #3

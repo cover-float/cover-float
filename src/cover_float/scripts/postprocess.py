@@ -19,15 +19,15 @@
 from __future__ import annotations
 
 import csv
-import logging
 import os
 import pathlib
 import time
 from dataclasses import dataclass
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.log as log
 from cover_float.common import constants
+from cover_float.common.config import Config
 from cover_float.common.util import unpack_test_vector
 from cover_float.reference import run_test_vector_unmodified, verify_test_vector
 from cover_float.scripts.parse_testvectors import format_output, parse_test_vector
@@ -105,22 +105,22 @@ NO_ROUNDING_MODE_OPS = ["fclass", "feq", "fle", "flt", "fmax", "fmin", "fsgnj", 
 
 def postprocess_testvectors(
     model: str,
+    logger: log.ModelAdapter,
     test_vector_location: pathlib.Path,
     processed_vectors_dir: pathlib.Path,
     readable_vectors_dir: pathlib.Path,
+    config: Config,
 ) -> None:
-    logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger(model))
-
     test_vector_file = test_vector_location / f"{model}_tv.txt"
     readable_vectors_file = (
-        readable_vectors_dir / f"{model}_parsed.txt" if not constants.config.RELEASE else pathlib.Path(os.devnull)
+        readable_vectors_dir / f"{model}_parsed.txt" if not config.release else pathlib.Path(os.devnull)
     )
     processed_vectors: dict[str, tuple[csv.DictWriter[str], TextIO]] = {}
     total = 0
     non_riscv = 0
 
     file_size = test_vector_file.stat().st_size
-    if not constants.config.RELEASE:
+    if not config.release:
         readable_vectors_file.parent.mkdir(parents=True, exist_ok=True)
 
     with (
@@ -134,7 +134,7 @@ def postprocess_testvectors(
         for line in test_vectors.readlines():
             parsed = parse_test_vector(line)
             if parsed:
-                if not constants.config.RELEASE:
+                if not config.release:
                     readable_vectors.write(format_output(parsed) + "\n")
 
                 if not verify_test_vector(line):

@@ -23,19 +23,16 @@
 # the interesting shift ranges, so short and long shifts: [-3, 3], [nf, nf-3], and [-nf, -nf+3]
 
 import itertools
-import logging
 import random
 from pathlib import Path
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.B9 import B9SignificandGenerator
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B11"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 B11_OPS = [constants.OP_ADD, constants.OP_SUB]
 
@@ -52,7 +49,7 @@ def interesting_shift_ranges(low_shifts: int, shifts_from_edge: int, fmt: str) -
 
 
 def interesting_tests(
-    sigs: list[int], interesting_shifts: list[int], fmt: str, test_f: TextIO, cover_f: TextIO
+    sigs: list[int], interesting_shifts: list[int], fmt: str, test_f: TextIO, cover_f: TextIO, config: Config
 ) -> None:
     random.seed(reproducible_hash("b11 interesting " + fmt))
     exp_min, exp_max = constants.BIASED_EXP[fmt]
@@ -72,11 +69,11 @@ def interesting_tests(
                 float2 = generate_float(sign, exp2, sig2, fmt)
 
                 tv = generate_test_vector(op, float1, float2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
-                run_and_store_test_vector(tv, test_f, cover_f)
+                run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 def uninteresting_tests(
-    sigs: list[int], interesting_shifts: list[int], fmt: str, test_f: TextIO, cover_f: TextIO
+    sigs: list[int], interesting_shifts: list[int], fmt: str, test_f: TextIO, cover_f: TextIO, config: Config
 ) -> None:
     random.seed(reproducible_hash("b11 uninteresting " + fmt))
 
@@ -110,16 +107,16 @@ def uninteresting_tests(
             float2 = generate_float(sign, exp2, sig2, fmt)
 
             tv = generate_test_vector(op, float1, float2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B11")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         seed = reproducible_hash(fmt + "b11")
         random.seed(seed)
 
-        logger.status(f"Generating {fmt} Sigs & Shifts")
+        get_model_logger("B11").status(f"Generating {fmt} Sigs & Shifts")
         bins_path = Path(
             "coverage",
             "covergroups",
@@ -133,11 +130,11 @@ def main(test_f: TextIO, cover_f: TextIO) -> None:
             sig_gen = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], "b11" + fmt)
             sigs = [int(sig, 2) for sig in sig_gen.generate(generated_coverage)]
 
-            if constants.config.FULL_COVERAGE_TESTGEN:
+            if config.full_coverage_testgen:
                 interesting_shifts = interesting_shift_ranges(2, 2, fmt)
             else:
                 interesting_shifts = interesting_shift_ranges(0, 0, fmt)
 
-            logger.status(f"Generating {fmt} Tests")
-            interesting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)
-            uninteresting_tests(sigs, interesting_shifts, fmt, test_f, cover_f)
+            get_model_logger("B11").status(f"Generating {fmt} Tests")
+            interesting_tests(sigs, interesting_shifts, fmt, test_f, cover_f, config)
+            uninteresting_tests(sigs, interesting_shifts, fmt, test_f, cover_f, config)

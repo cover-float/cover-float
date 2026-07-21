@@ -5,14 +5,12 @@ Created: 4/28/2026
 Last Modified: 4/28/2026
 """
 
-import logging
 import random
 from dataclasses import dataclass
-from pathlib import Path
 from random import seed
-from typing import TextIO, cast
+from typing import TextIO
 
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     BIAS,
     EXPONENT_BITS,
@@ -33,8 +31,6 @@ from cover_float.common.util import (
 )
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B16"))
 
 OPS = [OP_FMADD, OP_FMSUB, OP_FNMADD, OP_FNMSUB]
 SOLVER_OPS = {
@@ -72,9 +68,10 @@ class FloatFormat:
 
 
 class B16Generator:
-    def __init__(self, fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+    def __init__(self, fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
         self.f = FloatFormat.from_name(fmt)
         self.test_f, self.cover_f = test_f, cover_f
+        self.config = config
 
     def get_op_details(self, op: str, a: str, b: str, c: str) -> tuple[int, int]:
         """Helper to get actual product exp and final result exp."""
@@ -84,7 +81,7 @@ class B16Generator:
 
     def store(self, op: str, a: str, b: str, c: str) -> None:
         v = generate_test_vector(op, int(a, 16), int(b, 16), int(c, 16), self.f.name, self.f.name)
-        run_and_store_test_vector(v, self.test_f, self.cover_f)
+        run_and_store_test_vector(v, self.test_f, self.cover_f, self.config)
 
     def get_random_split(self, target_exp: int) -> tuple[int, int]:
         """Splits a target product exponent into two valid operand exponents."""
@@ -218,17 +215,13 @@ class B16Generator:
 
 
 @register_model("B16")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    with (
-        Path("./tests/testvectors/B16_tv.txt").open("w") as tf,
-        Path("./tests/covervectors/B16_cv.txt").open("w") as cf,
-    ):
-        for fmt_name in FLOAT_FMTS:
-            gen = B16Generator(fmt_name, tf, cf)
-            for d in range(-(2 * gen.f.p + 1), 2):
-                retries = 15
-                for op in OPS:
-                    seed(reproducible_hash(f"{fmt_name}_b16_{d}_{op}"))
-                    for _ in range(retries):
-                        if gen.generate(d, op):
-                            break
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    for fmt_name in FLOAT_FMTS:
+        gen = B16Generator(fmt_name, test_f, cover_f, config)
+        for d in range(-(2 * gen.f.p + 1), 2):
+            retries = 15
+            for op in OPS:
+                seed(reproducible_hash(f"{fmt_name}_b16_{d}_{op}"))
+                for _ in range(retries):
+                    if gen.generate(d, op):
+                        break

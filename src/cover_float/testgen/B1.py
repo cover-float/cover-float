@@ -13,16 +13,13 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
-import logging
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as const
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector
 from cover_float.reference import run_and_store_test_vector
-from cover_float.testgen.model import register_model
-
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
+from cover_float.testgen.model import get_model_logger, register_model
 
 SRC1_OPS = [const.OP_SQRT, const.OP_CLASS, const.OP_RFI]
 
@@ -294,7 +291,7 @@ BASIC_TYPES = {
 }
 
 
-def write1SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
+def write1SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
@@ -302,16 +299,16 @@ def write1SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]
     print("// 1 source operations, all basic type input combinations", file=test_f)
     # print("//", file=f)
     for op in SRC1_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
         for i in choices:
             val = BASIC_TYPES[fmt][i]
             run_and_store_test_vector(
-                f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
+                f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f, config
             )
 
 
-def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
+def writeCvtTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
@@ -319,7 +316,7 @@ def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int])
     print("// 1 source convert operations, all basic type input and result format combinations", file=test_f)
     # print("//", file=f)
     for op in CVT_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         # print(f"FMT IS: {fmt}")
         fmts = const.FLOAT_FMTS if op == const.OP_CFF else const.INT_FMTS
         for resultFmt in fmts:
@@ -327,33 +324,36 @@ def writeCvtTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int])
                 for i in choices:
                     val = BASIC_TYPES[fmt][i]
                     run_and_store_test_vector(
-                        f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{resultFmt}_00", test_f, cover_f
+                        f"{op}_{rm}_{val}_{32 * '0'}_{32 * '0'}_{fmt}_{32 * '0'}_{resultFmt}_00",
+                        test_f,
+                        cover_f,
+                        config,
                     )
 
 
-def write2SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
+def write2SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
     print("// 2 source operations, all basic type input combinations", file=test_f)
     for op in SRC2_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         for i in choices:
             val1 = BASIC_TYPES[fmt][i]
             for j in choices:
                 val2 = BASIC_TYPES[fmt][j]
                 run_and_store_test_vector(
-                    f"{op}_{rm}_{val1}_{val2}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
+                    f"{op}_{rm}_{val1}_{val2}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f, config
                 )
 
 
-def write3SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]) -> None:
+def write3SrcTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, choices: list[int]) -> None:
 
     rm = const.ROUND_NEAR_EVEN
 
     print("// 3 source operations, all basic type input combinations", file=test_f)
     for op in SRC3_OPS:
-        logger.status(f"OP IS: {op}")
+        get_model_logger("B1").status(f"OP IS: {op}")
         for i in choices:
             val1 = BASIC_TYPES[fmt][i]
             for j in choices:
@@ -361,11 +361,11 @@ def write3SrcTests(test_f: TextIO, cover_f: TextIO, fmt: str, choices: list[int]
                 for k in choices:
                     val3 = BASIC_TYPES[fmt][k]
                     run_and_store_test_vector(
-                        f"{op}_{rm}_{val1}_{val2}_{val3}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f
+                        f"{op}_{rm}_{val1}_{val2}_{val3}_{fmt}_{32 * '0'}_{fmt}_00", test_f, cover_f, config
                     )
 
 
-def writeResultTests(test_f: TextIO, cover_f: TextIO, fmt: str, full_coverage: bool) -> None:
+def writeResultTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str, full_coverage: bool) -> None:
     if not full_coverage:
         return
 
@@ -376,23 +376,23 @@ def writeResultTests(test_f: TextIO, cover_f: TextIO, fmt: str, full_coverage: b
     mantissa = 0
     a = generate_float(0, exp, mantissa, fmt)
     tv = generate_test_vector(const.OP_SQRT, a, 0, 0, fmt, fmt)
-    run_and_store_test_vector(tv, test_f, cover_f)
+    run_and_store_test_vector(tv, test_f, cover_f, config)
 
     # Generate a +1.5 result (input is 2.25)
     exp = 1
     mantissa = 1 << (const.MANTISSA_BITS[fmt] - 3)
     a = generate_float(0, exp, mantissa, fmt)
     tv = generate_test_vector(const.OP_SQRT, a, 0, 0, fmt, fmt)
-    run_and_store_test_vector(tv, test_f, cover_f)
+    run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B1")
-def main(test_vectors: TextIO, cover_vectors: TextIO) -> None:
-    choices = list(range(len(BASIC_TYPES[const.FMT_SINGLE]))) if const.config.FULL_COVERAGE_TESTGEN else minimal_set
+def main(config: Config, test_vectors: TextIO, cover_vectors: TextIO) -> None:
+    choices = list(range(len(BASIC_TYPES[const.FMT_SINGLE]))) if config.full_coverage_testgen else minimal_set
 
     for fmt in const.FLOAT_FMTS:
-        write1SrcTests(test_vectors, cover_vectors, fmt, choices)
-        write2SrcTests(test_vectors, cover_vectors, fmt, choices)
-        write3SrcTests(test_vectors, cover_vectors, fmt, choices)
-        writeCvtTests(test_vectors, cover_vectors, fmt, choices)
-        writeResultTests(test_vectors, cover_vectors, fmt, const.config.FULL_COVERAGE_TESTGEN)
+        write1SrcTests(test_vectors, cover_vectors, config, fmt, choices)
+        write2SrcTests(test_vectors, cover_vectors, config, fmt, choices)
+        write3SrcTests(test_vectors, cover_vectors, config, fmt, choices)
+        writeCvtTests(test_vectors, cover_vectors, config, fmt, choices)
+        writeResultTests(test_vectors, cover_vectors, config, fmt, config.full_coverage_testgen)

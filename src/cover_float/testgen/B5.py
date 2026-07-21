@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from random import seed
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     EXPONENT_BIAS,
     EXPONENT_BITS,
@@ -79,7 +80,15 @@ def generate_FP(
 
 
 def convert_grs(
-    hp: str, lp: str, g_exp: int, grs: str, sign: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO
+    hp: str,
+    lp: str,
+    g_exp: int,
+    grs: str,
+    sign: str,
+    rounding_mode: str,
+    test_f: TextIO,
+    cover_f: TextIO,
+    config: Config,
 ) -> None:
     hp_m_bits = MANTISSA_BITS[hp]
     hp_e_bits = EXPONENT_BITS[hp]
@@ -120,17 +129,17 @@ def convert_grs(
 
     input_fp = generate_FP(hp_e_bits, sign, input_exp, input_mant_bin, hp_e_bias)
     run_and_store_test_vector(
-        f"{OP_CFF}_{rounding_mode}_{input_fp}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
+        f"{OP_CFF}_{rounding_mode}_{input_fp}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f, config
     )
 
 
-def tests_conversion_1_2(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_conversion_1_2(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
     lp_min_exp = UNBIASED_EXP[lp][0]
 
-    convert_grs(hp, lp, lp_min_exp + 1, "001", "0", rounding_mode, test_f, cover_f)
-    convert_grs(hp, lp, lp_min_exp + 1, "001", "1", rounding_mode, test_f, cover_f)
+    convert_grs(hp, lp, lp_min_exp + 1, "001", "0", rounding_mode, test_f, cover_f, config)
+    convert_grs(hp, lp, lp_min_exp + 1, "001", "1", rounding_mode, test_f, cover_f, config)
 
 
 def genPNTestVectors(
@@ -144,6 +153,7 @@ def genPNTestVectors(
     hp_e_bias: int,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
 ) -> None:
 
     hashval = reproducible_hash(OP_CFF + lp + "b5")
@@ -152,14 +162,20 @@ def genPNTestVectors(
     input_value_2 = generate_FP(hp_e_bits, "1", hp_exp, complete_binary_2, hp_e_bias)
 
     run_and_store_test_vector(
-        f"{OP_CFF}_{rounding_mode}_{input_value_1}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
+        f"{OP_CFF}_{rounding_mode}_{input_value_1}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00",
+        test_f,
+        cover_f,
+        config,
     )  # Test 1
     run_and_store_test_vector(
-        f"{OP_CFF}_{rounding_mode}_{input_value_2}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
+        f"{OP_CFF}_{rounding_mode}_{input_value_2}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00",
+        test_f,
+        cover_f,
+        config,
     )  # Test 2
 
 
-def tests_conversion_3_4(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_conversion_3_4(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
 
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
@@ -170,11 +186,11 @@ def tests_conversion_3_4(lp: str, hp: str, rounding_mode: str, test_f: TextIO, c
 
     grs = ["001", "010", "011", "100", "101", "110", "111"]
     for bits in grs:
-        convert_grs(hp, lp, lp_min_exp + 1, bits, "0", rounding_mode, test_f, cover_f)
-        convert_grs(hp, lp, lp_min_exp + 1, bits, "1", rounding_mode, test_f, cover_f)
+        convert_grs(hp, lp, lp_min_exp + 1, bits, "0", rounding_mode, test_f, cover_f, config)
+        convert_grs(hp, lp, lp_min_exp + 1, bits, "1", rounding_mode, test_f, cover_f, config)
 
 
-def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
 
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
@@ -200,7 +216,7 @@ def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, c
             hp_m = "1" * (lp_m_bits) + "0" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
         hp_exp = lp_sn_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm - 2 i_ulp:
         if hp_sn_exp != lp_sn_exp:  # If we need to generate a subnorm, then the criteria for the mantissa is different
@@ -209,7 +225,7 @@ def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, c
             hp_m = "1" * (lp_m_bits) + "1" + "0" * (rem_bits - 1)
         hp_exp = lp_sn_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm - 1 i_ulp:
         if hp_sn_exp != lp_sn_exp:  # If we need to generate a subnorm, then the criteria for the mantissa is different
@@ -220,45 +236,45 @@ def tests_conversion_5_6(lp: str, hp: str, rounding_mode: str, test_f: TextIO, c
             hp_m_2 = "1" * (lp_m_bits) + "1" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
         hp_exp = lp_sn_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm:
         hp_m_1 = "0" * (hp_m_bits)
         hp_m_2 = "0" * (hp_m_bits)
         hp_exp = lp_n_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m_1, hp_m_2, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm + 1 i_ulp:
         hp_m = "0" * lp_m_bits + "0" + f"{random.randint(1, max_rem >> 1):0{rem_bits - 1}b}"
         hp_exp = lp_n_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm + 2 i_ulp:
         hp_m = "0" * lp_m_bits + "1" + "0" * (rem_bits - 1)
         hp_exp = lp_n_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f, config)
 
         # MinNorm + 3 i_ulp:
         hp_m = ("0" * lp_m_bits) + "1" + f"{random.randint(1, (1 << (rem_bits - 1)) - 1):0{(rem_bits - 1)}b}"
         hp_exp = lp_n_exp
 
-        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f)
+        genPNTestVectors(lp, hp, rounding_mode, hp_e_bits, hp_exp, hp_m, hp_m, hp_e_bias, test_f, cover_f, config)
 
 
-def tests_conversion_7_8(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_conversion_7_8(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
 
     lp_sn_exp = UNBIASED_EXP[lp][0] - MANTISSA_BITS[lp] - 3
 
-    convert_grs(hp, lp, lp_sn_exp, "001", "0", rounding_mode, test_f, cover_f)
-    convert_grs(hp, lp, lp_sn_exp, "001", "1", rounding_mode, test_f, cover_f)
+    convert_grs(hp, lp, lp_sn_exp, "001", "0", rounding_mode, test_f, cover_f, config)
+    convert_grs(hp, lp, lp_sn_exp, "001", "1", rounding_mode, test_f, cover_f, config)
 
 
-def tests_conversion_9(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_conversion_9(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     hashval = reproducible_hash(OP_CFF + lp + "b5")
     seed(hashval)
     hp_m_bits = MANTISSA_BITS[hp]
@@ -275,22 +291,25 @@ def tests_conversion_9(lp: str, hp: str, rounding_mode: str, test_f: TextIO, cov
         hp_exp = lp_sn_exp + i
         input_value_1 = generate_FP(hp_e_bits, f"{random.randint(0, 1)}", hp_exp, complete_binary, hp_e_bias)
         run_and_store_test_vector(
-            f"{OP_CFF}_{rounding_mode}_{input_value_1}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00", test_f, cover_f
+            f"{OP_CFF}_{rounding_mode}_{input_value_1}_{32 * '0'}_{32 * '0'}_{hp}_{32 * '0'}_{lp}_00",
+            test_f,
+            cover_f,
+            config,
         )  # Test 1
 
 
-def convertTests(test_f: TextIO, cover_f: TextIO) -> None:
+def convertTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # All conversion tests:
     for i_hp in range(len(B5_FMTS)):
         hp = B5_FMTS[i_hp]
         for i_lp in range(i_hp + 1, len(B5_FMTS)):
             lp = B5_FMTS[i_lp]
             for rounding_mode in ROUNDING_MODES:
-                tests_conversion_1_2(lp, hp, rounding_mode, test_f, cover_f)
-                tests_conversion_3_4(lp, hp, rounding_mode, test_f, cover_f)
-                tests_conversion_5_6(lp, hp, rounding_mode, test_f, cover_f)
-                tests_conversion_7_8(lp, hp, rounding_mode, test_f, cover_f)
-                tests_conversion_9(lp, hp, rounding_mode, test_f, cover_f)
+                tests_conversion_1_2(lp, hp, rounding_mode, test_f, cover_f, config)
+                tests_conversion_3_4(lp, hp, rounding_mode, test_f, cover_f, config)
+                tests_conversion_5_6(lp, hp, rounding_mode, test_f, cover_f, config)
+                tests_conversion_7_8(lp, hp, rounding_mode, test_f, cover_f, config)
+                tests_conversion_9(lp, hp, rounding_mode, test_f, cover_f, config)
 
 
 def genSpecExp_mul(precision: str, target: int, hashString: str) -> tuple[int, int]:
@@ -739,7 +758,7 @@ def getMultiplyTests(precision: str, rounding_mode: str) -> Iterator[tuple[str, 
     yield from tests_multiply_9(precision, rounding_mode)
 
 
-def multiplyTests(test_f: TextIO, cover_f: TextIO) -> None:
+def multiplyTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for precision in FLOAT_FMTS:
         for rounding_mode in ROUNDING_MODES:
             for a, b in getMultiplyTests(precision, rounding_mode):
@@ -747,6 +766,7 @@ def multiplyTests(test_f: TextIO, cover_f: TextIO) -> None:
                     f"{OP_MUL}_{rounding_mode}_{a}_{b}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
                     test_f,
                     cover_f,
+                    config,
                 )
 
 
@@ -761,6 +781,7 @@ def fma_gen(
     addend_pattern: str,
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     hashEnding: str,
 ) -> None:
     m_bits = MANTISSA_BITS[precision]
@@ -824,25 +845,29 @@ def fma_gen(
         c_bin_mant = f"{c_mant:0{m_bits}b}"
         c = generate_FP(e_bits, str(c_sign), c_exp, c_bin_mant, e_bias)
         run_and_store_test_vector(
-            f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+            f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f, config
         )
 
 
-def tests_fma_1_2(operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_fma_1_2(
+    operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m_bits = MANTISSA_BITS[precision]
     min_exp = UNBIASED_EXP[precision][0]
 
     minSNPos = min_exp - m_bits
 
     fma_gen(
-        operation, precision, rounding_mode, 0, "001", minSNPos, 1, "rand_sn", test_f, cover_f, "pos_1"
+        operation, precision, rounding_mode, 0, "001", minSNPos, 1, "rand_sn", test_f, cover_f, config, "pos_1"
     )  # adds decreased magnitude, can't be normal
     fma_gen(
-        operation, precision, rounding_mode, 1, "001", minSNPos, 0, "rand_sn", test_f, cover_f, "neg_2"
+        operation, precision, rounding_mode, 1, "001", minSNPos, 0, "rand_sn", test_f, cover_f, config, "neg_2"
     )  # add decreases magnitude, can't be normal
 
 
-def tests_fma_3_4(operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_fma_3_4(
+    operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m_bits = MANTISSA_BITS[precision]
     min_exp = UNBIASED_EXP[precision][0]
 
@@ -850,38 +875,64 @@ def tests_fma_3_4(operation: str, precision: str, rounding_mode: str, test_f: Te
 
     # MinSN - 3 ulp; G = 1, R = 0, S = 1
     fma_gen(
-        operation, precision, rounding_mode, 0, "101", minSNPos, 1, "min_sn", test_f, cover_f, "pos_-3_ulp_3"
+        operation, precision, rounding_mode, 0, "101", minSNPos, 1, "min_sn", test_f, cover_f, config, "pos_-3_ulp_3"
     )  # Get rid of G Bit and some more from sticky, result is negative
-    fma_gen(operation, precision, rounding_mode, 1, "101", minSNPos, 0, "min_sn", test_f, cover_f, "neg_-3_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 1, "101", minSNPos, 0, "min_sn", test_f, cover_f, config, "neg_-3_ulp_4"
+    )
 
     # MinSN - 2 ulp; G = 1, R = 1, S = 0
     fma_gen(
-        operation, precision, rounding_mode, 1, "010", minSNPos, 0, "min_sn", test_f, cover_f, "pos_-2_ulp_3"
+        operation, precision, rounding_mode, 1, "010", minSNPos, 0, "min_sn", test_f, cover_f, config, "pos_-2_ulp_3"
     )  # Subtract minSN from 1 bit 2*minSN
-    fma_gen(operation, precision, rounding_mode, 0, "010", minSNPos, 1, "min_sn", test_f, cover_f, "neg_-2_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "010", minSNPos, 1, "min_sn", test_f, cover_f, config, "neg_-2_ulp_4"
+    )
 
     # MinSN - 1 ulp; G = 0, R = 1, S = 1
-    fma_gen(operation, precision, rounding_mode, 0, "111", minSNPos, 1, "min_sn", test_f, cover_f, "pos_-1_ulp_3")
-    fma_gen(operation, precision, rounding_mode, 1, "111", minSNPos, 0, "min_sn", test_f, cover_f, "neg_-1_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "111", minSNPos, 1, "min_sn", test_f, cover_f, config, "pos_-1_ulp_3"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "111", minSNPos, 0, "min_sn", test_f, cover_f, config, "neg_-1_ulp_4"
+    )
 
     # #MinSN; G = 1, R = 0, S = 0
-    fma_gen(operation, precision, rounding_mode, 0, "100", minSNPos, 1, "2*min_sn", test_f, cover_f, "pos_minSN_3")
-    fma_gen(operation, precision, rounding_mode, 1, "100", minSNPos, 0, "2*min_sn", test_f, cover_f, "neg_minSN_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "100", minSNPos, 1, "2*min_sn", test_f, cover_f, config, "pos_minSN_3"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "100", minSNPos, 0, "2*min_sn", test_f, cover_f, config, "neg_minSN_4"
+    )
 
     # MinSN + 1 ulp; G = 1, R = 0, S = 1
-    fma_gen(operation, precision, rounding_mode, 0, "001", minSNPos, 0, "min_sn", test_f, cover_f, "pos_+1_ulp_3")
-    fma_gen(operation, precision, rounding_mode, 1, "001", minSNPos, 1, "min_sn", test_f, cover_f, "neg_+1_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "001", minSNPos, 0, "min_sn", test_f, cover_f, config, "pos_+1_ulp_3"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "001", minSNPos, 1, "min_sn", test_f, cover_f, config, "neg_+1_ulp_4"
+    )
 
     # MinSN + 2 ulp; G = 1, R = 1, S = 0
-    fma_gen(operation, precision, rounding_mode, 0, "010", minSNPos, 0, "min_sn", test_f, cover_f, "pos_+2_ulp_3")
-    fma_gen(operation, precision, rounding_mode, 1, "010", minSNPos, 1, "min_sn", test_f, cover_f, "neg_+2_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "010", minSNPos, 0, "min_sn", test_f, cover_f, config, "pos_+2_ulp_3"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "010", minSNPos, 1, "min_sn", test_f, cover_f, config, "neg_+2_ulp_4"
+    )
 
     # MinSN + 3 ulp; G = 1, R = 1, S = 1
-    fma_gen(operation, precision, rounding_mode, 0, "011", minSNPos, 0, "min_sn", test_f, cover_f, "pos_+3_ulp_3")
-    fma_gen(operation, precision, rounding_mode, 1, "011", minSNPos, 1, "min_sn", test_f, cover_f, "neg_+3_ulp_4")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "011", minSNPos, 0, "min_sn", test_f, cover_f, config, "pos_+3_ulp_3"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "011", minSNPos, 1, "min_sn", test_f, cover_f, config, "neg_+3_ulp_4"
+    )
 
 
-def tests_fma_5_6(operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_fma_5_6(
+    operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m_bits = MANTISSA_BITS[precision]
     min_exp = UNBIASED_EXP[precision][0]
 
@@ -889,52 +940,102 @@ def tests_fma_5_6(operation: str, precision: str, rounding_mode: str, test_f: Te
 
     # MinN - 3 ulp; G = 1, R = 0, S = 1
     fma_gen(
-        operation, precision, rounding_mode, 0, "101", minSNPos, 0, "1*m-1_0", test_f, cover_f, "pos_-3_ulp_5"
+        operation, precision, rounding_mode, 0, "101", minSNPos, 0, "1*m-1_0", test_f, cover_f, config, "pos_-3_ulp_5"
     )  # Get rid of G Bit and some more from sticky, result is negative
-    fma_gen(operation, precision, rounding_mode, 1, "101", minSNPos, 1, "1*m-1_0", test_f, cover_f, "neg_-3_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 1, "101", minSNPos, 1, "1*m-1_0", test_f, cover_f, config, "neg_-3_ulp_6"
+    )
 
     # MinN - 2 ulp; G = 1, R = 1, S = 0
     fma_gen(
-        operation, precision, rounding_mode, 0, "110", minSNPos, 0, "1*m-1_0", test_f, cover_f, "pos_-2_ulp_5"
+        operation, precision, rounding_mode, 0, "110", minSNPos, 0, "1*m-1_0", test_f, cover_f, config, "pos_-2_ulp_5"
     )  # Get rid of G Bit and some more from sticky, result is negative
-    fma_gen(operation, precision, rounding_mode, 1, "110", minSNPos, 1, "1*m-1_0", test_f, cover_f, "neg_-2_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 1, "110", minSNPos, 1, "1*m-1_0", test_f, cover_f, config, "neg_-2_ulp_6"
+    )
 
     # MinN - 1 ulp; G = 1, R = 1, S = 1
     fma_gen(
-        operation, precision, rounding_mode, 0, "111", minSNPos, 0, "1*m-1_0", test_f, cover_f, "pos_-2_ulp_5"
+        operation, precision, rounding_mode, 0, "111", minSNPos, 0, "1*m-1_0", test_f, cover_f, config, "pos_-2_ulp_5"
     )  # Get rid of G Bit and some more from sticky, result is negative
-    fma_gen(operation, precision, rounding_mode, 1, "111", minSNPos, 1, "1*m-1_0", test_f, cover_f, "neg_-2_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 1, "111", minSNPos, 1, "1*m-1_0", test_f, cover_f, config, "neg_-2_ulp_6"
+    )
 
     # MinN
-    fma_gen(operation, precision, rounding_mode, 1, "100", minSNPos, 0, "1_0*m-1_1", test_f, cover_f, "pos_norm_5")
-    fma_gen(operation, precision, rounding_mode, 0, "100", minSNPos, 1, "1_0*m-1_1", test_f, cover_f, "neg_norm_6")
+    fma_gen(
+        operation, precision, rounding_mode, 1, "100", minSNPos, 0, "1_0*m-1_1", test_f, cover_f, config, "pos_norm_5"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 0, "100", minSNPos, 1, "1_0*m-1_1", test_f, cover_f, config, "neg_norm_6"
+    )
 
     # MinN + 1 ulp
-    fma_gen(operation, precision, rounding_mode, 0, "001", minSNPos, 0, "min_n", test_f, cover_f, "pos_+1_ulp_5")
-    fma_gen(operation, precision, rounding_mode, 1, "001", minSNPos, 1, "min_n", test_f, cover_f, "neg_+1_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "001", minSNPos, 0, "min_n", test_f, cover_f, config, "pos_+1_ulp_5"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "001", minSNPos, 1, "min_n", test_f, cover_f, config, "neg_+1_ulp_6"
+    )
 
     # MinN + 2 ulp
-    fma_gen(operation, precision, rounding_mode, 0, "010", minSNPos, 0, "min_n", test_f, cover_f, "pos_+2_ulp_5")
-    fma_gen(operation, precision, rounding_mode, 1, "010", minSNPos, 1, "min_n", test_f, cover_f, "neg_+2_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "010", minSNPos, 0, "min_n", test_f, cover_f, config, "pos_+2_ulp_5"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "010", minSNPos, 1, "min_n", test_f, cover_f, config, "neg_+2_ulp_6"
+    )
 
     # MinN + 3 ulp
-    fma_gen(operation, precision, rounding_mode, 0, "011", minSNPos, 0, "min_n", test_f, cover_f, "pos_+3_ulp_5")
-    fma_gen(operation, precision, rounding_mode, 1, "011", minSNPos, 1, "min_n", test_f, cover_f, "neg_+3_ulp_6")
+    fma_gen(
+        operation, precision, rounding_mode, 0, "011", minSNPos, 0, "min_n", test_f, cover_f, config, "pos_+3_ulp_5"
+    )
+    fma_gen(
+        operation, precision, rounding_mode, 1, "011", minSNPos, 1, "min_n", test_f, cover_f, config, "neg_+3_ulp_6"
+    )
 
 
-def tests_fma_7_8(operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_fma_7_8(
+    operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m_bits = MANTISSA_BITS[precision]
     min_exp = UNBIASED_EXP[precision][0]
 
     minSNPos = min_exp - m_bits
 
     fma_gen(
-        operation, precision, rounding_mode, 0, "011", minSNPos + 1, 1, "min_sn", test_f, cover_f, "pos_-3_ulp_3"
+        operation,
+        precision,
+        rounding_mode,
+        0,
+        "011",
+        minSNPos + 1,
+        1,
+        "min_sn",
+        test_f,
+        cover_f,
+        config,
+        "pos_-3_ulp_3",
     )  # Get rid of G Bit and some more from sticky, result is negative
-    fma_gen(operation, precision, rounding_mode, 1, "011", minSNPos + 1, 0, "min_sn", test_f, cover_f, "neg_-3_ulp_4")
+    fma_gen(
+        operation,
+        precision,
+        rounding_mode,
+        1,
+        "011",
+        minSNPos + 1,
+        0,
+        "min_sn",
+        test_f,
+        cover_f,
+        config,
+        "neg_-3_ulp_4",
+    )
 
 
-def tests_fma_9(operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_fma_9(
+    operation: str, precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m_bits = MANTISSA_BITS[precision]
     min_exp = UNBIASED_EXP[precision][0]
 
@@ -951,6 +1052,7 @@ def tests_fma_9(operation: str, precision: str, rounding_mode: str, test_f: Text
             f"randexp_{abs(exp)}",
             test_f,
             cover_f,
+            config,
             f"pos_-3_ulp_{exp}",
         )
         fma_gen(
@@ -964,24 +1066,26 @@ def tests_fma_9(operation: str, precision: str, rounding_mode: str, test_f: Text
             f"randexp_{abs(exp)}",
             test_f,
             cover_f,
+            config,
             f"pos_-3_ulp_{exp}",
         )
 
 
-def fmaTests(test_f: TextIO, cover_f: TextIO) -> None:
+def fmaTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for operation in FMA_OPS:
         for precision in FLOAT_FMTS:
             for rounding_mode in ROUNDING_MODES:
-                tests_fma_1_2(operation, precision, rounding_mode, test_f, cover_f)
-                tests_fma_3_4(operation, precision, rounding_mode, test_f, cover_f)
-                tests_fma_5_6(operation, precision, rounding_mode, test_f, cover_f)
-                tests_fma_7_8(operation, precision, rounding_mode, test_f, cover_f)
-                tests_fma_9(operation, precision, rounding_mode, test_f, cover_f)
+                tests_fma_1_2(operation, precision, rounding_mode, test_f, cover_f, config)
+                tests_fma_3_4(operation, precision, rounding_mode, test_f, cover_f, config)
+                tests_fma_5_6(operation, precision, rounding_mode, test_f, cover_f, config)
+                tests_fma_7_8(operation, precision, rounding_mode, test_f, cover_f, config)
+                tests_fma_9(operation, precision, rounding_mode, test_f, cover_f, config)
 
 
 def div_grs_mant(
     test_f: TextIO,
     cover_f: TextIO,
+    config: Config,
     grs: str,
     g_bit_pos: int,
     precision: str,
@@ -1032,7 +1136,10 @@ def div_grs_mant(
     b_fp = generate_FP(e_bits, str(b_sign), b_exp_norm, b, e_bias)
 
     run_and_store_test_vector(
-        f"{OP_DIV}_{rounding_mode}_{b_fp}_{a_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+        f"{OP_DIV}_{rounding_mode}_{b_fp}_{a_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+        test_f,
+        cover_f,
+        config,
     )
     return a_fp, b_fp
 
@@ -1107,7 +1214,7 @@ def getDivTests(precision: str, rounding_mode: str) -> Iterator[tuple[str, str]]
     yield from tests_div_9(precision, rounding_mode)
 
 
-def divTests(test_f: TextIO, cover_f: TextIO) -> None:
+def divTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for precision in FLOAT_FMTS:
         for rounding_mode in ROUNDING_MODES:
             for a, b in getDivTests(precision, rounding_mode):
@@ -1115,10 +1222,11 @@ def divTests(test_f: TextIO, cover_f: TextIO) -> None:
                     f"{OP_DIV}_{rounding_mode}_{a}_{b}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
                     test_f,
                     cover_f,
+                    config,
                 )
 
 
-def tests_add_sub_1_2(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_add_sub_1_2(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     m_bits = MANTISSA_BITS[precision]
     e_bits = EXPONENT_BITS[precision]
     e_bias = EXPONENT_BIAS[precision]
@@ -1148,11 +1256,14 @@ def tests_add_sub_1_2(precision: str, rounding_mode: str, test_f: TextIO, cover_
         a_fp = generate_FP(e_bits, sign, sn_exp, a, e_bias)
         b_fp = generate_FP(e_bits, sign, sn_exp, b, e_bias)
         run_and_store_test_vector(
-            f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+            f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+            test_f,
+            cover_f,
+            config,
         )
 
 
-def tests_add_sub_3_4(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_add_sub_3_4(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     m_bits = MANTISSA_BITS[precision]
     e_bits = EXPONENT_BITS[precision]
     e_bias = EXPONENT_BIAS[precision]
@@ -1183,11 +1294,14 @@ def tests_add_sub_3_4(precision: str, rounding_mode: str, test_f: TextIO, cover_
         b_fp = generate_FP(e_bits, str(b_sign), sn_exp, b, e_bias)
 
         run_and_store_test_vector(
-            f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+            f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+            test_f,
+            cover_f,
+            config,
         )
 
 
-def tests_add_sub_5_6(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_add_sub_5_6(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     m_bits = MANTISSA_BITS[precision]
     e_bits = EXPONENT_BITS[precision]
     e_bias = EXPONENT_BIAS[precision]
@@ -1208,6 +1322,7 @@ def tests_add_sub_5_6(precision: str, rounding_mode: str, test_f: TextIO, cover_
                 f"{OP_ADD}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
                 test_f,
                 cover_f,
+                config,
             )
         normDist += 1
 
@@ -1226,11 +1341,12 @@ def tests_add_sub_5_6(precision: str, rounding_mode: str, test_f: TextIO, cover_
                 f"{OP_SUB}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
                 test_f,
                 cover_f,
+                config,
             )
         normDist += 1
 
 
-def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO) -> None:
+def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     m_bits = MANTISSA_BITS[precision]
     e_bits = EXPONENT_BITS[precision]
     e_bias = EXPONENT_BIAS[precision]
@@ -1250,23 +1366,26 @@ def tests_add_sub_9(precision: str, rounding_mode: str, test_f: TextIO, cover_f:
             a_fp = generate_FP(e_bits, a_sign, a_exp, f"{a_mant:0{m_bits}b}", e_bias)
             b_fp = generate_FP(e_bits, b_sign, b_exp, f"{b_mant:0{m_bits}b}", e_bias)
             run_and_store_test_vector(
-                f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+                f"{op}_{rounding_mode}_{a_fp}_{b_fp}_{32 * '0'}_{precision}_{32 * '0'}_{precision}_00",
+                test_f,
+                cover_f,
+                config,
             )
 
 
-def addSubTests(test_f: TextIO, cover_f: TextIO) -> None:
+def addSubTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for precision in FLOAT_FMTS:
         for rounding_mode in ROUNDING_MODES:
-            tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f)
+            tests_add_sub_1_2(precision, rounding_mode, test_f, cover_f, config)
             # tests_add_sub_3_4(precision, rounding_mode, test_f, cover_f)
             # tests_add_sub_5_6(precision, rounding_mode, test_f, cover_f)
-            tests_add_sub_9(precision, rounding_mode, test_f, cover_f)
+            tests_add_sub_9(precision, rounding_mode, test_f, cover_f, config)
 
 
 @register_model("B5")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    convertTests(test_f, cover_f)  # Generating Too little tests
-    multiplyTests(test_f, cover_f)
-    addSubTests(test_f, cover_f)  # Generating too many tests
-    fmaTests(test_f, cover_f)
-    divTests(test_f, cover_f)
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    convertTests(test_f, cover_f, config)  # Generating Too little tests
+    multiplyTests(test_f, cover_f, config)
+    addSubTests(test_f, cover_f, config)  # Generating too many tests
+    fmaTests(test_f, cover_f, config)
+    divTests(test_f, cover_f, config)

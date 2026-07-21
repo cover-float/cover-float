@@ -4,6 +4,7 @@
 import random
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     EXPONENT_BIAS,
     EXPONENT_BITS,
@@ -90,7 +91,7 @@ def getRandomInt(min_exp: int, max_exp: int, sign: str, precision: str) -> str:
     return generate_FP(precision, sign, exp, mantissa_str)
 
 
-def genUnderflowTests(test_f: TextIO, cover_f: TextIO) -> None:
+def genUnderflowTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for precision in FLOAT_FMTS:
         min_exp = UNBIASED_EXP[precision][0] + 1
         max_exp = UNBIASED_EXP[precision][1] - 1
@@ -103,10 +104,11 @@ def genUnderflowTests(test_f: TextIO, cover_f: TextIO) -> None:
                     f"{operation}_{rm}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
                     test_f,
                     cover_f,
+                    config,
                 )
 
 
-def genOverflowTests(test_f: TextIO, cover_f: TextIO) -> None:
+def genOverflowTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for precision in FLOAT_FMTS:
         rounding_mode = random.choice(ROUNDING_MODES)
 
@@ -131,6 +133,7 @@ def genOverflowTests(test_f: TextIO, cover_f: TextIO) -> None:
                     f"{operation}_{rm}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
                     test_f,
                     cover_f,
+                    config,
                 )
 
 
@@ -148,7 +151,7 @@ def get_fma_signs(operation: str) -> tuple[int, int]:
     return op_mul_sign, op_add_sign
 
 
-def lsbGuardStickyTests(test_f: TextIO, cover_f: TextIO) -> None:
+def lsbGuardStickyTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     rounding_mode = random.choice(ROUNDING_MODES)
     for precision in FLOAT_FMTS:
         for grs_int in range(0, 8):
@@ -156,7 +159,10 @@ def lsbGuardStickyTests(test_f: TextIO, cover_f: TextIO) -> None:
                 mul_sign, add_sign = get_fma_signs(operation)
                 a, b, c = get_fp_values(precision, f"{grs_int:03b}", mul_sign, add_sign)
                 run_and_store_test_vector(
-                    f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00", test_f, cover_f
+                    f"{operation}_{rounding_mode}_{a}_{b}_{c}_{precision}_{32 * '0'}_{precision}_00",
+                    test_f,
+                    cover_f,
+                    config,
                 )
 
 
@@ -286,8 +292,8 @@ def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]
 
 
 @register_model("B18")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     random.seed(reproducible_hash("B18"))
-    genUnderflowTests(test_f, cover_f)
-    genOverflowTests(test_f, cover_f)
-    lsbGuardStickyTests(test_f, cover_f)
+    genUnderflowTests(test_f, cover_f, config)
+    genOverflowTests(test_f, cover_f, config)
+    lsbGuardStickyTests(test_f, cover_f, config)

@@ -24,6 +24,7 @@ import random
 from random import seed
 from typing import TextIO
 
+from cover_float.common.config import Config
 from cover_float.common.constants import (
     EXPONENT_BITS,
     FLOAT_FMTS,
@@ -46,19 +47,21 @@ def decimalComponentsToHex(fmt: str, sign: int, biased_exp: int, mantissa: int) 
     return f"{int(bits, 2):032X}"
 
 
-def writeAdd(fmt: str, a_hex: str, b_hex: str, test_f: TextIO, cover_f: TextIO) -> None:
+def writeAdd(fmt: str, a_hex: str, b_hex: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     run_and_store_test_vector(
         f"{OP_ADD}_{ROUND_NEAR_EVEN}_{a_hex}_{b_hex}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
         test_f,
         cover_f,
+        config,
     )
 
 
-def writeSub(fmt: str, a_hex: str, b_hex: str, test_f: TextIO, cover_f: TextIO) -> None:
+def writeSub(fmt: str, a_hex: str, b_hex: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     run_and_store_test_vector(
         f"{OP_SUB}_{ROUND_NEAR_EVEN}_{a_hex}_{b_hex}_{32 * '0'}_{fmt}_{32 * '0'}_{fmt}_00",
         test_f,
         cover_f,
+        config,
     )
 
 
@@ -121,7 +124,9 @@ def makeCarryMantissas(fmt: str, m_shifts: int) -> tuple[int, int]:
     return a_m, b_m
 
 
-def makeTestVectors(fmt: str, d: int, leading_zeros: int, operation: str, test_f: TextIO, cover_f: TextIO) -> None:
+def makeTestVectors(
+    fmt: str, d: int, leading_zeros: int, operation: str, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
     m = MANTISSA_BITS[fmt]
     p = m + 1
 
@@ -173,10 +178,10 @@ def makeTestVectors(fmt: str, d: int, leading_zeros: int, operation: str, test_f
     a_hex = decimalComponentsToHex(fmt, a_sign, a_exp, a_m)
     b_hex = decimalComponentsToHex(fmt, b_sign, b_exp, b_m)
 
-    write_fn(fmt, a_hex, b_hex, test_f, cover_f)
+    write_fn(fmt, a_hex, b_hex, test_f, cover_f, config)
 
 
-def SubnormCancellationTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
+def SubnormCancellationTests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -> None:
     m = MANTISSA_BITS[fmt]
     p = m + 1
 
@@ -185,22 +190,22 @@ def SubnormCancellationTests(test_f: TextIO, cover_f: TextIO, fmt: str) -> None:
             if d == 0 or d == 1:
                 if leading_zeros != (m - 1):
                     seed(reproducible_hash(f"{fmt}_b13_add_{d}_{leading_zeros}"))
-                    makeTestVectors(fmt, d, leading_zeros, "add", test_f, cover_f)
+                    makeTestVectors(fmt, d, leading_zeros, "add", test_f, cover_f, config)
 
                     seed(reproducible_hash(f"{fmt}_b13_sub_{d}_{leading_zeros}"))
-                    makeTestVectors(fmt, d, leading_zeros, "sub", test_f, cover_f)
+                    makeTestVectors(fmt, d, leading_zeros, "sub", test_f, cover_f, config)
             else:
                 seed(reproducible_hash(f"{fmt}_b13_add_{d}_{leading_zeros}"))
-                makeTestVectors(fmt, d, leading_zeros, "add", test_f, cover_f)
+                makeTestVectors(fmt, d, leading_zeros, "add", test_f, cover_f, config)
 
                 seed(reproducible_hash(f"{fmt}_b13_sub_{d}_{leading_zeros}"))
-                makeTestVectors(fmt, d, leading_zeros, "sub", test_f, cover_f)
+                makeTestVectors(fmt, d, leading_zeros, "sub", test_f, cover_f, config)
 
 
 @register_model("B13")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     test_f.write("// B13 Cancellation + Subnormal Tests\n")
     test_f.write("// ADD, SUB\n")
 
     for fmt in FLOAT_FMTS:
-        SubnormCancellationTests(test_f, cover_f, fmt)
+        SubnormCancellationTests(test_f, cover_f, config, fmt)

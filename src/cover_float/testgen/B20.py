@@ -15,21 +15,18 @@
 
 # B20 (rwolk@g.hmc.edu)
 
-import logging
 import math
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash, unpack_test_vector
 from cover_float.reference import run_and_store_test_vector, run_test_vector, store_cover_vector
 from cover_float.testgen.model import register_model
 
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
 
-
-def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # Generally, we want to look for two significands, sig1 and sig2 where
     # when reduced into lowest terms, sig2 only has factors of two. Now, when
     # sig2 is 2^k, we have nf - k trailing zeros.
@@ -61,10 +58,9 @@ def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         # Extract Number of trailing zeros for verification
         generated_trailing_zeros = len(bin(res)) - len(bin(res).rstrip("0"))
         if generated_trailing_zeros != trailing_zeros:
-            logger.exception(
+            raise ValueError(
                 f"Failed to Generate A Div Result for format {fmt} with exactly {trailing_zeros} trailing_zeros"
             )
-            continue
 
         exp1, exp2 = random.randint(min_exp, max_exp), random.randint(min_exp, max_exp)
         while not min_exp < exp1 - exp2 < max_exp:
@@ -74,10 +70,10 @@ def generate_div_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         f2 = generate_float(random.randint(0, 1), exp2, s2 & ((1 << nf) - 1), fmt)
         tv = generate_test_vector(constants.OP_DIV, f1, f2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
 
-        run_and_store_test_vector(tv, test_f, cover_f)
+        run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
-def generate_sqrt_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_sqrt_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     # We are looking for exact square root answers that are exact and have an exact number of trailing zeros
     # This makes the approach very easy: We generate the answers, then make sure they fit into a float
     # when squared. Clearly, because the multiplication result is 2.2nf, and the number of trailing zeros
@@ -120,16 +116,15 @@ def generate_sqrt_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         mantissa |= 1 << nf
 
         if mantissa != answer:
-            logger.exception(
+            raise ValueError(
                 f"Failed to Generate a SQRT Value for format: {fmt} and number of trailing zeros: {trailing_zeros}"
             )
-            continue
 
-        store_cover_vector(result, test_f, cover_f)
+        store_cover_vector(result, test_f, cover_f, config)
 
 
 @register_model("B20")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
-        generate_div_tests(fmt, test_f, cover_f)
-        generate_sqrt_tests(fmt, test_f, cover_f)
+        generate_div_tests(fmt, test_f, cover_f, config)
+        generate_sqrt_tests(fmt, test_f, cover_f, config)

@@ -1,7 +1,7 @@
 [project]
 name = "cover-float"
 version = "0.1.0"
-description = "Add your description here"
+description = "Test Generators With Coverage for the IBM Floating Point Tests"
 readme = "README.md"
 authors = [
     { name = "Corey Hickson", email = "chickson@hmc.edu" },
@@ -12,13 +12,12 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "rich==14.1.0",
+    "rich>=14.3.4",
     "sympy==1.14.0",
 ]
 
 [project.scripts]
-cover-float-reference = "cover_float.cli:main"
-cover-float-testgen = "cover_float.cli:testgen"
+cover-float-testgen = "cover_float.cli:main"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"

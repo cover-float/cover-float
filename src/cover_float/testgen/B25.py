@@ -19,12 +19,13 @@ import random
 from typing import TextIO
 
 import cover_float.common.constants as constants
+from cover_float.common.config import Config
 from cover_float.common.util import generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
 
 
-def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     seed = reproducible_hash(f"B25 {int_fmt}")
     random.seed(seed)
 
@@ -35,28 +36,28 @@ def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
         tv = generate_test_vector(
             constants.OP_CIF, (1 << int_bits) - 1, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
         )
-        run_and_store_test_vector(tv, test_f, cover_f)
+        run_and_store_test_vector(tv, test_f, cover_f, config)
         # 0
         tv = generate_test_vector(
             constants.OP_CIF, 0, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
         )
-        run_and_store_test_vector(tv, test_f, cover_f)
+        run_and_store_test_vector(tv, test_f, cover_f, config)
         # 1
         tv = generate_test_vector(
             constants.OP_CIF, 1, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
         )
-        run_and_store_test_vector(tv, test_f, cover_f)
+        run_and_store_test_vector(tv, test_f, cover_f, config)
         if constants.INT_SIGNED[int_fmt]:
             # - Max Int
             tv = generate_test_vector(
                 constants.OP_CIF, 1 << int_bits | 1, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
             )
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
             # IntMin (maximum negative int)
             tv = generate_test_vector(
                 constants.OP_CIF, 1 << int_bits, 0, 0, int_fmt, float_fmt, random.choice(constants.ROUNDING_MODES)
             )
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
             # -1: Just all ones for twos complement representation
             tv = generate_test_vector(
                 constants.OP_CIF,
@@ -67,7 +68,7 @@ def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
                 float_fmt,
                 random.choice(constants.ROUNDING_MODES),
             )
-            run_and_store_test_vector(tv, test_f, cover_f)
+            run_and_store_test_vector(tv, test_f, cover_f, config)
 
         # Random
         # This generates a random int, possibly with a sign bit (when applicable)
@@ -80,10 +81,10 @@ def generate_B25(int_fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             float_fmt,
             random.choice(constants.ROUNDING_MODES),
         )
-        run_and_store_test_vector(tv, test_f, cover_f)
+        run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B25")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.INT_FMTS:
-        generate_B25(fmt, test_f, cover_f)
+        generate_B25(fmt, test_f, cover_f, config)

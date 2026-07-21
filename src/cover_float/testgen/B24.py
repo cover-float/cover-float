@@ -20,6 +20,7 @@
 from typing import Optional, TextIO
 
 import cover_float.common.constants as constants
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector
 from cover_float.reference import run_and_store_test_vector
 from cover_float.testgen.model import register_model
@@ -54,7 +55,7 @@ MAGNITUDES: list[Optional[tuple[int, int, int]]] = [
 ]
 
 
-def generate_B24(test_f: TextIO, cover_f: TextIO) -> None:
+def generate_B24(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     for src_fmt in constants.FLOAT_FMTS:
         nf = constants.MANTISSA_BITS[src_fmt]
         bias = constants.EXPONENT_BIAS[src_fmt]
@@ -74,9 +75,9 @@ def generate_B24(test_f: TextIO, cover_f: TextIO) -> None:
                     for sign in (0, 1):
                         f = generate_float(sign, unbiased_exp, fraction, src_fmt)
                         tv = generate_test_vector(constants.OP_CFI, f, 0, 0, src_fmt, dest_fmt, rm)
-                        run_and_store_test_vector(tv, test_f, cover_f)
+                        run_and_store_test_vector(tv, test_f, cover_f, config)
 
 
 @register_model("B24")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
-    generate_B24(test_f, cover_f)
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
+    generate_B24(test_f, cover_f, config)

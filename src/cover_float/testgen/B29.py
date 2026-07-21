@@ -15,20 +15,17 @@
 
 # B29 (rwolk@g.hmc.edu)
 
-import logging
 import random
-from typing import TextIO, cast
+from typing import TextIO
 
 import cover_float.common.constants as constants
-import cover_float.common.log as log
+from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash, unpack_test_vector
 from cover_float.reference import run_test_vector, store_cover_vector
 from cover_float.testgen.model import register_model
 
-logger: log.ModelLogger = cast(log.ModelLogger, logging.getLogger("B1"))
 
-
-def generate_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
+def generate_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     targets = [{"Sign": x & 1, "LSB": (x & 2) >> 1, "Guard": (x & 4) >> 2, "Sticky": (x & 8) >> 3} for x in range(16)]
 
     nf = constants.MANTISSA_BITS[fmt]
@@ -71,12 +68,12 @@ def generate_tests(fmt: str, test_f: TextIO, cover_f: TextIO) -> None:
             }
 
             if computed_info == target:
-                store_cover_vector(results, test_f, cover_f)
+                store_cover_vector(results, test_f, cover_f, config)
             else:
-                logger.exception(f"Failed to Generate for fmt={fmt} and target={target}")
+                raise ValueError(f"Failed to Generate for fmt={fmt} and target={target}")
 
 
 @register_model("B29")
-def main(test_f: TextIO, cover_f: TextIO) -> None:
+def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
-        generate_tests(fmt, test_f, cover_f)
+        generate_tests(fmt, test_f, cover_f, config)
