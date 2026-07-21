@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import itertools
+import os
 import pickle
 import random
 from dataclasses import dataclass
@@ -753,8 +754,11 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
         hashval = reproducible_hash(fmt + "b15")
         random.seed(hashval)
 
-        bins_path = Path("coverage", "covergroups", "bins_templates", "generated")
-        bins_path.mkdir(parents=True, exist_ok=True)
+        if config.no_coverage_generation:
+            bins_path = Path(os.devnull)
+        else:
+            bins_path = Path("coverage", "covergroups", "bins_templates", "generated")
+            bins_path.mkdir(parents=True, exist_ok=True)
 
         add_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh"
         mul_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_prod_special_sigs.svh"

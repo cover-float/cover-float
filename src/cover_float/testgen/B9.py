@@ -16,6 +16,7 @@
 # Created By: Ryan Wolk (rwolk@hmc.edu) on 2/26/2026
 
 import math
+import os
 import random
 from pathlib import Path
 from typing import TextIO
@@ -227,14 +228,17 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         generator = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], fmt + "b9")
 
-        bins_path = Path(
-            "coverage",
-            "covergroups",
-            "bins_templates",
-            "generated",
-            f"B9_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
-        )
-        bins_path.parent.mkdir(parents=True, exist_ok=True)
+        if config.no_coverage_generation:
+            bins_path = Path(os.devnull)
+        else:
+            bins_path = Path(
+                "coverage",
+                "covergroups",
+                "bins_templates",
+                "generated",
+                f"B9_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
+            )
+            bins_path.parent.mkdir(parents=True, exist_ok=True)
 
         with bins_path.open("w") as generated_coverage:
             sigs = generator.generate(generated_coverage)
