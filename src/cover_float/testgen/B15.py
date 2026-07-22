@@ -756,12 +756,15 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
 
         if config.no_coverage_generation:
             bins_path = Path(os.devnull)
+            add_sigs_path = Path(os.devnull)
+            mul_sigs_path = Path(os.devnull)
         else:
             bins_path = Path("coverage", "covergroups", "bins_templates", "generated")
             bins_path.mkdir(parents=True, exist_ok=True)
 
-        add_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh"
-        mul_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_prod_special_sigs.svh"
+            add_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh"
+            mul_sigs_path = bins_path / f"B15_{constants.FMT_TO_STRING[fmt]}_prod_special_sigs.svh"
+
         with add_sigs_path.open("w") as add_sigs_file, mul_sigs_path.open("w") as mul_sigs_file:
             logger.status(f"Generating {fmt} Sigs & Shifts")
             b9_sig_gen = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], fmt + "b15")
