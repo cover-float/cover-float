@@ -1,2 +1,6 @@
 # cover-float
-A collection of SystemVerilog functional coverpoints for the IBM Floating-Point test suite
+An implementation of the IBM floating point test suite, written by Aharoni et. al, found [here](https://web.archive.org/web/20210701231302/https://www.research.ibm.com/haifa/projects/verification/fpgen/papers/ieee-test-suite-v2.pdf). We provide functional coverage written in SystemVerilog and Python test generators for each of the 29 models listed in the paper. In addition, we provide python bindings for a modified version of softfloat that allows us to extract intermediate information from floating point operations, such as the pre-rounding intermediate and the multiplication result of a fused multiply-add operation.
+
+The project is structured with SystemVerilog coverage found in `coverage`, Python test generation found in `src/cover_float`, softfloat bindings found in `src/c`, our modified version of softfloat found in `src/submodules/spike`, and an unmodified version of softfloat, used to ensure that our changes did not affect computation results, found in `src/submodules/unmodified_spike`.
+
+Python generation depends on `uv` as a build system for the softfloat bindings and as a runner. Test generation can be invoked through `make all` or simply `make`. To generate a specific model, e.g. B4, run `make B4`. Coverage is invoked through `make sim`. See the makefile for more configuration options.
