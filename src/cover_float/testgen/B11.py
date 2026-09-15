@@ -23,6 +23,7 @@
 # the interesting shift ranges, so short and long shifts: [-3, 3], [nf, nf-3], and [-nf, -nf+3]
 
 import itertools
+import os
 import random
 from pathlib import Path
 from typing import TextIO
@@ -117,14 +118,17 @@ def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
         random.seed(seed)
 
         get_model_logger("B11").status(f"Generating {fmt} Sigs & Shifts")
-        bins_path = Path(
-            "coverage",
-            "covergroups",
-            "bins_templates",
-            "generated",
-            f"B11_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
-        )
-        bins_path.parent.mkdir(parents=True, exist_ok=True)
+        if config.no_coverage_generation:
+            bins_path = Path(os.devnull)
+        else:
+            bins_path = Path(
+                "coverage",
+                "covergroups",
+                "bins_templates",
+                "generated",
+                f"B11_{constants.FMT_TO_STRING[fmt]}_special_sigs.svh",
+            )
+            bins_path.parent.mkdir(parents=True, exist_ok=True)
 
         with bins_path.open("w") as generated_coverage:
             sig_gen = B9SignificandGenerator(constants.MANTISSA_BITS[fmt], "b11" + fmt)
