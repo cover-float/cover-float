@@ -24,9 +24,6 @@
         ],
         "minimumReleaseAge": "4 hours"
     },
-    "git-submodules": {
-        "enabled": true
-    },
     "pre-commit": {
         "enabled": true
     },
