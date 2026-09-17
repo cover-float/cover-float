@@ -1,6 +1,78 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:best-practices"
+    ],
+    "baseBranchPatterns": [
+        "main"
+    ],
+    "timezone": "America/Los_Angeles",
+    "labels": [
+        "dependencies"
+    ],
+    "prHourlyLimit": 4,
+    "prConcurrentLimit": 10,
+    "rebaseWhen": "conflicted",
+    "minimumReleaseAge": "7 days",
+    "internalChecksFilter": "strict",
+    "automerge": true,
+    "osvVulnerabilityAlerts": true,
+    "vulnerabilityAlerts": {
+        "labels": [
+            "dependencies",
+            "security"
+        ],
+        "minimumReleaseAge": "4 hours"
+    },
+    "git-submodules": {
+        "enabled": true
+    },
+    "pre-commit": {
+        "enabled": true
+    },
+    "lockFileMaintenance": {
+        "enabled": true,
+        "schedule": [
+            "before 6am on monday"
+        ]
+    },
+    "packageRules": [
+        {
+            "description": "Group all GitHub Actions updates into one PR",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "groupName": "github-actions"
+        },
+        {
+            "description": "Keep ruff in sync across pyproject.toml and the pre-commit hook",
+            "matchDepNames": [
+                "ruff",
+                "astral-sh/ruff-pre-commit"
+            ],
+            "groupName": "ruff"
+        },
+        {
+            "description": "Keep uv updates grouped across project files and pre-commit",
+            "matchDepNames": [
+                "uv",
+                "astral-sh/uv-pre-commit"
+            ],
+            "groupName": "uv"
+        },
+        {
+            "description": "Group pre-commit hook updates",
+            "matchManagers": [
+                "pre-commit"
+            ],
+            "matchDepNames": [
+                "!astral-sh/ruff-pre-commit",
+                "!astral-sh/uv-pre-commit"
+            ],
+            "groupName": "pre-commit hooks",
+            "schedule": [
+                "before 6am on monday"
+            ]
+        }
+    ]
 }
