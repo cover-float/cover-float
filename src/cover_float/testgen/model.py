@@ -29,7 +29,7 @@ from typing import Any, Callable, TextIO
 
 from rich.progress import TaskID
 
-import cover_float.common.log as log
+from cover_float.common import log
 from cover_float.common.config import Config
 from cover_float.scripts.postprocess import postprocess_testvectors
 

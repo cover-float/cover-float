@@ -41,19 +41,17 @@ dev = [
 line-length = 120
 
 [tool.ruff.lint]
+# Extra rules to enable beyond the default set
 extend-select = [
-  "F",   # various basic rules (pyflakes)
-  "E",   # errors (pycodestyle)
-  "W",   # warnings (pycodestyle)
-  "I",   # Import related rules (isort)
-  "UP",  # Upgraded version available in newer Python
-  "B",   # bugbear rules
   "A",   # shadow builtins
-  "EXE", # Executable file shebangs
   "ANN", # type annotation rules
-  "RUF", # Ruff specific rules
-  "PTH", # Pathlib usage
+  "ISC", # Implicit string concatenation
+  "PTH", # Use Pathlib
   "SIM", # Simplifications
+  "TID", # Tidy imports
+]
+ignore = [
+  "N", # Naming requirements
 ]
 
 ##### PYRIGHT CONFIG #####

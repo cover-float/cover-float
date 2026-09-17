@@ -25,8 +25,7 @@ import time
 from dataclasses import dataclass
 from typing import TextIO
 
-import cover_float.common.log as log
-from cover_float.common import constants
+from cover_float.common import constants, log
 from cover_float.common.config import Config
 from cover_float.common.util import unpack_test_vector
 from cover_float.reference import run_test_vector_unmodified, verify_test_vector

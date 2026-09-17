@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, BinaryIO, TextIO
 
-import cover_float.common.constants as constants
+from cover_float.common import constants
 from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,
@@ -148,7 +148,7 @@ class B15SignificandGenerator:
     def _trailing_ones_factoring(nf: int, ones: int) -> tuple[int, int]:
         # We want a significand with so many trailing ones
         if (1 << (2 * nf - ones)) <= (1 << 20):  # Around 1 Million
-            leaders = list(range(0, 1 << (2 * nf - ones)))
+            leaders = list(range(1 << (2 * nf - ones)))
             random.shuffle(leaders)
         else:
             leaders = (random.randint(0, (1 << (2 * nf - ones)) - 1) for _ in range(1 << 20))
@@ -241,7 +241,7 @@ class B15SignificandGenerator:
     def _leading_digit_factoring(nf: int, count: int, digit: str) -> tuple[int, int]:
         # We want a significand with so many trailing ones
         if (1 << (2 * nf - count)) <= (1 << 10):  # Around 1 Thousand
-            finals = list(range(0, 1 << (2 * nf - count)))
+            finals = list(range(1 << (2 * nf - count)))
             random.shuffle(finals)
         else:
             finals = (random.randint(0, (1 << (2 * nf - count)) - 1) for _ in range(1 << 10))
@@ -615,8 +615,7 @@ class B15SignificandGenerator:
         return [(sig.sig1, sig.sig2) for sig in self.sigs]
 
     def store_sigs(self, file: TextIO) -> None:
-        for i, sig in enumerate(self.sigs):
-            file.write(f"bins bin_{i} = {{ 'b{sig.result:0{2 * self.nf + 2}b} }}; \n")
+        file.writelines(f"bins bin_{i} = {{ 'b{sig.result:0{2 * self.nf + 2}b} }}; \n" for i, sig in enumerate(self.sigs))
 
     def cache_sigs(self, file: BinaryIO) -> None:
         pickle.dump(self.sigs, file)

@@ -21,7 +21,7 @@ import random
 from pathlib import Path
 from typing import TextIO
 
-import cover_float.common.constants as constants
+from cover_float.common import constants
 from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector
@@ -76,7 +76,7 @@ class B9SignificandGenerator:
         self.sparse_positions = [*one_sparse_positions, *two_sparse_positions]
 
         # Checkerboards: List of (run_length, offset)
-        self.checkerboards = [(run_length, offset) for run_length in range(1, 3) for offset in range(0, run_length * 2)]
+        self.checkerboards = [(run_length, offset) for run_length in range(1, 3) for offset in range(run_length * 2)]
 
         # Long Runs: List of (length, positions)
         self.long_runs: list[tuple[int, int]] = []
@@ -191,8 +191,7 @@ class B9SignificandGenerator:
         return leading_trailing + sparse + checkers + long_runs
 
     def write_significand_coverage_template(self, significands: list[str], initial: int, file: TextIO) -> None:
-        for i, sig in enumerate(significands, initial):
-            file.write(f"bins bin_{i:02d} = {{ 'b{sig.zfill(self.nf)} }}; \n")
+        file.writelines(f"bins bin_{i:02d} = {{ 'b{sig.zfill(self.nf)} }}; \n" for i, sig in enumerate(significands, initial))
 
 
 def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:

@@ -345,8 +345,7 @@ def genSpecExp_div(precision: str, target: int, hashString: str, grs_int: int) -
 
     upper_bound = min(max_exp, max_exp + target)
 
-    if lower_bound > upper_bound:
-        lower_bound = upper_bound
+    lower_bound = min(lower_bound, upper_bound)
 
     a_exp = random.randint(lower_bound, upper_bound)
     b_exp = a_exp - target

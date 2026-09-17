@@ -27,7 +27,7 @@ import functools
 import random
 from typing import TYPE_CHECKING, Optional, TextIO
 
-import cover_float.common.constants as constants
+from cover_float.common import constants
 from cover_float.common.config import Config
 from cover_float.common.util import (
     bezout_inverse,

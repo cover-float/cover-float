@@ -19,7 +19,7 @@
 import random
 from typing import TextIO
 
-import cover_float.common.constants as constants
+from cover_float.common import constants
 from cover_float.common.config import Config
 from cover_float.common.util import generate_float, generate_test_vector, reproducible_hash
 from cover_float.reference import run_and_store_test_vector

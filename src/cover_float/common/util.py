@@ -19,8 +19,8 @@ from typing import Callable, TypeVar
 
 from typing_extensions import ParamSpec
 
-import cover_float.common.constants as constants
-import cover_float.reference as reference
+from cover_float import reference
+from cover_float.common import constants
 
 ZERO = "0" * 32
 
