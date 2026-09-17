@@ -34,7 +34,7 @@ build-backend = "scikit_build_core.build"
 dev = [
     "pre-commit==4.3.0",
     "pyright==1.1.414",
-    "ruff==0.15.2",
+    "ruff==0.16.7",
 ]
 
 [tool.ruff]
