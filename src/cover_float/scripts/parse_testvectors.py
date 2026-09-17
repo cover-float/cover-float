@@ -30,7 +30,7 @@ Currently supports
 
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import cover_float.common.log as log
 from cover_float.reference import run_test_vector_unmodified, verify_test_vector
@@ -91,7 +91,7 @@ def parse_int_value(hex_val: str, spec: dict[str, Any]) -> dict[str, Any]:
     return {"value": value, "signed": spec.get("signed", False), "raw": hex_val}
 
 
-def parse_fp_value(hex_val: str, fmt_code: str) -> Optional[dict[str, Any]]:
+def parse_fp_value(hex_val: str, fmt_code: str) -> dict[str, Any] | None:
     spec = FMT_SPECS.get(fmt_code)
     if not spec:
         return None
@@ -156,7 +156,7 @@ def decode_class_mask(val: int) -> str:
     return "|".join(active) if active else hex(val)
 
 
-def value_to_string(parsed: Optional[dict[str, Any]], fmt_code: str, is_class: bool = False) -> str:
+def value_to_string(parsed: dict[str, Any] | None, fmt_code: str, is_class: bool = False) -> str:
     if parsed is None:
         return "None"
 
@@ -180,7 +180,7 @@ def value_to_string(parsed: Optional[dict[str, Any]], fmt_code: str, is_class: b
     return f"{sign_char}{format_mantissa(parsed)}P{parsed['exp']}"
 
 
-def parse_test_vector(line: str) -> Optional[dict[str, Any]]:
+def parse_test_vector(line: str) -> dict[str, Any] | None:
     line = line.strip()
     if not line or line.startswith("//"):
         return None
@@ -277,8 +277,8 @@ def format_output(parsed: dict[str, Any]) -> str:
     op: str = parsed["format"]
     rnd: str = parsed["round"]
     a: str = parsed["op_a"]
-    b: Optional[str] = parsed.get("op_b")
-    c: Optional[str] = parsed.get("op_c")
+    b: str | None = parsed.get("op_b")
+    c: str | None = parsed.get("op_c")
 
     if "v-" in op or any(x in op for x in ["cfi", "cff", "cif", "cls"]):
         base = f"{op} {rnd} {a}"

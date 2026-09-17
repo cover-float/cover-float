@@ -21,8 +21,9 @@ Last Edited:     April 10, 2026
 """
 
 import random
+from collections.abc import Callable
 from random import seed
-from typing import Callable, TextIO
+from typing import TextIO
 
 from cover_float.common.config import Config
 from cover_float.common.constants import (

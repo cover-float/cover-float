@@ -17,7 +17,7 @@
 
 import itertools
 import random
-from typing import Optional, TextIO
+from typing import TextIO
 
 import cover_float.common.constants as constants
 from cover_float.common.config import Config
@@ -51,8 +51,8 @@ def mul_sigs_with_trailing(target: int, bit_length: int, fmt: str) -> tuple[int,
 
 
 def divideSetRounding(
-    lsb: int, guard: int, target: int, extra_bits: int, fmt: str, should_shift: Optional[bool] = None
-) -> Optional[tuple[int, int]]:
+    lsb: int, guard: int, target: int, extra_bits: int, fmt: str, should_shift: bool | None = None
+) -> tuple[int, int] | None:
     nf = constants.MANTISSA_BITS[fmt]
 
     # There is a potential shift when sigA < sigB, so make it random
@@ -142,7 +142,7 @@ def generate_exponents(fmt: str, *, subtract: bool = False) -> tuple[int, int]:
 
 
 def generate_div_tests(
-    fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config, target_bits: Optional[int] = None
+    fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config, target_bits: int | None = None
 ) -> None:
     seed = reproducible_hash(f"B8 DIV {fmt} {rm}")
     random.seed(seed)

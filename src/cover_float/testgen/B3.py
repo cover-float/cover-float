@@ -14,7 +14,7 @@
 # and limitations under the License.
 
 import random
-from typing import Optional, TextIO
+from typing import TextIO
 
 import cover_float.common.constants as common
 from cover_float.common.config import Config
@@ -41,7 +41,7 @@ SRC3_OPS = [
 ]
 
 
-def generate_random_float(exponent: int, fmt: str, sign: Optional[int] = None) -> int:
+def generate_random_float(exponent: int, fmt: str, sign: int | None = None) -> int:
     if sign is None:
         sign = random.randint(0, 1)
     # sign = 0
