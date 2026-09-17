@@ -2,5 +2,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(submodules)
+add_subdirectory(dependencies)
 add_subdirectory(c)
