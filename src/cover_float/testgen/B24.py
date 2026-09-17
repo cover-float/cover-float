@@ -17,7 +17,7 @@
 # B24: CvtFP2Int - Underflow
 
 
-from typing import Optional, TextIO
+from typing import TextIO
 
 import cover_float.common.constants as constants
 from cover_float.common.config import Config
@@ -43,7 +43,7 @@ DEST_FMTS = [
 # Each magnitude is (unbiased_exp, top_fraction_value, num_top_bits). The stored
 # fraction is (top << (nf - num_top_bits)), i.e. top-justified, so construction
 # is format-general. None is a sentinel for +-0 (biased exponent 0, fraction 0).
-MAGNITUDES: list[Optional[tuple[int, int, int]]] = [
+MAGNITUDES: list[tuple[int, int, int] | None] = [
     None,  # 0
     (-2, 0, 0),  # 1/4  = 1.0  x 2^-2
     (-1, 0, 0),  # 1/2  = 1.0  x 2^-1

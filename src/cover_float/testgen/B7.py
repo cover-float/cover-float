@@ -25,7 +25,7 @@
 
 import functools
 import random
-from typing import TYPE_CHECKING, Optional, TextIO
+from typing import TYPE_CHECKING, TextIO
 
 import cover_float.common.constants as constants
 from cover_float.common.config import Config
@@ -242,7 +242,7 @@ STICKY_LIMITS = {
 @functools.cache
 def multiplicand_generator(
     target_location: int, shift_amount: int, effective_subtraction: bool, nf: int
-) -> Optional[tuple[int, int]]:
+) -> tuple[int, int] | None:
     total_multiplicand_rounding_bits = nf + shift_amount + 2
     target = 1 << (nf - target_location - 1)
     if effective_subtraction:

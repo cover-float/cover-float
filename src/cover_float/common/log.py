@@ -20,12 +20,12 @@ import logging.handlers
 import multiprocessing
 import threading
 import time
-from collections.abc import Generator, Iterable, Sized
+from collections.abc import Callable, Generator, Iterable, Sized
 from contextlib import contextmanager
 from multiprocessing.connection import Connection
 from queue import Queue
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from rich import console
 from rich.logging import RichHandler
