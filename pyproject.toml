@@ -24,7 +24,7 @@ minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 
 [tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "CMakeLists.txt" }]
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" }]
 
 [build-system]
 requires = ["scikit-build-core>=0.10", "pybind11"]
