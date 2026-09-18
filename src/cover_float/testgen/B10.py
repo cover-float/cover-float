@@ -58,7 +58,7 @@ def innerTest(test_f: TextIO, cover_f: TextIO, config: Config, op: str) -> None:
         a_exp = random.randint(min_exp, max_exp - (p + 4))
         b_exp = a_exp
 
-        for _ in range(0, p + 5):
+        for _ in range(p + 5):
             complete_a = decimalComponentsToHex(fmt, a_exp)
             complete_b = decimalComponentsToHex(fmt, b_exp)
 
@@ -76,7 +76,7 @@ def innerTest(test_f: TextIO, cover_f: TextIO, config: Config, op: str) -> None:
         a_exp = random.randint(min_exp + (p + 4), max_exp)
         b_exp = a_exp - 1
 
-        for _ in range(0, p + 4):
+        for _ in range(p + 4):
             complete_a = decimalComponentsToHex(fmt, a_exp)
             complete_b = decimalComponentsToHex(fmt, b_exp)
             run_and_store_test_vector(

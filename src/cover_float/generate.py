@@ -19,8 +19,8 @@ from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from rich import print as rprint
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 
-import cover_float.common.log as log
 import cover_float.testgen as tg
+from cover_float.common import log
 from cover_float.common.config import Config
 from cover_float.common.util import SingleThreadedExecutor
 

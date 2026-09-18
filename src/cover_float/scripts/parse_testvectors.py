@@ -32,7 +32,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import cover_float.common.log as log
+from cover_float.common import log
 from cover_float.reference import run_test_vector_unmodified, verify_test_vector
 
 FMT_SPECS: dict[str, dict[str, Any]] = {

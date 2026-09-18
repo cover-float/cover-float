@@ -14,6 +14,7 @@
 # and limitations under the License.
 
 import argparse
+import sys
 from pathlib import Path
 
 from cover_float import Config, generate
@@ -24,7 +25,7 @@ def main() -> None:
     success = generate(config)
 
     # Code 0 if successful
-    exit(not success)
+    sys.exit(not success)
 
 
 def parse_args() -> Config:

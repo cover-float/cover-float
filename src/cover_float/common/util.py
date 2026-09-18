@@ -20,8 +20,8 @@ from typing import TypeVar
 
 from typing_extensions import ParamSpec
 
-import cover_float.common.constants as constants
-import cover_float.reference as reference
+from cover_float import reference
+from cover_float.common import constants
 
 ZERO = "0" * 32
 
@@ -231,8 +231,9 @@ class SingleThreadedExecutor(concurrent.futures.Executor):
 
         try:
             result = fn(*args, **kwargs)
-            future.set_result(result)
-        except Exception as e:
+        except BaseException as e:  # noqa: BLE001
             future.set_exception(e)
+        else:
+            future.set_result(result)
 
         return future

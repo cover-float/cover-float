@@ -154,7 +154,7 @@ def get_fma_signs(operation: str) -> tuple[int, int]:
 def lsbGuardStickyTests(test_f: TextIO, cover_f: TextIO, config: Config) -> None:
     rounding_mode = random.choice(ROUNDING_MODES)
     for precision in FLOAT_FMTS:
-        for grs_int in range(0, 8):
+        for grs_int in range(8):
             for operation in FMA_OPS:
                 mul_sign, add_sign = get_fma_signs(operation)
                 a, b, c = get_fp_values(precision, f"{grs_int:03b}", mul_sign, add_sign)
@@ -252,10 +252,7 @@ def generate_inexact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, in
 
         if gen_sticky and gen_lsb == lsb and gen_guard == guard:
             return sig1, sig2
-    else:
-        raise ValueError(
-            f"Failed to Generate Multiplicands giving lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
-        )
+    raise ValueError(f"Failed to Generate Multiplicands giving lsb={lsb}, guard={guard} with {m_bits} mantissa bits")
 
 
 def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]:
@@ -285,10 +282,7 @@ def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]
 
         if gen_sticky == 0 and gen_guard == guard and gen_lsb == lsb:
             return sig1, sig2
-    else:
-        raise ValueError(
-            f"Failed to Generate Exact Multiplicands for lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
-        )
+    raise ValueError(f"Failed to Generate Exact Multiplicands for lsb={lsb}, guard={guard} with {m_bits} mantissa bits")
 
 
 @register_model("B18")
