@@ -32,7 +32,7 @@ build-backend = "scikit_build_core.build"
 
 [dependency-groups]
 dev = [
-    "pre-commit==4.3.0",
+    "pre-commit==4.6.2",
     "pyright==1.1.414",
     "ruff==0.15.2",
 ]
