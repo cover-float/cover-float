@@ -231,8 +231,9 @@ class SingleThreadedExecutor(concurrent.futures.Executor):
 
         try:
             result = fn(*args, **kwargs)
-            future.set_result(result)
-        except Exception as e:
+        except BaseException as e:  # noqa: BLE001
             future.set_exception(e)
+        else:
+            future.set_result(result)
 
         return future

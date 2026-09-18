@@ -252,9 +252,7 @@ def generate_inexact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, in
 
         if gen_sticky and gen_lsb == lsb and gen_guard == guard:
             return sig1, sig2
-    raise ValueError(
-        f"Failed to Generate Multiplicands giving lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
-    )
+    raise ValueError(f"Failed to Generate Multiplicands giving lsb={lsb}, guard={guard} with {m_bits} mantissa bits")
 
 
 def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]:
@@ -284,9 +282,7 @@ def generate_exact_factors(lsb: int, guard: int, m_bits: int) -> tuple[int, int]
 
         if gen_sticky == 0 and gen_guard == guard and gen_lsb == lsb:
             return sig1, sig2
-    raise ValueError(
-        f"Failed to Generate Exact Multiplicands for lsb={lsb}, guard={guard} with {m_bits} mantissa bits"
-    )
+    raise ValueError(f"Failed to Generate Exact Multiplicands for lsb={lsb}, guard={guard} with {m_bits} mantissa bits")
 
 
 @register_model("B18")

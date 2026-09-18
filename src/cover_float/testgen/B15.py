@@ -615,7 +615,9 @@ class B15SignificandGenerator:
         return [(sig.sig1, sig.sig2) for sig in self.sigs]
 
     def store_sigs(self, file: TextIO) -> None:
-        file.writelines(f"bins bin_{i} = {{ 'b{sig.result:0{2 * self.nf + 2}b} }}; \n" for i, sig in enumerate(self.sigs))
+        file.writelines(
+            f"bins bin_{i} = {{ 'b{sig.result:0{2 * self.nf + 2}b} }}; \n" for i, sig in enumerate(self.sigs)
+        )
 
     def cache_sigs(self, file: BinaryIO) -> None:
         pickle.dump(self.sigs, file)

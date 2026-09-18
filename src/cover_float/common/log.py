@@ -39,6 +39,7 @@ from rich.progress import (
     TaskID,
     TextColumn,
 )
+from typing_extensions import Self
 
 from cover_float.common.config import Config
 
@@ -221,7 +222,9 @@ class ProgressAwareLogHandler(logging.Handler):
                 message_renderable=message,
             )
             self.progress.print(renderable)
-        except Exception:
+        except RecursionError:  # Mirrors implementation of logging.Handler.emit
+            raise
+        except Exception:  # noqa: BLE001
             self.handleError(record)
 
 
@@ -263,7 +266,7 @@ class StatusReporter:
             self._refresh_thread.daemon = True
             self._refresh_thread.start()
 
-    def __enter__(self) -> StatusReporter:
+    def __enter__(self) -> Self:
         if not self.disable:
             self.progress.start()
 
@@ -272,7 +275,9 @@ class StatusReporter:
 
         return self
 
-    def __exit__(self, exc_type: type | None, exc_value: Exception | None, traceback: TracebackType | None) -> None:
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
         self.exiting = True
 
         if self._refresh_thread:

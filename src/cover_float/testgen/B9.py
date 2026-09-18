@@ -98,7 +98,7 @@ class B9SignificandGenerator:
             interpolated = start + (end - start) * (i / max_n)
             ans.append((run_length, math.floor(interpolated)))
 
-        return sorted(list(set(ans)))
+        return sorted(set(ans))
 
     def generate_leading_and_trailing(self) -> list[str]:
         random.seed(reproducible_hash(self.seed + "leading/trailing"))
@@ -191,7 +191,9 @@ class B9SignificandGenerator:
         return leading_trailing + sparse + checkers + long_runs
 
     def write_significand_coverage_template(self, significands: list[str], initial: int, file: TextIO) -> None:
-        file.writelines(f"bins bin_{i:02d} = {{ 'b{sig.zfill(self.nf)} }}; \n" for i, sig in enumerate(significands, initial))
+        file.writelines(
+            f"bins bin_{i:02d} = {{ 'b{sig.zfill(self.nf)} }}; \n" for i, sig in enumerate(significands, initial)
+        )
 
 
 def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
