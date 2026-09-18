@@ -10,7 +10,7 @@ authors = [
     { name = "Sisi Wang", email = "siswang@g.hmc.edu" },
     { name = "Angela Zheng", email = "angzheng@g.hmc.edu" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "rich>=14.3.4",
     "sympy==1.14.0",

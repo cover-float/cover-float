@@ -22,10 +22,10 @@ import logging
 import logging.handlers
 import os
 import re
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
 from queue import Queue
-from typing import Any, Callable, TextIO
+from typing import Any, TextIO
 
 from rich.progress import TaskID
 
