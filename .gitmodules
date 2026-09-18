@@ -1,0 +1,4 @@
+[submodule "src/dependencies/softfloat/spike"]
+	path = src/dependencies/softfloat/spike
+	url = https://github.com/cover-float/riscv-isa-sim.git
+	branch = dev
