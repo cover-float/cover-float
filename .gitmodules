@@ -1,10 +1,4 @@
-[submodule "submodules/spike"]
-	path = src/submodules/spike
+[submodule "src/dependencies/softfloat/spike"]
+	path = src/dependencies/softfloat/spike
 	url = https://github.com/cover-float/riscv-isa-sim.git
 	branch = dev
-[submodule "src/submodules/boost_multiprecision"]
-	path = src/submodules/boost_multiprecision
-	url = https://github.com/boostorg/multiprecision.git
-[submodule "src/submodules/unmodified_spike"]
-	path = src/submodules/unmodified_spike
-	url = https://github.com/riscv-software-src/riscv-isa-sim.git
