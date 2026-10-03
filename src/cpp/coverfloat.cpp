@@ -670,7 +670,13 @@ std::pair<int, std::string> reference_model(
             // resultf = bf16_rem(af, bf);
             float32_t f32A = {(uint32_t)af.v << 16};
             float32_t f32B = {(uint32_t)bf.v << 16};
-            resultf = f32_to_bf16(f32_div(f32A, f32B));
+
+            // Round odd acts like a sticky bit
+            softFloat_setRoundingMode(softfloat_round_odd);
+            float32_t f32_remainder = f32_rem(f32A, f32B);
+            softFloat_setRoundingMode(rm);
+
+            resultf = f32_to_bf16(f32_remainder);
 
             FLOAT16_TO_MP(result, resultf);
             break;
@@ -1459,7 +1465,7 @@ std::pair<int, std::string> reference_model(
                 break;
             }
             case FMT_LONG: {
-                result = f32_to_i64(bf16_to_f32(af), rm, true);
+                result = signed_to_unsigned(f32_to_i64(bf16_to_f32(af), rm, true));
                 break;
             }
             case FMT_ULONG: {
@@ -2045,7 +2051,7 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT16(af, a);
 
             float32_t as_f32 = bf16_to_f32(af);
-            float32_t rounded_to_int_f32 = f32_roundToInt(as_f32, softfloat_round_odd, true);
+            float32_t rounded_to_int_f32 = f32_roundToInt(as_f32, rm, true);
             resultf = f32_to_bf16(rounded_to_int_f32);
 
             sig = fracBF16UI(a);
