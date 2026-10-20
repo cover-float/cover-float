@@ -63,22 +63,16 @@ uint_fast8_t translate_rounding_mode_to_softfloat(uint_fast8_t rm) {
     switch (rm) {
     case 0:
         return softfloat_round_near_even;
-        break;
     case 1:
         return softfloat_round_minMag;
-        break;
     case 2:
         return softfloat_round_min;
-        break;
     case 3:
         return softfloat_round_max;
-        break;
     case 4:
         return softfloat_round_near_maxMag;
-        break;
     case 5:
         return softfloat_round_odd;
-        break;
     default:
         std::stringstream ss;
         ss << "Invalid rounding mode (" << (uint16_t)rm << ") for coverfloat. Expected a number between 0 and 5";

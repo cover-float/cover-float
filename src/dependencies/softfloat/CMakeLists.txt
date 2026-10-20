@@ -10,6 +10,8 @@ FetchContent_Declare(
     unmodified_spike
     GIT_REPOSITORY https://github.com/riscv-software-src/riscv-isa-sim.git
     GIT_TAG b6a84e1f3a51800d8354489b6493723742abff9a
+    GIT_SHALLOW
+    GIT_SUBMODULES "berkeley-softfloat-3"
 )
 
 FetchContent_GetProperties(unmodified_spike)
