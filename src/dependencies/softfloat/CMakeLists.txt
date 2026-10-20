@@ -8,8 +8,8 @@ set(cover_float_spike_source_dir "${CMAKE_CURRENT_LIST_DIR}/spike")
 
 FetchContent_Declare(
     unmodified_spike
-    URL "https://github.com/riscv-software-src/riscv-isa-sim/archive/dbb30bb31a086decd0cf1376dca3418d0a9bac64.tar.gz"
-    URL_HASH "SHA256=0488de77a9c723374981c6dc44c7ac33ba00af45cc90ce4be1c89fe03d0cee49"
+    GIT_REPOSITORY https://github.com/riscv-software-src/riscv-isa-sim.git
+    GIT_TAG b6a84e1f3a51800d8354489b6493723742abff9a
 )
 
 FetchContent_GetProperties(unmodified_spike)
@@ -40,6 +40,7 @@ target_compile_options(unmodified_softfloat PRIVATE
     -Wno-sign-compare
     -Wno-implicit-fallthrough
     -Wno-unused-parameter
+    -Wno-unused-variable
 )
 target_include_directories(unmodified_softfloat
     PUBLIC

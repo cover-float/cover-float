@@ -137,8 +137,8 @@ def postprocess_testvectors(
                     readable_vectors.write(format_output(parsed) + "\n")
 
                 if not verify_test_vector(line):
-                    logger.exception(
-                        f"Covervector Failed Verification: {line}, Expected: {run_test_vector_unmodified(line)}"
+                    logger.error(
+                        f"{model} Covervector Failed Verification: {line}, Expected: {run_test_vector_unmodified(line)}"
                     )
 
             try:

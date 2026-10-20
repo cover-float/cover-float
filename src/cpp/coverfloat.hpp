@@ -54,6 +54,15 @@ typedef struct {
 
 extern THREAD_LOCAL intermResult_t softfloat_intermediateResult;
 extern THREAD_LOCAL fmaFullShiftInfo_t softfloat_fmaAddShiftInfo;
+
+#define F32_EXP_BITS 8
+#define F32_EXP_BIAS ((1 << (F32_EXP_BITS - 1)) - 1)
+#define F32_SIG_BITS 23
+#define F32_EXP_MASK (((uint32_t)1 << F32_EXP_BITS) - 1)
+#define F32_SIG_MASK (((uint32_t)1 << F32_SIG_BITS) - 1)
+#define BF16_SIG_BITS 7
+#define BF16_EXP_BIAS F32_EXP_BIAS
+#define BF16_IMPLICIT_ONE (1 << BF16_SIG_BITS)
 #endif
 
 #define TEST_VECTOR_WIDTH_BITS 576

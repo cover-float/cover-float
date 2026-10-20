@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
+#include <stdexcept>
 #include <utility>
 
 #ifndef TEST_FMA
@@ -56,7 +57,33 @@ uint_fast8_t softFloat_getFlags() {
 }
 
 void softFloat_setRoundingMode(uint_fast8_t rm) {
-    softfloat_roundingMode = rm;
+    // Convert from the cover-float rm format to the softfloat-specific format
+    // The softfloat numbers are based on the numbers in softfloat 3d. Softfloat
+    // 3e changed round odd to be 6, hence why this function exists.
+    switch (rm) {
+    case 0:
+        softfloat_roundingMode = softfloat_round_near_even;
+        break;
+    case 1:
+        softfloat_roundingMode = softfloat_round_minMag;
+        break;
+    case 2:
+        softfloat_roundingMode = softfloat_round_min;
+        break;
+    case 3:
+        softfloat_roundingMode = softfloat_round_max;
+        break;
+    case 4:
+        softfloat_roundingMode = softfloat_round_near_maxMag;
+        break;
+    case 5:
+        softfloat_roundingMode = softfloat_round_odd;
+        break;
+    default:
+        std::stringstream ss;
+        ss << "Invalid rounding mode (" << (uint16_t)rm << ") for coverfloat. Expected a number between 0 and 5";
+        throw std::invalid_argument(ss.str());
+    }
 }
 
 void softfloat_getIntermResults(intermResult_t *result) {
@@ -672,7 +699,7 @@ std::pair<int, std::string> reference_model(
             float32_t f32B = {(uint32_t)bf.v << 16};
 
             // Round odd acts like a sticky bit
-            softFloat_setRoundingMode(softfloat_round_odd);
+            softfloat_roundingMode = softfloat_round_odd;
             float32_t f32_remainder = f32_rem(f32A, f32B);
             softFloat_setRoundingMode(rm);
 
@@ -1177,7 +1204,7 @@ std::pair<int, std::string> reference_model(
                 // a direct conversion to int64_t is UB
                 memcpy(&input, &serialized_input, sizeof(input));
 
-                softFloat_setRoundingMode(softfloat_round_odd);
+                softfloat_roundingMode = softfloat_round_odd;
                 float64_t out_64 = i64_to_f64(input);
                 softFloat_setRoundingMode(rm);
                 out = f64_to_bf16(out_64);
@@ -1187,7 +1214,7 @@ std::pair<int, std::string> reference_model(
             case FMT_ULONG: {
                 uint64_t input = static_cast<uint64_t>(a);
 
-                softFloat_setRoundingMode(softfloat_round_odd);
+                softfloat_roundingMode = softfloat_round_odd;
                 float64_t out_64 = ui64_to_f64(input);
                 softFloat_setRoundingMode(rm);
                 out = f64_to_bf16(out_64);
@@ -1577,7 +1604,7 @@ std::pair<int, std::string> reference_model(
                 break;
             }
             case FMT_BF16: {
-                softFloat_setRoundingMode(softfloat_round_odd);
+                softfloat_roundingMode = softfloat_round_odd;
                 float32_t af_32 = f128_to_f32(af);
                 // Save them for later
                 intermResult_t temp_interm_results = softfloat_intermediateResult;
@@ -2482,48 +2509,6 @@ float128_t f128_max(float128_t a, float128_t b) {
 }
 
 std::string coverfloat_runtestvector(const std::string &input, bool suppress_error_check) {
-
-#if 0
-    char op_str[MAX_TOKEN_LEN + 1]; // plus one for space for null terminator
-    char rm_str[MAX_TOKEN_LEN + 1];
-    char a_str[MAX_TOKEN_LEN + 1];
-    char b_str[MAX_TOKEN_LEN + 1];
-    char c_str[MAX_TOKEN_LEN + 1];
-    char opFmt_str[MAX_TOKEN_LEN + 1];
-    char res_str[MAX_TOKEN_LEN + 1];
-    char resFmt_str[MAX_TOKEN_LEN + 1];
-    char flags_str[MAX_TOKEN_LEN + 1];
-
-    if (sscanf(
-            input,
-            "%48[^_]_%48[^_]_%48[^_]_%48[^_]_%48[^_]_%48[^_]_%48[^_]_%48[^_]_%48[^_ \t\r\n]",
-            op_str,
-            rm_str,
-            a_str,
-            b_str,
-            c_str,
-            opFmt_str,
-            res_str,
-            resFmt_str,
-            flags_str
-        ) != 9) {
-        snprintf(output, output_size, "Error: malformed testvector: %s\n", input);
-
-        return EXIT_FAILURE;
-    }
-
-    // unpack test vector tokens into integers to pass to the reference model
-
-    uint32_t op = parse_hex_128(op_str).lower;
-    uint8_t rm = parse_hex_128(rm_str).lower;
-    uint128_t a = parse_hex_128(a_str);
-    uint128_t b = parse_hex_128(b_str);
-    uint128_t c = parse_hex_128(c_str);
-    uint8_t opFmt = parse_hex_128(opFmt_str).lower;
-    uint8_t resFmt = parse_hex_128(resFmt_str).lower;
-    uint128_t res = parse_hex_128(res_str);
-    uint8_t flags = parse_hex_128(flags_str).lower;
-#else
     std::stringstream ss(input);
     ss >> std::hex;
 
@@ -2556,7 +2541,6 @@ std::string coverfloat_runtestvector(const std::string &input, bool suppress_err
     uint8_t rm = static_cast<uint8_t>(rm16);
     uint8_t opFmt = static_cast<uint8_t>(opFmt16);
     uint8_t resFmt = static_cast<uint8_t>(resFmt16);
-#endif
 
     mp::uint128_t newRes;
     uint8_t newFlags;
