@@ -530,7 +530,9 @@ std::pair<int, std::string> reference_model(
             break;
         }
         default: {
-            return {EXIT_FAILURE, "Bad Operand Format For Div " + operandFmt};
+            std::stringstream ss;
+            ss << "Bad Operand Format For Div " << static_cast<uint16_t>(operandFmt);
+            return {EXIT_FAILURE, ss.str()};
         }
         }
 

@@ -12,6 +12,7 @@ FetchContent_Declare(
     GIT_TAG b6a84e1f3a51800d8354489b6493723742abff9a
     GIT_SHALLOW
     GIT_SUBMODULES "berkeley-softfloat-3"
+    PATCH_COMMAND  ${CMAKE_COMMAND} -E rm -f VERSION
 )
 
 FetchContent_GetProperties(unmodified_spike)
