@@ -120,9 +120,6 @@ minimal_set = [
     "Positive SNaN Min",
 ]
 
-# Old index-based minimal_set that references FMT_SINGLE
-# minimal_set = [0, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 26, 27, 28, 29, 30, 32]
-
 BASIC_TYPES = {
     const.FMT_SINGLE: {
         "Positive 0": "00000000000000000000000000000000",
