@@ -23,7 +23,8 @@
         bins posinfinity      = {64'h7FF0000000000000};
         bins neginfinity      = {64'hFFF0000000000000};
         `ifndef IGNORE_NANS
-            bins posQNaN          = {[64'h7FF8000000000000:64'h7FFFFFFFFFFFFFFF]};
+            bins defaultNaN       = {64'h7FF8000000000000};
+            bins posQNaN          = {[64'h7FF8000000000001:64'h7FFFFFFFFFFFFFFF]};
             bins posSNaN          = {[64'h7FF0000000000001:64'h7FF7FFFFFFFFFFFF]};
             bins negQNaN          = {[64'hFFF8000000000000:64'hFFFFFFFFFFFFFFFF]};
             bins negSNaN          = {[64'hFFF0000000000001:64'hFFF7FFFFFFFFFFFF]};
