@@ -87,7 +87,7 @@ For CFI (float to int), we generate something with a high enough (but still non 
 
 For CFF (float to float), we use a random float for sticky = 1, and for sticky = 0, we choose something where we fill zeros for the entire sticky part, then randomly choose a significand. For all of these, the exponent is kept between -10 and 10 as we do not want cases where there is overflow or underflow due to the exponent.
 
-For CIF (int to float), we use random ints for sticky = 1, and for sticky = 0, the ints are chosen so that a leading one is set in the msb, then there are enough trailing zeros so that sticky = 1. Int signs are also randomized when applicable.
+For CIF (int to float), we use random ints for sticky = 1, and for sticky = 0, the ints are chosen so that there are enough trailing zeros such that sticky = 1. The ints are chosen to avoid overflowing upon conversion. Int signs are also randomized when applicable.
 
 == Test Count Breakdown
 
