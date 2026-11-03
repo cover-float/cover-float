@@ -86,19 +86,15 @@ class Generator:
         builder: Callable[[], tuple[str, str, str]],
     ) -> tuple[str, str, str]:
 
-        a, b, c = builder()
-        last = (a, b, c)
-
         for _ in range(self.MAX_TRIES):
             a, b, c = builder()
             result = get_result_from_ref(op, a, b, c, self.fmt)
             if result == desired.lower():
                 return a, b, c
-            last = (a, b, c)
 
-        a, _, _ = last
-        b = get_result_from_ref(OP_SUB, desired, a, ZERO, self.fmt)
-        return a, b, ZERO
+        raise RuntimeError(
+            f"Could not find exact operands for {op} after {self.MAX_TRIES} tries. Desired result: {desired}"
+        )
 
     def gen_add(self, desired: str, base_e: int, maxnorm: bool, sign: int) -> tuple[str, str, str]:
         neg_zero = decimal_components_to_hex(self.fmt, 1, 0, 0)
