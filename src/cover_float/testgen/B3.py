@@ -718,7 +718,7 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 if random.random() >= 0.5:
                     # Generate a test for sticky = 0
                     # -1 for the leading 1
-                    bits_to_mask = integer.bit_length() - (common.MANTISSA_BITS[fmt] + 2) - 1
+                    bits_to_mask = integer.bit_length() - (common.MANTISSA_BITS[fmt] + 1) - 1
                     if bits_to_mask > 0:
                         integer &= ~((1 << bits_to_mask) - 1)
 
