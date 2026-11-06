@@ -140,7 +140,7 @@ One of these bits results in a guard bit, so for effective addition, we have ste
 
 This totals to 3242 tests.
 
-Converts: We generate stem:[nf - 1] for each CFI (a conversion of where 1 < x < 2, to maximize the number of fractional bits. stem:[nf] bits go to rounding, stem:[nf-1] go to the sticky), the excess number of excess bits minus one for each CFF, and the number of excess bits minus two for each CIF. Convert tests are only generated in the case of narrowing conversions, so a table below lists the number of conversions for each precision where the number of tests is non-trivial.
+Converts: We generate stem:[nf - 1] for each CFI (a conversion of where 1 < x < 2, to maximize the number of fractional bits. stem:[nf] bits go to rounding, stem:[nf-1] go to the sticky), the excess number of excess bits minus one for each CFF, and the number of excess bits minus two for each CIF. For CIF converts to half precision, the smaller exponent range limits the amount of sticky bits we can test without overflowing, so we only test for up to 4 sticky bits (maximum exponent of 15 - 10 bits for mantissa - 1 bit for the guard bit = 4 bits). Convert tests are only generated in the case of narrowing conversions, so a table below lists the number of conversions for each precision where the number of tests is non-trivial.
 
 CFF: We have From - To - 1 total sticky bits
 [cols="5*", options="header"]
@@ -152,18 +152,18 @@ CFF: We have From - To - 1 total sticky bits
 | Double (52) | 0 | 0 | 0 | 59
 |===
 
-CIF: From each int format, the msb becomes the leading one, nf bits go to the significand, and 1 goes to the guard, leaving From - To - 2 total sticky bits.
+CIF: From each int format, the msb becomes the leading one, nf bits go to the significand, and 1 goes to the guard, leaving From - To - 2 total sticky bits. Half precision cases are limited by the small exponent range.
 [cols="5*", options="header"]
 |===
 | To / From | int (31) | long (63) | uint (32) | ulong (64)
 | BF16 (7) | 22 | 54 | 23 | 55
-| Half (10) | 19 | 51 | 20 | 52
+| Half (10) | 4 | 4 | 4 | 4
 | Single (23) | 6 | 38 | 7 | 39
 | Double (52) | 0 | 9 | 0 | 10
 |===
 
-This totals (with CFI) to 1695.
+This totals (with CFI) to 1569.
 
 === Overall Test Count
 
-Each of these cases sum to a total of 5743 tests.
+Each of these cases sum to a total of 5617 tests.
