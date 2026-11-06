@@ -454,7 +454,8 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
 
     # CIF
     for from_fmt in constants.INT_FMTS:
-        from_bits = constants.INT_MAX_EXPS[from_fmt]
+        # Limit by the exponent range of the floating point if needed
+        from_bits = min(constants.INT_MAX_EXPS[from_fmt], constants.UNBIASED_EXP[fmt][1] + 1)
 
         maximal_overhang = from_bits - (nf + 1)  # Account for leading one in floats
         if maximal_overhang <= 0:
