@@ -351,6 +351,7 @@
         fd = $fopen("../tests/covervectors/B1_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -361,6 +362,7 @@
         fd = $fopen("../tests/covervectors/B2_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -371,6 +373,7 @@
         fd = $fopen("../tests/covervectors/B3_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -381,6 +384,7 @@
         fd = $fopen("../tests/covervectors/B4_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -391,6 +395,7 @@
         fd = $fopen("../tests/covervectors/B5_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -401,6 +406,7 @@
         fd = $fopen("../tests/covervectors/B6_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -411,6 +417,7 @@
         fd = $fopen("../tests/covervectors/B7_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -421,6 +428,7 @@
         fd = $fopen("../tests/covervectors/B8_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -431,6 +439,7 @@
         fd = $fopen("../tests/covervectors/B9_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -441,6 +450,7 @@
         fd = $fopen("../tests/covervectors/B10_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -451,6 +461,7 @@
         fd = $fopen("../tests/covervectors/B11_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -461,6 +472,7 @@
         fd = $fopen("../tests/covervectors/B12_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -471,6 +483,7 @@
         fd = $fopen("../tests/covervectors/B13_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -481,6 +494,7 @@
         fd = $fopen("../tests/covervectors/B14_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -491,6 +505,7 @@
         fd = $fopen("../tests/covervectors/B15_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -501,6 +516,7 @@
         fd = $fopen("../tests/covervectors/B16_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -511,6 +527,7 @@
         fd = $fopen("../tests/covervectors/B17_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -521,6 +538,7 @@
         fd = $fopen("../tests/covervectors/B18_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -531,6 +549,7 @@
         fd = $fopen("../tests/covervectors/B19_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -541,6 +560,7 @@
         fd = $fopen("../tests/covervectors/B20_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -551,6 +571,7 @@
         fd = $fopen("../tests/covervectors/B21_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -561,6 +582,7 @@
         fd = $fopen("../tests/covervectors/B22_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -571,6 +593,7 @@
         fd = $fopen("../tests/covervectors/B23_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -581,6 +604,7 @@
         fd = $fopen("../tests/covervectors/B24_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -591,6 +615,7 @@
         fd = $fopen("../tests/covervectors/B25_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -601,6 +626,7 @@
         fd = $fopen("../tests/covervectors/B26_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -611,6 +637,7 @@
         fd = $fopen("../tests/covervectors/B27_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -621,6 +648,7 @@
         fd = $fopen("../tests/covervectors/B28_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
@@ -631,6 +659,7 @@
         fd = $fopen("../tests/covervectors/B29_cv.txt", "r"); \
         while ($fscanf(fd, "%h", covervectors) == 1) begin \
             @(posedge clk); \
+            @(negedge clk); \
         end \
         @(negedge clk); \
         $fclose(fd); \
