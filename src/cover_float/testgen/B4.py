@@ -743,7 +743,7 @@ def _group2_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
     for target in const.FLOAT_FMTS:
         target_E, target_M, target_bias = _fmt_params(target)
 
-        if target_E > E or (fmt == target) or (fmt == const.FMT_BF16 and target == const.FMT_SINGLE):
+        if target_E >= E or (fmt == target) or (fmt == const.FMT_BF16 and target == const.FMT_SINGLE):
             # Then the conversion is widening
             continue
 
@@ -772,6 +772,10 @@ def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
         for offset, sign, rm in itertools.product(range(-3, 4), (0, 1), ROUND_MODES):
             target_max_norm_exp = _unbiased_max(target_E, target_bias)
             exp = target_max_norm_exp + offset
+
+            # if the target_max_norm_exp is less than max norm
+            if target_max_norm_exp > const.UNBIASED_EXP[fmt][1]:
+                continue
 
             mantissa = random.getrandbits(M)
 
