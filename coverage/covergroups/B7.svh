@@ -327,25 +327,29 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
     F16_sticky_from_I32:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: 256], 256))
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 : 0]))
     {
-        bins sticky_bit[] = {[0:18]};
+        // FP16 exponents have a limited range they can express, which limits the potential length of our extra bits
+        bins sticky_bit[] = {[0:3]};
         type_option.weight = 0;
     }
     F16_sticky_from_U32:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: 256], 256))
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 : 0]))
     {
-        bins sticky_bit[] = {[0:19]};
+        // FP16 exponents have a limited range they can express, which limits the potential length of our extra bits
+        bins sticky_bit[] = {[0:3]};
         type_option.weight = 0;
     }
     F16_sticky_from_I64:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: 256], 256))
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 : 0]))
     {
-        bins sticky_bit[] = {[0:50]};
+        // FP16 exponents have a limited range they can express, which limits the potential length of our extra bits
+        bins sticky_bit[] = {[0:3]};
         type_option.weight = 0;
     }
     F16_sticky_from_U64:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: 256], 256))
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 : 0]))
     {
-        bins sticky_bit[] = {[0:51]};
+        // FP16 exponents have a limited range they can express, which limits the potential length of our extra bits
+        bins sticky_bit[] = {[0:3]};
         type_option.weight = 0;
     }
     F32_sticky_from_I32:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F32_M_BITS - 2 -: 256], 256))
