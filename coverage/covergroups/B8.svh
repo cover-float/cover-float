@@ -541,25 +541,25 @@ covergroup B8_cg (virtual coverfloat_interface CFI);
         bins case_ii[] = {[{{(SIZEOF_LONG - BF16_M_BITS - 4){1'b1}},{2'b00}}:{(SIZEOF_LONG - BF16_M_BITS - 2){1'b1}}]};
     }
     // CIF for F16: int_bits is replaced with max unbiased exponent because it has a lower range to avoid overflow
-    F16_from_I32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_E_UPPER + 2 - F16_M_BITS - 2] {
+    F16_from_I32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2] {
         type_option.weight = 0;
         bins case_i[] = { [1:3] };
-        bins case_ii[] = {[{{(F16_E_UPPER + 2 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_E_UPPER + 2 - F16_M_BITS - 2){1'b1}}]};
+        bins case_ii[] = {[{{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2){1'b1}}]};
     }
-    F16_from_U32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_E_UPPER + 2 - F16_M_BITS - 2] {
+    F16_from_U32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2] {
         type_option.weight = 0;
         bins case_i[] = { [1:3] };
-        bins case_ii[] = {[{{(F16_E_UPPER + 2 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_E_UPPER + 2 - F16_M_BITS - 2){1'b1}}]};
+        bins case_ii[] = {[{{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2){1'b1}}]};
     }
-    F16_from_I64_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_E_UPPER + 2 - F16_M_BITS - 2] {
+    F16_from_I64_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2] {
         type_option.weight = 0;
         bins case_i[] = { [1:3] };
-        bins case_ii[] = {[{{(F16_E_UPPER + 2 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_E_UPPER + 2 - F16_M_BITS - 2){1'b1}}]};
+        bins case_ii[] = {[{{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2){1'b1}}]};
     }
-    F16_from_U64_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_E_UPPER + 2 - F16_M_BITS - 2] {
+    F16_from_U64_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2] {
         type_option.weight = 0;
         bins case_i[] = { [1:3] };
-        bins case_ii[] = {[{{(F16_E_UPPER + 2 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_E_UPPER + 2 - F16_M_BITS - 2){1'b1}}]};
+        bins case_ii[] = {[{{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 4){1'b1}},{2'b00}}:{(F16_MAXNORM_EXP - F16_EXP_BIAS + 1 - F16_M_BITS - 2){1'b1}}]};
     }
 
     F32_from_I32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F32_M_BITS - 2 -: SIZEOF_INT - 1 - F32_M_BITS - 2] {
