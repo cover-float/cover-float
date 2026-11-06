@@ -3,4 +3,4 @@ An implementation of the IBM floating point test suite, written by Aharoni et. a
 
 The project has SystemVerilog coverage in `coverage`, Python test generation in `src/cover_float`, and softfloat bindings in `src/cpp`. The modified softfloat source is kept in the Spike submodule at `src/dependencies/softfloat/spike`; CMake fetches an unmodified version for comparison. Clone the repository with `--recurse-submodules` to fetch the modified source.
 
-Python generation depends on `uv` as a build system for the softfloat bindings and as a runner. Test generation can be invoked through `make all` or simply `make`. To generate a specific model, e.g. B4, run `make B4`. Coverage is invoked through `make sim`. See the makefile for more configuration options.
+Python generation depends on `uv` as a build system for the softfloat bindings and as a runner. Test generation can be invoked through `make all` or simply `make`. To generate a specific model, e.g. B4, run `make B4`. Coverage is invoked through `make coverage`, and can be used with either QuestaSim or Verilator depending on the `COVERAGE_SIMULATOR` switch. See the makefile for more configuration options.

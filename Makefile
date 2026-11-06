@@ -46,7 +46,8 @@ coverage-verilator:
 	verilator --binary --coverage-user coverage/coverfloat.sv -Icoverage -Icoverage/covergroups/ -Wno-WIDTHEXPAND -j 0 --quiet -O3 --coverage-merge-instances
 	cd obj_dir && ./Vcoverfloat
 	@echo "Coverage Report:"
-	@summary=$$(verilator_coverage --report summary obj_dir/coverage.dat | $(GREP) -v -e $(EMPTY_BIN) -e "Coverage Summary:"); \
+	@report=$$(verilator_coverage --report summary obj_dir/coverage.dat) || exit $$?; \
+	summary=$$(printf "%s\n" "$$report" | $(GREP) -v -e $(EMPTY_BIN) -e "Coverage Summary:"); \
 	printf "%s\n" "$$summary"; \
 	if printf "%s\n" "$$summary" | $(GREP) -v -e "100\.0%" | $(GREP) -q . ; then \
 		echo "Failing Covergroups:"; \
