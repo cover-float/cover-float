@@ -690,7 +690,10 @@ def convert_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> 
             sig = upper_bits << (extra_bit + 1)
             sig |= 1  # Places the extra bit in the right place
 
-            remaining_shift_dist = from_bits - sig.bit_length()
+            # highest possible amount you can shift
+            remaining_shift_dist = min(from_bits, constants.UNBIASED_EXP[fmt][1] + 1) - sig.bit_length()
+            if remaining_shift_dist < 0:
+                break  # impossible to generate this sticky or remaining sticky combinations without overflow
             additional_zeros = random.randint(0, remaining_shift_dist)
             sig <<= additional_zeros
 
