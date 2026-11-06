@@ -104,7 +104,7 @@ These cases are similar to the addition/subtraction cases, except the leading on
 
 === Converts
 
-For these cases, we simply track where the LSB, Guard, and Sticky end up being for a convert, and place bits accordingly. For int to float converts, we also set the most significant bit of the int to ensure that a maximum number of bits end up in extra bits. The exception to this is for half precision, where the small range of the exponent limits the number of sticky bits to four (15 bits (max exponent) - 10 bits (mantissa) - 1 bit (guard) = 4 sticky bits).
+For these cases, we simply track where the LSB, Guard, and Sticky end up being for a convert, and place bits accordingly. For int to float converts, we also set the most significant bit of the int to ensure that a maximum number of bits end up in extra bits. The exception to this is for half precision, where the small range of the exponent limits the number of sticky bits to four (15 bits (max exponent) - 10 bits (mantissa) - 1 bit (guard) = 4 sticky bits) before the format overflows, so the MSB is placed in bit 15 for these int to float converts. 
 
 == Test Count Breakdown
 
