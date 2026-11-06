@@ -140,7 +140,7 @@ One of these bits results in a guard bit, so for effective addition, we have ste
 
 This totals to 3242 tests.
 
-Converts: We generate stem:[nf - 1] for each CFI (a conversion of where 1 < x < 2, to maximize the number of fractional bits. stem:[nf] bits go to rounding, stem:[nf-1] go to the sticky), the excess number of excess bits minus one for each CFF, and the number of excess bits minus two for each CIF. For CIF converts to half precision, the smaller exponent range limits the amount of sticky bits we can test without overflowing, so we only test for up to 4 sticky bits. Convert tests are only generated in the case of narrowing conversions, so a table below lists the number of conversions for each precision where the number of tests is non-trivial.
+Converts: We generate stem:[nf - 1] for each CFI (a conversion of where 1 < x < 2, to maximize the number of fractional bits. stem:[nf] bits go to rounding, stem:[nf-1] go to the sticky), the excess number of excess bits minus one for each CFF, and the number of excess bits minus two for each CIF. For CIF converts to half precision, the smaller exponent range limits the amount of sticky bits we can test without overflowing, so we only test for up to 4 sticky bits (maximum exponent of 15 - 10 bits for mantissa - 1 bit for the guard bit = 4 bits). Convert tests are only generated in the case of narrowing conversions, so a table below lists the number of conversions for each precision where the number of tests is non-trivial.
 
 CFF: We have From - To - 1 total sticky bits
 [cols="5*", options="header"]
