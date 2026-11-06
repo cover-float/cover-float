@@ -395,11 +395,6 @@ covergroup B18_cg (virtual coverfloat_interface CFI);
 
             // Account for the leading ones
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
-
-            // type_option.weight is ignored by Verilator
-            `ifdef VERILATOR
-                ignore_bins impossible_mul = {2};
-            `endif
     }
 
     BF16_maxNorm_pm_3ulp: coverpoint (
@@ -415,11 +410,6 @@ covergroup B18_cg (virtual coverfloat_interface CFI);
 
             // Account for the leading ones
             bins maxNorm_pm_3ulp[] = {[3'b001 : 3'b111]};
-
-            // type_option.weight is ignored by Verilator
-            `ifdef VERILATOR
-                ignore_bins impossible_mul = {2};
-            `endif
     }
 
     // cases iii & iv
@@ -806,11 +796,6 @@ covergroup B18_cg (virtual coverfloat_interface CFI);
 
             // Zero for an all zero fraction
             bins minNorm_p_3ulp[] = {[3'b000 : 3'b011]};
-
-            // type_option.weight is ignored by Verilator
-            `ifdef VERILATOR
-                ignore_bins impossible_mul = {2};
-            `endif
     }
     BF16_minNorm_m_3ulp: coverpoint (
         CFI.fmaPreAddition[(BF16_FMA_PRE_ADDITION_NF + 1)] == 1

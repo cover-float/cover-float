@@ -46,11 +46,7 @@ module coverfloat (); import coverfloat_pkg::*; // TODO: maybe rename...
         // $fclose(fd);
 
 
-        `ifdef VERILATOR
-            $finish;
-        `else
-            $stop;
-        `endif
+        $finish;
 
     end
 

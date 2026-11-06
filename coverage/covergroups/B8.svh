@@ -535,13 +535,11 @@ covergroup B8_cg (virtual coverfloat_interface CFI);
         bins case_i[] = { [1:3] };
         bins case_ii[] = {[{{(SIZEOF_LONG - 1 - BF16_M_BITS - 4){1'b1}},{2'b00}}:{(SIZEOF_LONG - 1 - BF16_M_BITS - 2){1'b1}}]};
     }
-    `ifndef VERILATOR
     BF16_from_U64_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - BF16_M_BITS - 2 -: SIZEOF_LONG - BF16_M_BITS - 2] {
         type_option.weight = 0;
         bins case_i[] = { [1:3] };
         bins case_ii[] = {[{{(SIZEOF_LONG - BF16_M_BITS - 4){1'b1}},{2'b00}}:{(SIZEOF_LONG - BF16_M_BITS - 2){1'b1}}]};
     }
-    `endif
 
     F16_from_I32_extra_bits: coverpoint CFI.intermM[INTERM_M_BITS - F16_M_BITS - 2 -: SIZEOF_INT - 1 - F16_M_BITS - 2] {
         type_option.weight = 0;

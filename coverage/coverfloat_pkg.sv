@@ -585,7 +585,7 @@ package coverfloat_pkg;
                 shift_one = pre_addition[F128_FMA_PRE_ADDITION_NF+1];
             end
             default: begin
-                $fatal("Unsupported Format Passed to get_effective_product_exponent, %h", fmt);
+                $fatal(1, "Unsupported format passed to get_effective_product_exponent, %h", fmt);
             end
         endcase
 
