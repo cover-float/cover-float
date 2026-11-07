@@ -166,25 +166,45 @@ covergroup B7_cg (virtual coverfloat_interface CFI);
         type_option.weight = 0;
     }
 
-    F128_sticky_effective_addition:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 -: 256], 256))
+    F128_sticky_effective_addition:  coverpoint (
+        count_leading_zeros(
+            { CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0], {(256 - (INTERM_M_BITS - F128_M_BITS - 1)){1'b0}}},
+            256
+        )
+    )
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0]))
     {
         bins sticky_bit[] = {[0:F128_M_BITS-2]};
         type_option.weight = 0;
     }
-    F128_sticky_effective_subtraction:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 -: 256], 256))
+    F128_sticky_effective_subtraction:  coverpoint (
+        count_leading_zeros(
+            { CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0], {(256 - (INTERM_M_BITS - F128_M_BITS - 1)){1'b0}}},
+            256
+        )
+    )
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0]))
     {
         bins sticky_bit[] = {[0:F128_M_BITS-1]};
         type_option.weight = 0;
     }
-    F128_sticky_multiplication:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 -: 256], 256))
+    F128_sticky_multiplication:  coverpoint (
+        count_leading_zeros(
+            { CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0], {(256 - (INTERM_M_BITS - F128_M_BITS - 1)){1'b0}}},
+            256
+        )
+    )
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0]))
     {
         bins sticky_bit[] = {[0:F128_M_BITS-1]};
         type_option.weight = 0;
     }
-    F128_sticky_fma:  coverpoint (count_leading_zeros(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 -: 256], 256))
+    F128_sticky_fma:  coverpoint (
+        count_leading_zeros(
+            { CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0], {(256 - (INTERM_M_BITS - F128_M_BITS - 1)){1'b0}}},
+            256
+        )
+    )
         iff ($onehot(CFI.intermM[INTERM_M_BITS - F128_M_BITS - 2 : 0]))
     {
         bins sticky_bit[] = {[0:2*F128_M_BITS-1]};

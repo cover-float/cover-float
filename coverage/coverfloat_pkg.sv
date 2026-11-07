@@ -22,120 +22,120 @@ package coverfloat_pkg;
 
 
     // encodings from SoftFloat
-    const logic [7:0] FLAG_INEXACT_MASK   =  8'd1;
-    const logic [7:0] FLAG_UNDERFLOW_MASK =  8'd2;
-    const logic [7:0] FLAG_OVERFLOW_MASK  =  8'd4;
-    const logic [7:0] FLAG_INFINITE_MASK  =  8'd8;
-    const logic [7:0] FLAG_INVALID_MASK   =  8'd16;
+    localparam logic [7:0] FLAG_INEXACT_MASK   =  8'd1;
+    localparam logic [7:0] FLAG_UNDERFLOW_MASK =  8'd2;
+    localparam logic [7:0] FLAG_OVERFLOW_MASK  =  8'd4;
+    localparam logic [7:0] FLAG_INFINITE_MASK  =  8'd8;
+    localparam logic [7:0] FLAG_INVALID_MASK   =  8'd16;
 
-    // arbitary encoding of IBM paper operations
+    // arbitrary encoding of IBM paper operations
     // numbering scheme: bits 31:4 are major operation (pulled directly form aharoni paper)
-    //                   bits 3:0 are variant operations (taylored towards riscv instrs)
+    //                   bits 3:0 are variant operations (tailored towards riscv instructions)
     //                   coverpoint are written such that any variant covers the superset
-    const logic [31:0] OP_ADD    = 32'h1_0;
-    const logic [31:0] OP_SUB    = 32'h2_0;
-    const logic [31:0] OP_MUL    = 32'h3_0;
-    const logic [31:0] OP_DIV    = 32'h4_0;
-    const logic [31:0] OP_FMA    = 32'h5_0;
-    const logic [31:0] OP_FMADD  = 32'h5_1; // multiply-add
-    const logic [31:0] OP_FMSUB  = 32'h5_2; // multiply-subtract
-    const logic [31:0] OP_FNMADD = 32'h5_3; // negated (multiply-add)
-    const logic [31:0] OP_FNMSUB = 32'h5_4; // negated (multiply-sub)
-    const logic [31:0] OP_SQRT   = 32'h6_0;
-    const logic [31:0] OP_REM    = 32'h7_0; // TODO: unused? Remove?
-    const logic [31:0] OP_CFI    = 32'h8_0;
-    const logic [31:0] OP_CFF    = 32'h9_0;
-    const logic [31:0] OP_CIF    = 32'hA_0;
-    const logic [31:0] OP_QC     = 32'hB_0;
-    const logic [31:0] OP_FEQ    = 32'hB_1; // quiet equal
-    const logic [31:0] OP_SC     = 32'hC_0;
-    const logic [31:0] OP_FLT    = 32'hC_1; // signaling less than
-    const logic [31:0] OP_FLE    = 32'hC_2; // signaling LT or eq
-    const logic [31:0] OP_CLASS  = 32'hD_0;
-    const logic [31:0] OP_MIN    = 32'hE_0;
-    const logic [31:0] OP_MAX    = 32'hF_0;
-    const logic [31:0] OP_CSN    = 32'h10_0; // copy sign / negate
-    const logic [31:0] OP_FSGNJ  = 32'h10_1;
-    const logic [31:0] OP_FSGNJN = 32'h10_2;
-    const logic [31:0] OP_FSGNJX = 32'h10_3;
-    const logic [32:0] OP_RFI    = 32'h11_0;
+    localparam logic [31:0] OP_ADD    = 32'h1_0;
+    localparam logic [31:0] OP_SUB    = 32'h2_0;
+    localparam logic [31:0] OP_MUL    = 32'h3_0;
+    localparam logic [31:0] OP_DIV    = 32'h4_0;
+    localparam logic [31:0] OP_FMA    = 32'h5_0;
+    localparam logic [31:0] OP_FMADD  = 32'h5_1; // multiply-add
+    localparam logic [31:0] OP_FMSUB  = 32'h5_2; // multiply-subtract
+    localparam logic [31:0] OP_FNMADD = 32'h5_3; // negated (multiply-add)
+    localparam logic [31:0] OP_FNMSUB = 32'h5_4; // negated (multiply-sub)
+    localparam logic [31:0] OP_SQRT   = 32'h6_0;
+    localparam logic [31:0] OP_REM    = 32'h7_0; // TODO: unused? Remove?
+    localparam logic [31:0] OP_CFI    = 32'h8_0;
+    localparam logic [31:0] OP_CFF    = 32'h9_0;
+    localparam logic [31:0] OP_CIF    = 32'hA_0;
+    localparam logic [31:0] OP_QC     = 32'hB_0;
+    localparam logic [31:0] OP_FEQ    = 32'hB_1; // quiet equal
+    localparam logic [31:0] OP_SC     = 32'hC_0;
+    localparam logic [31:0] OP_FLT    = 32'hC_1; // signaling less than
+    localparam logic [31:0] OP_FLE    = 32'hC_2; // signaling LT or eq
+    localparam logic [31:0] OP_CLASS  = 32'hD_0;
+    localparam logic [31:0] OP_MIN    = 32'hE_0;
+    localparam logic [31:0] OP_MAX    = 32'hF_0;
+    localparam logic [31:0] OP_CSN    = 32'h10_0; // copy sign / negate
+    localparam logic [31:0] OP_FSGNJ  = 32'h10_1;
+    localparam logic [31:0] OP_FSGNJN = 32'h10_2;
+    localparam logic [31:0] OP_FSGNJX = 32'h10_3;
+    localparam logic [31:0] OP_RFI    = 32'h11_0;
 
-    // const logic [31:0] OP_
+    // localparam logic [31:0] OP_
 
     // encodings from SoftFloat
-    const logic [7:0] ROUND_NEAR_EVEN   = 8'd0;
-    const logic [7:0] ROUND_MINMAG      = 8'd1;
-    const logic [7:0] ROUND_MIN         = 8'd2;
-    const logic [7:0] ROUND_MAX         = 8'd3;
-    const logic [7:0] ROUND_NEAR_MAXMAG = 8'd4;
-    // const logic [7:0] ROUND_ODD         = 8'd5;
+    localparam logic [7:0] ROUND_NEAR_EVEN   = 8'd0;
+    localparam logic [7:0] ROUND_MINMAG      = 8'd1;
+    localparam logic [7:0] ROUND_MIN         = 8'd2;
+    localparam logic [7:0] ROUND_MAX         = 8'd3;
+    localparam logic [7:0] ROUND_NEAR_MAXMAG = 8'd4;
+    // localparam logic [7:0] ROUND_ODD         = 8'd5;
 
     // format encodings
     //  {(int = 1, float = 0), (unsigned int), others => format encoding}
-    const logic [7:0] FMT_INVAL  = 8'b 1_1_111111; // source unused / invalid
-    const logic [7:0] FMT_HALF   = 8'b 0_0_000000;
-    const logic [7:0] FMT_SINGLE = 8'b 0_0_000001;
-    const logic [7:0] FMT_DOUBLE = 8'b 0_0_000010;
-    const logic [7:0] FMT_QUAD   = 8'b 0_0_000011;
-    const logic [7:0] FMT_BF16   = 8'b 0_0_000100;
+    localparam logic [7:0] FMT_INVAL  = 8'b 1_1_111111; // source unused / invalid
+    localparam logic [7:0] FMT_HALF   = 8'b 0_0_000000;
+    localparam logic [7:0] FMT_SINGLE = 8'b 0_0_000001;
+    localparam logic [7:0] FMT_DOUBLE = 8'b 0_0_000010;
+    localparam logic [7:0] FMT_QUAD   = 8'b 0_0_000011;
+    localparam logic [7:0] FMT_BF16   = 8'b 0_0_000100;
 
-    const logic [7:0] FMT_INT    = 8'b 1_0_000001;
-    const logic [7:0] FMT_UINT   = 8'b 1_1_000001;
-    const logic [7:0] FMT_LONG   = 8'b 1_0_000010;
-    const logic [7:0] FMT_ULONG  = 8'b 1_1_000010;
+    localparam logic [7:0] FMT_INT    = 8'b 1_0_000001;
+    localparam logic [7:0] FMT_UINT   = 8'b 1_1_000001;
+    localparam logic [7:0] FMT_LONG   = 8'b 1_0_000010;
+    localparam logic [7:0] FMT_ULONG  = 8'b 1_1_000010;
 
 
-    // TODO: expand with other relvelant parameters
+    // TODO: expand with other relevant parameters
 
-    parameter int INTERM_M_BITS = 340;
+    localparam int INTERM_M_BITS = 340;
 
-    parameter int F16_E_BITS = 5;
-    parameter int BF16_E_BITS = 8;
-    parameter int F32_E_BITS = 8;
-    parameter int F64_E_BITS = 11;
-    parameter int F128_E_BITS = 15;
+    localparam int F16_E_BITS = 5;
+    localparam int BF16_E_BITS = 8;
+    localparam int F32_E_BITS = 8;
+    localparam int F64_E_BITS = 11;
+    localparam int F128_E_BITS = 15;
 
-    parameter int F16_M_BITS   = 10;
-    parameter int BF16_M_BITS  = 7;
-    parameter int F32_M_BITS   = 23;
-    parameter int F64_M_BITS   = 52;
-    parameter int F128_M_BITS  = 112;
+    localparam int F16_M_BITS   = 10;
+    localparam int BF16_M_BITS  = 7;
+    localparam int F32_M_BITS   = 23;
+    localparam int F64_M_BITS   = 52;
+    localparam int F128_M_BITS  = 112;
 
     // Precision (p = number of significand bits + 1 implicit bits)
-    parameter int F16_P   = F16_M_BITS  + 1;
-    parameter int BF16_P  = BF16_M_BITS + 1;
-    parameter int F32_P   = F32_M_BITS  + 1;
-    parameter int F64_P   = F64_M_BITS  + 1;
-    parameter int F128_P  = F128_M_BITS + 1;
+    localparam int F16_P   = F16_M_BITS  + 1;
+    localparam int BF16_P  = BF16_M_BITS + 1;
+    localparam int F32_P   = F32_M_BITS  + 1;
+    localparam int F64_P   = F64_M_BITS  + 1;
+    localparam int F128_P  = F128_M_BITS + 1;
 
-    parameter int F16_E_UPPER  = 14;
-    parameter int F16_E_LOWER  = 10;
-    parameter int BF16_E_UPPER = 14;
-    parameter int BF16_E_LOWER = 7;
-    parameter int F32_E_UPPER  = 30;
-    parameter int F32_E_LOWER  = 23;
-    parameter int F64_E_UPPER  = 62;
-    parameter int F64_E_LOWER  = 52;
-    parameter int F128_E_UPPER = 126;
-    parameter int F128_E_LOWER = 112;
+    localparam int F16_E_UPPER  = 14;
+    localparam int F16_E_LOWER  = 10;
+    localparam int BF16_E_UPPER = 14;
+    localparam int BF16_E_LOWER = 7;
+    localparam int F32_E_UPPER  = 30;
+    localparam int F32_E_LOWER  = 23;
+    localparam int F64_E_UPPER  = 62;
+    localparam int F64_E_LOWER  = 52;
+    localparam int F128_E_UPPER = 126;
+    localparam int F128_E_LOWER = 112;
 
-    parameter int F16_SIGN_BIT = 15;
-    parameter int BF16_SIGN_BIT = 15;
-    parameter int F32_SIGN_BIT = 31;
-    parameter int F64_SIGN_BIT = 63;
-    parameter int F128_SIGN_BIT = 127;
+    localparam int F16_SIGN_BIT = 15;
+    localparam int BF16_SIGN_BIT = 15;
+    localparam int F32_SIGN_BIT = 31;
+    localparam int F64_SIGN_BIT = 63;
+    localparam int F128_SIGN_BIT = 127;
 
-    parameter int F16_M_UPPER  = F16_M_BITS - 1;
-    parameter int BF16_M_UPPER = BF16_M_BITS - 1;
-    parameter int F32_M_UPPER  = F32_M_BITS - 1;
-    parameter int F64_M_UPPER  = F64_M_BITS - 1;
-    parameter int F128_M_UPPER = F128_M_BITS - 1;
+    localparam int F16_M_UPPER  = F16_M_BITS - 1;
+    localparam int BF16_M_UPPER = BF16_M_BITS - 1;
+    localparam int F32_M_UPPER  = F32_M_BITS - 1;
+    localparam int F64_M_UPPER  = F64_M_BITS - 1;
+    localparam int F128_M_UPPER = F128_M_BITS - 1;
 
-    parameter int F16_MAXNORM_EXP  = (1 << F16_E_BITS)  - 2;
-    parameter int BF16_MAXNORM_EXP = (1 << BF16_E_BITS) - 2;
-    parameter int F32_MAXNORM_EXP  = (1 << F32_E_BITS)  - 2;
-    parameter int F64_MAXNORM_EXP  = (1 << F64_E_BITS)  - 2;
-    parameter int F128_MAXNORM_EXP = (1 << F128_E_BITS) - 2;
+    localparam int F16_MAXNORM_EXP  = (1 << F16_E_BITS)  - 2;
+    localparam int BF16_MAXNORM_EXP = (1 << BF16_E_BITS) - 2;
+    localparam int F32_MAXNORM_EXP  = (1 << F32_E_BITS)  - 2;
+    localparam int F64_MAXNORM_EXP  = (1 << F64_E_BITS)  - 2;
+    localparam int F128_MAXNORM_EXP = (1 << F128_E_BITS) - 2;
 
     // IEEE-754 floating-point format–derived exponent constants
     // Definitions are derived from IEEE 754-2019, §3.4 (Formats) and §3.5 (Subnormal numbers)
@@ -152,48 +152,48 @@ package coverfloat_pkg;
     // Half precision (binary16)
     // E = 5, P = 11
     // -----------------------------
-    parameter int F16_EXP_BIAS        = (1 << (F16_E_BITS - 1)) - 1;
-    parameter int F16_MIN_NORM_EXP    = 1 - F16_EXP_BIAS;
-    parameter int F16_MIN_SUBNORM_EXP = (1 - F16_EXP_BIAS) - (F16_P - 1);
+    localparam int F16_EXP_BIAS        = (1 << (F16_E_BITS - 1)) - 1;
+    localparam int F16_MIN_NORM_EXP    = 1 - F16_EXP_BIAS;
+    localparam int F16_MIN_SUBNORM_EXP = (1 - F16_EXP_BIAS) - (F16_P - 1);
 
     // -----------------------------
     // BFloat16
     // E = 8, P = 8
     // -----------------------------
-    parameter int BF16_EXP_BIAS        = (1 << (BF16_E_BITS - 1)) - 1;
-    parameter int BF16_MIN_NORM_EXP    = 1 - BF16_EXP_BIAS;
-    parameter int BF16_MIN_SUBNORM_EXP = (1 - BF16_EXP_BIAS) - (BF16_P - 1);
+    localparam int BF16_EXP_BIAS        = (1 << (BF16_E_BITS - 1)) - 1;
+    localparam int BF16_MIN_NORM_EXP    = 1 - BF16_EXP_BIAS;
+    localparam int BF16_MIN_SUBNORM_EXP = (1 - BF16_EXP_BIAS) - (BF16_P - 1);
 
     // -----------------------------
     // Single precision (binary32)
     // E = 8, P = 24
     // -----------------------------
-    parameter int F32_EXP_BIAS        = (1 << (F32_E_BITS - 1)) - 1;
-    parameter int F32_MIN_NORM_EXP    = 1 - F32_EXP_BIAS;
-    parameter int F32_MIN_SUBNORM_EXP = (1 - F32_EXP_BIAS) - (F32_P - 1);
+    localparam int F32_EXP_BIAS        = (1 << (F32_E_BITS - 1)) - 1;
+    localparam int F32_MIN_NORM_EXP    = 1 - F32_EXP_BIAS;
+    localparam int F32_MIN_SUBNORM_EXP = (1 - F32_EXP_BIAS) - (F32_P - 1);
 
     // -----------------------------
     // Double precision (binary64)
     // E = 11, P = 53
     // -----------------------------
-    parameter int F64_EXP_BIAS        = (1 << (F64_E_BITS - 1)) - 1;
-    parameter int F64_MIN_NORM_EXP    = 1 - F64_EXP_BIAS;
-    parameter int F64_MIN_SUBNORM_EXP = (1 - F64_EXP_BIAS) - (F64_P - 1);
+    localparam int F64_EXP_BIAS        = (1 << (F64_E_BITS - 1)) - 1;
+    localparam int F64_MIN_NORM_EXP    = 1 - F64_EXP_BIAS;
+    localparam int F64_MIN_SUBNORM_EXP = (1 - F64_EXP_BIAS) - (F64_P - 1);
 
     // -----------------------------
     // Quad precision (binary128)
     // E = 15, P = 113
     // -----------------------------
-    parameter int F128_EXP_BIAS        = (1 << (F128_E_BITS - 1)) - 1;
-    parameter int F128_MIN_NORM_EXP    = 1 - F128_EXP_BIAS;
-    parameter int F128_MIN_SUBNORM_EXP = (1 - F128_EXP_BIAS) - (F128_P - 1);
+    localparam int F128_EXP_BIAS        = (1 << (F128_E_BITS - 1)) - 1;
+    localparam int F128_MIN_NORM_EXP    = 1 - F128_EXP_BIAS;
+    localparam int F128_MIN_SUBNORM_EXP = (1 - F128_EXP_BIAS) - (F128_P - 1);
 
-    parameter int SIZEOF_INT  = 32;
-    parameter int SIZEOF_LONG = 64;
-    parameter int UINT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 1;//add 1 because of hidden 1
-    parameter int INT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 2;//hidden1 + 1
-    parameter int LONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 2;//hidden1 + 1
-    parameter int ULONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 1;//hidden1
+    localparam int SIZEOF_INT  = 32;
+    localparam int SIZEOF_LONG = 64;
+    localparam int UINT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 1;//add 1 because of hidden 1
+    localparam int INT_TRAILING_ZEROS = F128_M_BITS - SIZEOF_INT + 2;//hidden1 + 1
+    localparam int LONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 2;//hidden1 + 1
+    localparam int ULONG_TRAILING_ZEROS = F128_M_BITS - SIZEOF_LONG + 1;//hidden1
 
     typedef struct {
     int max_int_exp;
@@ -205,27 +205,27 @@ package coverfloat_pkg;
     } max_int_struct;
 
     // Helpers for finding the first fractional digit in FMA_PreAddition
-    parameter int F32_FMA_PRE_ADDITION_NF = 2 * F32_M_BITS;
-    parameter int F64_FMA_PRE_ADDITION_NF = 2 * F64_M_BITS;
-    parameter int F128_FMA_PRE_ADDITION_NF = 2 * F128_M_BITS;
-    parameter int F16_FMA_PRE_ADDITION_NF = 2 * F16_M_BITS;
-    parameter int BF16_FMA_PRE_ADDITION_NF = 2 * BF16_M_BITS;
+    localparam int F32_FMA_PRE_ADDITION_NF = 2 * F32_M_BITS;
+    localparam int F64_FMA_PRE_ADDITION_NF = 2 * F64_M_BITS;
+    localparam int F128_FMA_PRE_ADDITION_NF = 2 * F128_M_BITS;
+    localparam int F16_FMA_PRE_ADDITION_NF = 2 * F16_M_BITS;
+    localparam int BF16_FMA_PRE_ADDITION_NF = 2 * BF16_M_BITS;
 
     // Some Constants For B28
     // This value seems like an odd choice ... because it is a trivial task for rfi,
     // it seems like the intention should be 1.1111 * 2^(precision-2) as that is the maximum value
     // that has some meaning when it goes through rfi
-    parameter int F32_RFI_MAX = (F32_EXP_BIAS + F32_M_BITS + 1) << (F32_M_BITS) | ((1 << F32_M_BITS) - 1); // 'h4bff0000
-    parameter logic[63:0] F64_RFI_MAX = (F64_EXP_BIAS + F64_M_BITS + 1) << (F64_M_BITS) | ((1 << F64_M_BITS) - 1);
-    parameter logic[127:0] F128_RFI_MAX = (F128_EXP_BIAS + F128_M_BITS + 1) << (F128_M_BITS) | ((1 << F128_M_BITS) - 1);
-    parameter int F16_RFI_MAX = (F16_EXP_BIAS + F16_M_BITS + 1) << (F16_M_BITS) | ((1 << F16_M_BITS) - 1);
-    parameter int BF16_RFI_MAX = (BF16_EXP_BIAS + BF16_M_BITS + 1) << (BF16_M_BITS) | ((1 << BF16_M_BITS) - 1);
+    localparam int F32_RFI_MAX = (F32_EXP_BIAS + F32_M_BITS + 1) << (F32_M_BITS) | ((1 << F32_M_BITS) - 1); // 'h4bff0000
+    localparam logic[63:0] F64_RFI_MAX = (F64_EXP_BIAS + F64_M_BITS + 1) << (F64_M_BITS) | ((1 << F64_M_BITS) - 1);
+    localparam logic[127:0] F128_RFI_MAX = (F128_EXP_BIAS + F128_M_BITS + 1) << (F128_M_BITS) | ((1 << F128_M_BITS) - 1);
+    localparam int F16_RFI_MAX = (F16_EXP_BIAS + F16_M_BITS + 1) << (F16_M_BITS) | ((1 << F16_M_BITS) - 1);
+    localparam int BF16_RFI_MAX = (BF16_EXP_BIAS + BF16_M_BITS + 1) << (BF16_M_BITS) | ((1 << BF16_M_BITS) - 1);
 
-    parameter int F32_ONE = (F32_EXP_BIAS) << F32_M_BITS; // 'h3f800000
-    parameter logic[63:0] F64_ONE = (F64_EXP_BIAS) << F64_M_BITS;
-    parameter logic[127:0] F128_ONE = (F128_EXP_BIAS) << F128_M_BITS;
-    parameter int F16_ONE = (F16_EXP_BIAS) << F16_M_BITS;
-    parameter int BF16_ONE = (BF16_EXP_BIAS) << BF16_M_BITS;
+    localparam int F32_ONE = (F32_EXP_BIAS) << F32_M_BITS; // 'h3f800000
+    localparam logic[63:0] F64_ONE = (F64_EXP_BIAS) << F64_M_BITS;
+    localparam logic[127:0] F128_ONE = (F128_EXP_BIAS) << F128_M_BITS;
+    localparam int F16_ONE = (F16_EXP_BIAS) << F16_M_BITS;
+    localparam int BF16_ONE = (BF16_EXP_BIAS) << BF16_M_BITS;
 
 
     // Helper functions for difficult coverpoints
@@ -584,6 +584,9 @@ package coverfloat_pkg;
             FMT_QUAD: begin
                 shift_one = pre_addition[F128_FMA_PRE_ADDITION_NF+1];
             end
+            default: begin
+                $fatal(1, "Unsupported format passed to get_effective_product_exponent, %h", fmt);
+            end
         endcase
 
         return get_product_exponent(a, b, fmt) + shift_one;
@@ -917,7 +920,7 @@ function automatic int effective_exponent (
 endfunction
 
 function automatic logic [127:0] effective_fraction (
-    input logic [255:0] val,
+    input logic [127:0] val,
     input logic [7:0]   fmt
 );
     int frac_bits;
@@ -980,7 +983,7 @@ function automatic logic [127:0] effective_fraction (
     // ---------------------------------------------
     // extract exponent
     // ---------------------------------------------
-    exp_field = (val >> e_lower) & ((1 << e_bits) - 1); // any exponent width
+    exp_field = 32'(val >> e_lower) & ((1 << e_bits) - 1); // any exponent width
 
     // ---------------------------------------------
     // normal number → return fraction as-is

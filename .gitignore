@@ -1,5 +1,6 @@
 coverfloat_worklib/
 build/
+obj_dir/
 *transcript*
 @_opt/
 _info

@@ -19,7 +19,7 @@ vlib coverfloat_worklib
 
 vlog -lint -sv -work coverfloat_worklib ../coverage/coverfloat.sv
 
-vsim -lib coverfloat_worklib coverfloat
+vsim -lib coverfloat_worklib coverfloat -onfinish stop
 
 run -all
 

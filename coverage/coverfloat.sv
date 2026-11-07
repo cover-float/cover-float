@@ -46,7 +46,7 @@ module coverfloat (); import coverfloat_pkg::*; // TODO: maybe rename...
         // $fclose(fd);
 
 
-        $stop;
+        $finish;
 
     end
 
@@ -56,7 +56,7 @@ module coverfloat (); import coverfloat_pkg::*; // TODO: maybe rename...
 
     always @(posedge clk) begin
         {CFI.op, CFI.rm, CFI.a, CFI.b, CFI.c, CFI.operandFmt, CFI.result,
-         CFI.resultFmt, CFI.exceptionBits, discard[2:0], CFI.intermS, CFI.intermX, CFI.intermM, CFI.fmaPreAddition} = covervectors;
+         CFI.resultFmt, CFI.exceptionBits, discard[2:0], CFI.intermS, CFI.intermX, CFI.intermM, CFI.fmaPreAddition} <= covervectors;
     end
 
     always @(negedge clk) begin
