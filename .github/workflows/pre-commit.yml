@@ -44,3 +44,39 @@ jobs:
 
       - name: Generate Tests
         run: make all
+
+  testgen-musl:
+    name: Run all Test Generation (musl)
+    runs-on: ubuntu-latest
+    container: alpine:latest
+
+    steps:
+      - name: Install Utilities
+        run: apk add --no-cache git bash make cmake build-base
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Generate Tests
+        run: make all
+
+  testgen-macos:
+    name: Run all Test Generation (MacOS)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Generate Tests
+        run: make all
