@@ -303,9 +303,7 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         }
 
         `ifdef COVER_F32
-            B4_BF16_from_F32_maxNorm_pm_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, BF16_maxNorm_pm_3ulp, BF16_result_fmt, F32_operand_fmt {
-                ignore_bins f32_exp_limits = binsof(BF16_maxNorm_pm_3ulp.maxNorm_pm_3ulp) intersect {[1:3]};
-            }
+            B4_BF16_from_F32_maxNorm_pm_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, BF16_maxNorm_pm_3ulp, BF16_result_fmt, F32_operand_fmt;
 
             // This is impossible for F32
             // B4_BF16_from_F32_gt_maxNorm_p_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, BF16_gt_maxNorm_p_3ulp, BF16_result_fmt, F32_operand_fmt;
