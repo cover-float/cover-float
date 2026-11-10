@@ -83,6 +83,10 @@ def _fmt_params(fmt: str) -> tuple[int, int, int]:
     )
 
 
+def _format_params(fmt: str) -> tuple[int, bool]:
+    return (const.INT_MAX_EXPS[fmt], const.INT_SIGNED[fmt])
+
+
 # ---------------------------------------------------------------------------
 # Derived format constants
 # ---------------------------------------------------------------------------
@@ -780,6 +784,54 @@ def _group3_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_
             _emit_convert(const.OP_CFF, rm, a, fmt, target, test_f, cover_f, config)
 
 
+def _group1_cif_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
+    # Generate CIF Tests between MaxNorm - 3ulp and MaxNorm + 3ulp
+
+    for source in const.INT_FMTS:
+        if const.INT_MAX_EXPS[source] <= _unbiased_max(E, bias):
+            # Then the integer can never overflow this format
+            continue
+
+        for offset, sign, rm in itertools.product(range(-12, 13), (0, 1), ROUND_MODES):
+            if sign and not const.INT_SIGNED[source]:
+                continue
+
+            ulp_exp = _ulp_exp(E, M, bias)
+            max_norm = ((1 << (M + 1)) - 1) << ulp_exp
+            value = max_norm + (offset << (ulp_exp - 2))  # steps of a quarter ulp
+
+            if sign:
+                value = -value
+
+            a = f"{value & ((1 << const.INT_SIZES[source]) - 1):032x}"  # two's complement
+
+            _emit_convert(const.OP_CIF, rm, a, source, fmt, test_f, cover_f, config)
+
+
+def _group2_cif_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
+    # A Random Integer Larger than MaxNorm + 3 ulp
+
+    for source in const.INT_FMTS:
+        if const.INT_MAX_EXPS[source] <= _unbiased_max(E, bias):
+            # Then the integer can never overflow this format
+            continue
+
+        for sign, rm in itertools.product((0, 1), ROUND_MODES):
+            if sign and not const.INT_SIGNED[source]:
+                continue
+
+            max_exp = _unbiased_max(E, bias)
+            low = (1 << (max_exp + 1)) + (4 << (max_exp + 1 - M))  # exponent max + 1, mantissa >= 4 ulp
+            value = random.randint(low, (1 << (max_exp + 2)) - 1)
+
+            if sign:
+                value = -value
+
+            a = f"{value & ((1 << const.INT_SIZES[source]) - 1):032x}"
+
+            _emit_convert(const.OP_CIF, rm, a, source, fmt, test_f, cover_f, config)
+
+
 # ---------------------------------------------------------------------------
 # Top-level
 # ---------------------------------------------------------------------------
@@ -799,6 +851,8 @@ def generate_b4_tests_converts(test_f: TextIO, cover_f: TextIO, config: Config, 
     _group1_converts(fmt, E, M, bias, test_f, cover_f, config)
     _group2_converts(fmt, E, M, bias, test_f, cover_f, config)
     _group3_converts(fmt, E, M, bias, test_f, cover_f, config)
+    _group1_cif_converts(fmt, E, M, bias, test_f, cover_f, config)
+    _group2_cif_converts(fmt, E, M, bias, test_f, cover_f, config)
 
 
 @register_model("B4")
