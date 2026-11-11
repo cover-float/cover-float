@@ -5,7 +5,7 @@
 set(cover_float_warning_flags
     -Wall
     -Wextra
-    -Werror
+    ${cover_float_werror}
     -Wno-format
 )
 
