@@ -23,6 +23,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 # Only run CI on the latest commit if a PR is updated
 concurrency:
@@ -54,6 +55,7 @@ jobs:
   testgen:
     name: Run all Test Generation (${{ matrix.name }})
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: Ubuntu
