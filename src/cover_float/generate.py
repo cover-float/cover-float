@@ -28,6 +28,11 @@ from cover_float.common.util import SingleThreadedExecutor
 def generate(config: Config) -> bool:
     tg.discover_and_import_models()
 
+    unknown_models = sorted(set(config.models or ()) - tg.GLOBAL_MODELS.keys())
+    if unknown_models:
+        rprint(f"[bold red]Unknown model(s): {', '.join(unknown_models)}[/]")
+        return False
+
     single_thread = config.single_thread or (config.models is not None and len(config.models) < 2)
     if single_thread:
         executor = SingleThreadedExecutor()
@@ -47,10 +52,9 @@ def generate(config: Config) -> bool:
                     futures.append(future)
         else:
             for model in config.models:
-                if model in tg.GLOBAL_MODELS:
-                    future = tg.GLOBAL_MODELS[model](config, logger, executor)
-                    if future is not None:
-                        futures.append(future)
+                future = tg.GLOBAL_MODELS[model](config, logger, executor)
+                if future is not None:
+                    futures.append(future)
 
         if len(futures) == 0:
             if not config.silent:
