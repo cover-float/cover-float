@@ -56,8 +56,8 @@ coverage-verilator:
 	fi
 
 update-verilator-report:
-	set -o pipefail; \
-	$(MAKE) --no-print-directory coverage-verilator | tee >(sed -n '/Coverage Report:/,$$p' > reports/verilator.txt)
+	$(MAKE) --no-print-directory coverage-verilator | tee reports/verilator.log
+	sed -n '/Coverage Report:/,$$p' reports/verilator.log > reports/verilator.txt
 
 ifeq ($(COVERAGE_SIMULATOR), questa)
 coverage: coverage-questa

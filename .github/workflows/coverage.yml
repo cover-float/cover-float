@@ -50,4 +50,6 @@ jobs:
         continue-on-error: true
 
       - name: Diff Coverage
-        run: git diff --exit-code -- reports/verilator.txt
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git diff --exit-code -- reports/verilator.txt
