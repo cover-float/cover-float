@@ -1,48 +1,53 @@
+[build-system]
+build-backend = "scikit_build_core.build"
+requires = [ "pybind11", "scikit-build-core>=0.10" ]
+
 [project]
 name = "cover-float"
 version = "0.1.0"
 description = "Test Generators With Coverage for the IBM Floating Point Tests"
 readme = "README.md"
 authors = [
-    { name = "Corey Hickson", email = "chickson@hmc.edu" },
-    { name = "Ryan Wolk", email = "rwolk@hmc.edu" },
-    { name = "Lamarr Olive", email = "lolive@g.hmc.edu" },
-    { name = "Sisi Wang", email = "siswang@g.hmc.edu" },
-    { name = "Angela Zheng", email = "angzheng@g.hmc.edu" },
+  { name = "Corey Hickson", email = "chickson@hmc.edu" },
+  { name = "Ryan Wolk", email = "rwolk@hmc.edu" },
+  { name = "Lamarr Olive", email = "lolive@g.hmc.edu" },
+  { name = "Sisi Wang", email = "siswang@g.hmc.edu" },
+  { name = "Angela Zheng", email = "angzheng@g.hmc.edu" },
 ]
 requires-python = ">=3.10"
-dependencies = [
-    "rich>=14.3.4",
-    "sympy==1.14.0",
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
+dependencies = [
+  "rich>=14.3.4",
+  "sympy==1.14.0",
+]
+scripts.cover-float-testgen = "cover_float.cli:main"
 
-[project.scripts]
-cover-float-testgen = "cover_float.cli:main"
+[dependency-groups]
+dev = [
+  "prek==0.5.10",
+  "pyright==1.1.414",
+  "ruff==0.17.3",
+]
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 
 [tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" }]
-
-[build-system]
-requires = ["scikit-build-core>=0.10", "pybind11"]
-build-backend = "scikit_build_core.build"
-
-[dependency-groups]
-dev = [
-    "prek==0.5.10",
-    "pyright==1.1.414",
-    "ruff==0.17.3",
-]
+cache-keys = [ { file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" } ]
 
 [tool.ruff]
 line-length = 120
-
-[tool.ruff.lint]
 # Extra rules to enable beyond the default set
-extend-select = [
+lint.extend-select = [
   "A",   # shadow builtins
   "ANN", # type annotation rules
   "ISC", # Implicit string concatenation
@@ -50,15 +55,19 @@ extend-select = [
   "SIM", # Simplifications
   "TID", # Tidy imports
 ]
-ignore = [
+lint.ignore = [
   "N", # Naming requirements
 ]
 
+[tool.pyproject-fmt]
+keep_full_version = true
+
 ##### PYRIGHT CONFIG #####
 [tool.pyright]
+typeCheckingMode = "strict"
 exclude = [
-  "**/__pycache__",
   "**/.*",
+  "**/__pycache__",
+  "**/node_modules",
   ".venv",
 ]
-typeCheckingMode = "strict"
