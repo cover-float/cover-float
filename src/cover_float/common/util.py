@@ -16,9 +16,7 @@
 import concurrent.futures
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeVar
-
-from typing_extensions import ParamSpec
+from typing import ParamSpec, TypeVar
 
 from cover_float import reference
 from cover_float.common import constants
