@@ -90,6 +90,8 @@ def _run_model_by_name(
     model_logger.addHandler(general_handler)
 
     try:
+        tv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
         with tv_path.open("w") as test_f, cv_path.open("w") as cover_f:
             if not config.full_coverage_testgen:
                 test_f.write(PARTIAL_OUTPUT_MESSAGE)
