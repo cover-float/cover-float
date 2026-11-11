@@ -26,7 +26,7 @@ add_library(softfloat STATIC ${SOFTFLOAT_SOURCES})
 target_compile_options(softfloat PRIVATE
     -Wall
     -Wextra
-    -Werror
+    ${cover_float_werror}
     -Wno-sign-compare
     -Wno-implicit-fallthrough
 )
@@ -39,7 +39,7 @@ add_library(unmodified_softfloat STATIC ${UNMODIFIED_SOFTFLOAT_SOURCES})
 target_compile_options(unmodified_softfloat PRIVATE
     -Wall
     -Wextra
-    -Werror
+    ${cover_float_werror}
     -Wno-sign-compare
     -Wno-implicit-fallthrough
     -Wno-unused-parameter
