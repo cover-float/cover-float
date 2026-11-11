@@ -96,6 +96,8 @@ build-dir = "build/sdist"
 build-frontend = "build[uv]"
 # Build only for the runner architecture. On x86_64 Linux, "auto" would also build i686.
 archs = ["native"]
+# The extension modules do not support free-threaded Python yet. Importing them turns the GIL back on.
+skip = ["cp3??t-*"]
 # Wheels are built from the sdist with no downloads, to prove that the sdist is complete.
 config-settings = { "cmake.define.COVER_FLOAT_WERROR" = "OFF", "cmake.define.FETCHCONTENT_FULLY_DISCONNECTED" = "ON" }
 # B2 is fast and runs both extension modules.
