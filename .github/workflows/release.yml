@@ -11,6 +11,12 @@ on:
   release:
     types: [published]
 
+# Run one release at a time, and never cancel a release that has started.
+# The "-caller" part keeps this group different from groups in called workflows.
+concurrency:
+  group: ${{ github.workflow }}-caller
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
