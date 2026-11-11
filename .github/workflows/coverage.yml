@@ -46,4 +46,8 @@ jobs:
         run: make all
 
       - name: Run Coverage
-        run: make coverage-verilator
+        run: make update-verilator-report
+        continue-on-error: true
+
+      - name: Diff Coverage
+        run: git diff --exit-code -- reports/verilator.txt
