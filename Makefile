@@ -55,6 +55,10 @@ coverage-verilator:
 		exit 1; \
 	fi
 
+update-verilator-report:
+	$(MAKE) --no-print-directory coverage-verilator | tee reports/verilator.log
+	sed -n '/Coverage Report:/,$$p' reports/verilator.log > reports/verilator.txt
+
 ifeq ($(COVERAGE_SIMULATOR), questa)
 coverage: coverage-questa
 else ifeq ($(COVERAGE_SIMULATOR), verilator)

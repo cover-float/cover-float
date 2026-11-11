@@ -5,6 +5,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Only run CI on the latest commit if a PR is updated
@@ -30,10 +31,33 @@ jobs:
         run: uv run prek run --all-files --show-diff-on-failure --color=always
 
   testgen:
-    name: Run all Test Generation
-    runs-on: ubuntu-latest
+    name: Run all Test Generation (${{ matrix.name }})
+    strategy:
+      matrix:
+        include:
+          - name: Ubuntu
+            os: ubuntu-latest
+            image: null
+            install: null
+
+          - name: Alpine (musl)
+            os: ubuntu-latest
+            image: alpine:latest
+            install: apk add --no-cache git bash make cmake build-base
+
+          - name: MacOS (clang)
+            os: macos-latest
+            image: null
+            install: null
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.image }}
 
     steps:
+      - name: Install Utilities
+        if: ${{ matrix.install != null }}
+        run: ${{ matrix.install }}
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

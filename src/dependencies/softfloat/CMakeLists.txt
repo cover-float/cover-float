@@ -44,6 +44,7 @@ target_compile_options(unmodified_softfloat PRIVATE
     -Wno-implicit-fallthrough
     -Wno-unused-parameter
     -Wno-unused-variable
+    -Wno-uninitialized-const-pointer
 )
 target_include_directories(unmodified_softfloat
     PUBLIC
