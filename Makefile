@@ -87,7 +87,3 @@ clean:
 	$(RM_CMD) tests/processed/*/B*.csv
 	$(RM_CMD) tests/.stamp
 	$(RM_CMD) obj_dir
-
-# --- Include Dependency Files ---
-# Include auto-generated dependency files if they exist
-# -include $(DEPS)
