@@ -18,6 +18,8 @@
 name: Coverage
 
 on:
+  push:
+    branches: [main]
   pull_request:
 
 # Only run on the latest commit if a PR is updated
