@@ -2492,7 +2492,7 @@ float128_t f128_min(float128_t a, float128_t b) {
         ui.ui.v0 = defaultNaNF128UI0;
         return ui.f;
     } else {
-        return (less || isNaNF128UI(b.v[0], b.v[1])) ? a : b;
+        return (less || isNaNF128UI(b.v[1], b.v[0])) ? a : b;
     }
 }
 
@@ -2505,7 +2505,7 @@ float128_t f128_max(float128_t a, float128_t b) {
         ui.ui.v0 = defaultNaNF128UI0;
         return ui.f;
     } else {
-        return (greater || isNaNF128UI(b.v[0], b.v[1])) ? a : b;
+        return (greater || isNaNF128UI(b.v[1], b.v[0])) ? a : b;
     }
 }
 
