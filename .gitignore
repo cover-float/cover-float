@@ -21,3 +21,6 @@ coverage/covergroups/bins_templates/generated
 tests/readable/B*_parsed.txt
 tests/processed/*/B*.csv
 tests/.stamp/*
+
+# Dependency sources vendored into the sdist
+src/dependencies/_vendor/
