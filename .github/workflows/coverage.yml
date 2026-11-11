@@ -31,7 +31,7 @@ jobs:
   coverage:
     name: Check Coverage with Verilator
     runs-on: ubuntu-latest
-    container: verilator/verilator:latest
+    container: verilator/verilator:latest@sha256:da7845c38c2ab84133661a1b1e2d717d028fe0bc629cc06c77bb80571e610448
 
     steps:
       - name: Checkout Code
