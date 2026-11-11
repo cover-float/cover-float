@@ -36,11 +36,13 @@ jobs:
   lint:
     name: Pre-commit check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Install the latest version of uv
@@ -56,30 +58,28 @@ jobs:
         include:
           - name: Ubuntu
             os: ubuntu-latest
-            image: null
-            install: null
 
           - name: Alpine (musl)
             os: ubuntu-latest
-            image: alpine:latest
+            image: alpine:latest@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
             install: apk add --no-cache git bash make cmake build-base
 
           - name: MacOS (clang)
             os: macos-latest
-            image: null
-            install: null
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     container: ${{ matrix.image }}
 
     steps:
       - name: Install Utilities
-        if: ${{ matrix.install != null }}
+        if: ${{ matrix.install }}
         run: ${{ matrix.install }}
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Install the latest version of uv
@@ -91,12 +91,14 @@ jobs:
   coverage:
     name: Check Coverage with Verilator
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container: verilator/verilator:latest@sha256:da7845c38c2ab84133661a1b1e2d717d028fe0bc629cc06c77bb80571e610448
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Install the latest version of uv
@@ -119,6 +121,7 @@ jobs:
   ci_pass:
     name: CI pass
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [lint, testgen, coverage]
     if: ${{ always() }}
     steps:
