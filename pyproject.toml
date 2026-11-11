@@ -11,8 +11,9 @@ authors = [
     { name = "Angela Zheng", email = "angzheng@g.hmc.edu" },
 ]
 requires-python = ">=3.10"
-license = "Apache-2.0"
-license-files = ["LICENSE"]
+# Wheels include softfloat (BSD-3-Clause) and Boost.Multiprecision (BSL-1.0).
+license = "Apache-2.0 AND BSD-3-Clause AND BSL-1.0"
+license-files = ["LICENSE", "src/dependencies/boost/LICENSE", "src/dependencies/softfloat/spike/LICENSE"]
 keywords = ["floating-point", "IEEE 754", "test generation", "functional coverage", "RISC-V", "verification"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -61,6 +62,17 @@ sdist.exclude = [
     "!/src/dependencies/softfloat/spike/LICENSE",
     "!/src/dependencies/softfloat/spike/softfloat",
 ]
+# Run CMake for the sdist, so that the downloaded dependencies are vendored into it.
+sdist.cmake = true
+sdist.include = [
+    "/src/dependencies/_vendor/*.pin",
+    "/src/dependencies/_vendor/boost_multiprecision/CMakeLists.txt",
+    "/src/dependencies/_vendor/boost_multiprecision/LICENSE",
+    "/src/dependencies/_vendor/boost_multiprecision/include",
+    "/src/dependencies/_vendor/unmodified_spike/LICENSE",
+    "/src/dependencies/_vendor/unmodified_spike/berkeley-softfloat-3/COPYING.txt",
+    "/src/dependencies/_vendor/unmodified_spike/softfloat",
+]
 
 [tool.uv]
 cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" }]
@@ -76,11 +88,16 @@ dev = [
     "ruff==0.17.3",
 ]
 
+[[tool.scikit-build.overrides]]
+if.state = "sdist"
+build-dir = "build/sdist"
+
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
 # Build only for the runner architecture. On x86_64 Linux, "auto" would also build i686.
 archs = ["native"]
-config-settings = { "cmake.define.COVER_FLOAT_WERROR" = "OFF" }
+# Wheels are built from the sdist with no downloads, to prove that the sdist is complete.
+config-settings = { "cmake.define.COVER_FLOAT_WERROR" = "OFF", "cmake.define.FETCHCONTENT_FULLY_DISCONNECTED" = "ON" }
 # B2 is fast and runs both extension modules.
 test-command = "cover-float-testgen --models B2 -qq --output-dir cover-float-smoke-test"
 
