@@ -9,7 +9,7 @@ set(cover_float_spike_source_dir "${CMAKE_CURRENT_LIST_DIR}/spike")
 FetchContent_Declare(
     unmodified_spike
     GIT_REPOSITORY https://github.com/riscv-software-src/riscv-isa-sim.git
-    GIT_TAG b6a84e1f3a51800d8354489b6493723742abff9a
+    GIT_TAG 4094d29094b690a7c4ae392c6d71260e5ec30b6b
     GIT_SHALLOW
     GIT_SUBMODULES "berkeley-softfloat-3"
     PATCH_COMMAND  ${CMAKE_COMMAND} -E rm -f VERSION
@@ -44,7 +44,6 @@ target_compile_options(unmodified_softfloat PRIVATE
     -Wno-implicit-fallthrough
     -Wno-unused-parameter
     -Wno-unused-variable
-    -Wno-uninitialized-const-pointer
 )
 target_include_directories(unmodified_softfloat
     PUBLIC
