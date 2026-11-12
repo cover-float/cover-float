@@ -66,7 +66,7 @@ all ones   = fraction with all ones    (the frac of MaxNorm)
 10000..000    = fraction with only the MSB set to 1
 any frac      = a randomized value in the fraction field, representative mid-range fraction (all zeros < any frac < all ones)
 any exp       = a randomized exponent value, representative of mid-range exponents (min_norm_bexp < any exp < max_norm_bexp)
-significand = mantissa = fraction (interchangable terms)
+significand = mantissa = fraction (interchangeable terms)
 ----
 
 ==== Exponent interpretation for subnormals

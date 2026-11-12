@@ -1,4 +1,4 @@
-        // all arithemtic operations
+        // all arithmetic operations
 
         bins op_sqrt   = {[OP_SQRT : OP_SQRT | 32'hF]};
         bins op_add    = {[OP_ADD : OP_ADD | 32'hF]};

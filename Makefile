@@ -26,7 +26,7 @@ MODELS := B1 B2 B3 B4 B5 B6 B7 B8 B9 B10 B11 B12 B13 B14 B15 B16 B17 B18 B19 B20
 .PHONY: build clean all $(MODELS) coverage coverage-questa coverage-verilator
 
 # Notice that we pass --managed-python, we do this so that uv (scikit-build-core)
-# will have a python enviornment with Python.h to build with.
+# will have a Python environment with Python.h to build with.
 all:
 	uv run --managed-python cover-float-testgen $(COVER_FLOAT_FLAGS)
 
@@ -87,7 +87,3 @@ clean:
 	$(RM_CMD) tests/processed/*/B*.csv
 	$(RM_CMD) tests/.stamp
 	$(RM_CMD) obj_dir
-
-# --- Include Dependency Files ---
-# Include auto-generated dependency files if they exist
-# -include $(DEPS)
