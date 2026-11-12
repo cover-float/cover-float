@@ -209,16 +209,20 @@ def B9_generator(sigs: list[str], fmt: str, test_f: TextIO, cover_f: TextIO, con
         for sig1 in sigs:
             for sig2 in sigs:
                 # TODO: Be more careful here so as to not accidentally create subnorms/underflows/overflows
-                exp1 = random.randint(exp_min, exp_max)
-                sign1 = random.randint(0, 1)
-                exp2 = random.randint(exp_min, exp_max)
-                sign2 = random.randint(0, 1)
+                parities = [0, 1] if op in B9_1SRC else [exp_min]
+                for parity in parities:
+                    # Generate tests with both parities for sqrt, otherwise no change to exponent generation.
+                    exp1 = random.randrange(exp_min + ((exp_min - parity) % 2), exp_max + 1)
 
-                float1 = generate_float(sign1, exp1, int(sig1, 2), fmt)
-                float2 = generate_float(sign2, exp2, int(sig2, 2), fmt) if op not in B9_1SRC else 0
+                    sign1 = random.randint(0, 1) if op not in B9_1SRC else 0
+                    exp2 = random.randint(exp_min, exp_max)
+                    sign2 = random.randint(0, 1)
 
-                tv = generate_test_vector(op, float1, float2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
-                run_and_store_test_vector(tv, test_f, cover_f, config)
+                    float1 = generate_float(sign1, exp1, int(sig1, 2), fmt)
+                    float2 = generate_float(sign2, exp2, int(sig2, 2), fmt) if op not in B9_1SRC else 0
+
+                    tv = generate_test_vector(op, float1, float2, 0, fmt, fmt, random.choice(constants.ROUNDING_MODES))
+                    run_and_store_test_vector(tv, test_f, cover_f, config)
 
                 if op in B9_1SRC:
                     break  # Don't over generate tests
