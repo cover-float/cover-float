@@ -39,12 +39,13 @@ from rich.progress import (
     TaskID,
     TextColumn,
 )
-from typing_extensions import Self
 
 from cover_float.common.config import Config
 
 # Make the type checker happy
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     _LoggerAdapter = logging.LoggerAdapter[logging.Logger]
 else:
     _LoggerAdapter = logging.LoggerAdapter
