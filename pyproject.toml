@@ -11,10 +11,38 @@ authors = [
     { name = "Angela Zheng", email = "angzheng@g.hmc.edu" },
 ]
 requires-python = ">=3.10"
+# Wheels include softfloat (BSD-3-Clause) and Boost.Multiprecision (BSL-1.0).
+license = "Apache-2.0 AND BSD-3-Clause AND BSL-1.0"
+license-files = ["LICENSE", "src/dependencies/boost/LICENSE", "src/dependencies/softfloat/spike/LICENSE"]
+keywords = ["floating-point", "IEEE 754", "test generation", "functional coverage", "RISC-V", "verification"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Hardware",
+    "Typing :: Typed",
+]
 dependencies = [
     "rich>=14.3.4",
     "sympy==1.14.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/cover-float/cover-float"
+Repository = "https://github.com/cover-float/cover-float"
+Issues = "https://github.com/cover-float/cover-float/issues"
 
 [project.scripts]
 cover-float-testgen = "cover_float.cli:main"
@@ -22,12 +50,35 @@ cover-float-testgen = "cover_float.cli:main"
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
+# Ship only the files needed to build the package. Of the Spike submodule, only softfloat is used.
+sdist.exclude = [
+    "/*",
+    "!/CMakeLists.txt",
+    "!/LICENSE",
+    "!/README.md",
+    "!/pyproject.toml",
+    "!/src",
+    "/src/dependencies/softfloat/spike/*",
+    "!/src/dependencies/softfloat/spike/LICENSE",
+    "!/src/dependencies/softfloat/spike/softfloat",
+]
+# Run CMake for the sdist, so that the downloaded dependencies are vendored into it.
+sdist.cmake = true
+sdist.include = [
+    "/src/dependencies/_vendor/*.pin",
+    "/src/dependencies/_vendor/boost_multiprecision/CMakeLists.txt",
+    "/src/dependencies/_vendor/boost_multiprecision/LICENSE",
+    "/src/dependencies/_vendor/boost_multiprecision/include",
+    "/src/dependencies/_vendor/unmodified_spike/LICENSE",
+    "/src/dependencies/_vendor/unmodified_spike/berkeley-softfloat-3/COPYING.txt",
+    "/src/dependencies/_vendor/unmodified_spike/softfloat",
+]
 
 [tool.uv]
 cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" }]
 
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11"]
+requires = ["scikit-build-core>=0.11", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [dependency-groups]
@@ -36,6 +87,21 @@ dev = [
     "pyright==1.1.414",
     "ruff==0.17.3",
 ]
+
+[[tool.scikit-build.overrides]]
+if.state = "sdist"
+build-dir = "build/sdist"
+
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+# Build only for the runner architecture. On x86_64 Linux, "auto" would also build i686.
+archs = ["native"]
+# The extension modules do not support free-threaded Python yet. Importing them turns the GIL back on.
+skip = ["cp3??t-*"]
+# Wheels are built from the sdist with no downloads, to prove that the sdist is complete.
+config-settings = { "cmake.define.COVER_FLOAT_WERROR" = "OFF", "cmake.define.FETCHCONTENT_FULLY_DISCONNECTED" = "ON" }
+# B2 is fast and runs both extension modules.
+test-command = "cover-float-testgen --models B2 -qq --output-dir cover-float-smoke-test"
 
 [tool.ruff]
 line-length = 120
