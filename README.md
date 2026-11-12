@@ -1,4 +1,5 @@
 # cover-float
+
 An implementation of the IBM floating point test suite, written by Aharoni et. al, found [here](https://web.archive.org/web/20210701231302/https://www.research.ibm.com/haifa/projects/verification/fpgen/papers/ieee-test-suite-v2.pdf). We provide functional coverage written in SystemVerilog and Python test generators for each of the 29 models listed in the paper. In addition, we provide python bindings for a modified version of softfloat that allows us to extract intermediate information from floating point operations, such as the pre-rounding intermediate and the multiplication result of a fused multiply-add operation.
 
 The project has SystemVerilog coverage in `coverage`, Python test generation in `src/cover_float`, and softfloat bindings in `src/cpp`. The modified softfloat source is kept in the Spike submodule at `src/dependencies/softfloat/spike`; CMake fetches an unmodified version for comparison. Clone the repository with `--recurse-submodules` to fetch the modified source.
