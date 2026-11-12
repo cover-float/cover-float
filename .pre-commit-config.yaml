@@ -1,21 +1,28 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
       - id: check-added-large-files
+      - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
+      - id: check-merge-conflict
+        args: [--assume-in-merge]
+        exclude: \.adoc$ # AsciiDoc level 6 section titles look like conflict markers
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.13.7
+    rev: d1df990f871e616da38bb602a2671d5e840b9989 # frozen: 0.13.7
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.17.3
+    rev: 25bcf95026b96e2dd3c0aec3090c3d6ef6ca2e6c # frozen: v0.17.3
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -31,7 +38,7 @@ repos:
         language: system
         types: [python]
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v23.1.3
+    rev: 98ad4ddb9c057de2f5b9e93e44e6db959807d68c # frozen: v23.1.3
     hooks:
     - id: clang-format
   # Lint GitHub Actions workflows for errors and security issues
