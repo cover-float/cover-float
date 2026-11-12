@@ -580,7 +580,7 @@ def factor_mul_gen(precision: str, rounding_mode: str, grs_pattern: str, sign: s
 
     a_bits = len(a_bin)
     b_bits = len(b_bin)
-    # Thow error is bit width is impossibly long
+    # Throw error if bit width is impossibly long
     if a_bits > m_bits + 1 or b_bits > m_bits + 1:
         raise ValueError(f"a_bits ({a_bits}) or b_bits ({b_bits}) cannot be greater than m_bits + 1 ({m_bits + 1}).")
 

@@ -27,5 +27,5 @@ coverage report
 
 q
 
-# might neet many of these later on...
+# might need many of these later on...
 coverage save coverfloat.ucdb

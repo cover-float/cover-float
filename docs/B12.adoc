@@ -114,7 +114,7 @@ Giving us our desired exponent difference of `max(a_exp, b_exp) - exp = 10 - (-1
 *Case:* `d` = all other `d` 's +
 *Relevant Functions:* makeCancellationMantissas, makeTestVectors
 
-This case best reflects the general idea. Since we want to cancel `k - 1` bits in the mantissa (recall that the implicit 1 is also canceled), we will generate `k - 1` random bits as the prefix for both `a_m` and `b_m`. In `a_m`, this prefix will be followed by `11`, and `00` in `b_m`. The rest of `a_m` and `b_m` will be randomly generated. The detailed arithmetics in the code involves edge cases such as `k = 1, (m-1), m` that are handled by if statements.
+This case best reflects the general idea. Since we want to cancel `k - 1` bits in the mantissa (recall that the implicit 1 is also canceled), we will generate `k - 1` random bits as the prefix for both `a_m` and `b_m`. In `a_m`, this prefix will be followed by `11`, and `00` in `b_m`. The rest of `a_m` and `b_m` will be randomly generated. The detailed arithmetic in the code involves edge cases such as `k = 1, (m-1), m` that are handled by if statements.
 
 Example: +
 We have two operands in `FP_32`, each with a 23-bit mantissa. We're aiming to cancel 9 bits.

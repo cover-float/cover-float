@@ -189,7 +189,7 @@ def write_fma_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 # In some cases, especially in lower precision formats (i.e. bf16 and half),
                 # we get an "overflow" here (i.e. we move up an exponent and have to shift)
                 # This means we can accidentally cause a shift of guard into the stickt bit
-                # which we do not guarentee to be zero, so we check that here
+                # which we do not guarantee to be zero, so we check that here
                 if len(bin(sigZ64)) != len(bin(sigProd)):
                     continue
 

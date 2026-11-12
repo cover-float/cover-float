@@ -126,7 +126,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
 
     F32_result_basictypes: coverpoint CFI.result[31:0] {
         type_option.weight = 0;
-        // Ignore NaN bins in the basic types bin templates since non-cannonical nans cant be produces
+        // Ignore NaN bins in the basic types bin templates since non-canonical NaNs can't be produced
         `define IGNORE_NANS
         `include "bins_templates/F32_basic_types_bins.svh"
         `undef  IGNORE_NANS
@@ -168,7 +168,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
 
     F64_result_basictypes: coverpoint CFI.result[63:0] {
         type_option.weight = 0;
-        // Ignore NaN bins in the basic types bin templates since non-cannonical nans cant be produces
+        // Ignore NaN bins in the basic types bin templates since non-canonical NaNs can't be produced
         `define IGNORE_NANS
         `include "bins_templates/F64_basic_types_bins.svh"
         `undef IGNORE_NANS
@@ -210,7 +210,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
 
     F16_result_basictypes: coverpoint CFI.result[15:0] {
         type_option.weight = 0;
-        // Ignore NaN bins in the basic types bin templates since non-cannonical nans cant be produces
+        // Ignore NaN bins in the basic types bin templates since non-canonical NaNs can't be produced
         `define IGNORE_NANS
         `include "bins_templates/F16_basic_types_bins.svh"
         `undef IGNORE_NANS
@@ -252,7 +252,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
 
     BF16_result_basictypes: coverpoint CFI.result[15:0] {
         type_option.weight = 0;
-        // Ignore NaN bins in the basic types bin templates since non-cannonical nans cant be produces
+        // Ignore NaN bins in the basic types bin templates since non-canonical NaNs can't be produced
         `define IGNORE_NANS
         `include "bins_templates/BF16_basic_types_bins.svh"
         `undef IGNORE_NANS
@@ -294,7 +294,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
 
     F128_result_basictypes: coverpoint CFI.result[127:0] {
         type_option.weight = 0;
-        // Ignore NaN bins in the basic types bin templates since non-cannonical nans cant be produces
+        // Ignore NaN bins in the basic types bin templates since non-canonical NaNs can't be produced
         `define IGNORE_NANS
         `include "bins_templates/F128_basic_types_bins.svh"
         `undef IGNORE_NANS

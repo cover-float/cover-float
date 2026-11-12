@@ -93,9 +93,9 @@ static constexpr int RFI_DECIMAL_POINT = INTERM_SIG_LENGTH / 2;
 
 #define MAX_TOKEN_LEN 48
 
-// arbitary encoding of IBM paper operations
+// arbitrary encoding of IBM paper operations
 // numbering scheme: bits 31:4 are major operation (pulled directly form aharoni paper)
-//                   bits 3:0 are variant operations (taylored towards riscv instrs)
+//                   bits 3:0 are variant operations (tailored towards riscv instrs)
 //                   coverpoint are written such that any variant covers the superset
 #define OP_ADD 0x10
 #define OP_SUB 0x20

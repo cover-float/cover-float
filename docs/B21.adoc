@@ -81,7 +81,7 @@ Each test has different requirements on the input, as shown in <<General Impleme
 The floating point division of values `a` and `b` to get the result `c` follow the general form.
 Division: latexmath:[c\_mantissa * 2^{c\_exp} * -1^{c\_sign} = (1.mantissa\_a) / (1.mantissa\_b) * 2^{a\_exp - b\_exp} * -1^{a\_sign \oplus b\_sign}]
 Remainder: latexmath:[c\_mantissa * 2^{c\_exp} * -1^{c\_sign} = \left( (1.mantissa\_a) * 2^{a\_exp} * -1^{a\_sign} \right) \text{ rem } \left( (1.mantissa\_b) * 2^{b\_exp} * -1^{b\_sign} \right)]
-This test suite tests all 16 permuations on the listed values of `a` and `b` as observed in the "Value" category of <<Input Values>>
+This test suite tests all 16 permutations on the listed values of `a` and `b` as observed in the "Value" category of <<Input Values>>
 
 ==== Determining Input Sign
 Each input value listed in <<Input Values>> is can have any possible input value. Therefore, the input signs, `a_sign` and `b_sign` are randomly generated.
