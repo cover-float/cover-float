@@ -75,8 +75,7 @@
             ]
         },
         {
-            "description":
-                "Bump the scikit-build-core floor, because it selects the build defaults through minimum-version",
+            "description": "Bump the scikit-build-core floor, because minimum-version uses it",
             "matchDepNames": [
                 "scikit-build-core"
             ],
