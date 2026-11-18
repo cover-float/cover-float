@@ -585,6 +585,95 @@ def _generate_group2_mul_factors(
         yield (mn, two)
 
 
+def _group2_random_overflow(
+    fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config
+) -> None:
+    """
+    6 operations x 2 signs x 5 rounding modes = 60 vectors.
+
+    The intermediate is a random inexact number above MaxNorm + 3ulp:
+    MaxNorm plus a random smaller float B.  B has its exponent d binades below
+    MaxNorm's (d in 0..M-4, so B >= 16 x 2^(ulp_exp) and the sum stays above
+    MaxNorm + 3ulp) and a random mantissa, so the sum usually has G/S bits set.
+
+    Positive intermediate (+(MaxNorm + B)), sign=0:
+      ADD:    A = +MaxNorm,    B = +B
+      SUB:    A = +MaxNorm,    B = -B              (A - (-B) = MaxNorm + B)
+      FMADD:  A = +MaxNorm/2,  B = 2.0, C = +B
+      FMSUB:  A = +MaxNorm/2,  B = 2.0, C = -B     (A*B - C = MaxNorm + B)
+      FNMADD: A = -MaxNorm/2,  B = 2.0, C = -B     (-(A*B) - C = MaxNorm + B)
+      FNMSUB: A = -MaxNorm/2,  B = 2.0, C = +B     (-(A*B) + C = MaxNorm + B)
+
+    Negative intermediate, sign=1: negate dominant operands.
+    """
+    two = _two(E, M, bias)
+    mb = _max_biased(E)
+
+    for sign in (0, 1):
+        mn = _maxnorm(sign, E, M)
+        hmn = _half_maxnorm(sign, E, M)
+        hmn_op = _half_maxnorm(1 - sign, E, M)
+
+        for rm in ROUND_MODES:
+            # Random small addend (same exponent and mantissa, both signs)
+            d = random.randint(0, M - 4)
+            mantissa = random.getrandbits(M)
+            rb = _fp_hex(sign, mb - d, mantissa, E, M)
+            rb_op = _fp_hex(1 - sign, mb - d, mantissa, E, M)  # opposite-sign addend
+
+            # ADD: ±MaxNorm + ±B
+            _emit(const.OP_ADD, rm, mn, rb, ZERO_PAD, fmt, test_f, cover_f, config)
+            # SUB: ±MaxNorm - (∓B)
+            _emit(const.OP_SUB, rm, mn, rb_op, ZERO_PAD, fmt, test_f, cover_f, config)
+            # FMADD: (±Mn/2 x 2) + ±B
+            _emit(const.OP_FMADD, rm, hmn, two, rb, fmt, test_f, cover_f, config)
+            # FMSUB: (±Mn/2 x 2) - (∓B)
+            _emit(const.OP_FMSUB, rm, hmn, two, rb_op, fmt, test_f, cover_f, config)
+            # FNMADD: -(∓Mn/2 x 2) - (∓B)
+            _emit(const.OP_FNMADD, rm, hmn_op, two, rb_op, fmt, test_f, cover_f, config)
+            # FNMSUB: -(∓Mn/2 x 2) + (±B)
+            _emit(const.OP_FNMSUB, rm, hmn_op, two, rb, fmt, test_f, cover_f, config)
+
+
+def _group2_far_overflow(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
+    """
+    6 operations x 2 signs x 5 rounding modes = 60 vectors.
+
+    The intermediate's exponent is far above max (>= emax + 4).  ADD and SUB
+    cannot get this far, so they are not generated here.
+
+    Positive intermediate, sign=0:
+      MUL:    A = +MaxNorm,  B = +MaxNorm            (MaxNorm x MaxNorm)
+      DIV:    A = +MaxNorm,  B = +MinSubNorm         (MaxNorm / MinSubNorm)
+      FMADD:  A = +MaxNorm,  B = +MaxNorm,  C = +0
+      FMSUB:  A = +MaxNorm,  B = +MaxNorm,  C = +0
+      FNMADD: A = +MaxNorm,  B = -MaxNorm,  C = +0   (-(A*B) - C = MaxNorm x MaxNorm)
+      FNMSUB: A = +MaxNorm,  B = -MaxNorm,  C = +0   (-(A*B) + C = MaxNorm x MaxNorm)
+
+    Negative intermediate, sign=1: negate one factor.
+    """
+    mn_pos = _maxnorm(0, E, M)
+    min_sub = _fp_hex(0, 0, 1, E, M)  # smallest positive subnormal
+
+    for sign in (0, 1):
+        mn = _maxnorm(sign, E, M)
+        mn_op = _maxnorm(1 - sign, E, M)  # opposite-sign MaxNorm, used only for FNMADD/FNMSUB
+
+        for rm in ROUND_MODES:
+            # MUL: +MaxNorm x ±MaxNorm
+            _emit(const.OP_MUL, rm, mn_pos, mn, ZERO_PAD, fmt, test_f, cover_f, config)
+            # DIV: ±MaxNorm / MinSubNorm
+            _emit(const.OP_DIV, rm, mn, min_sub, ZERO_PAD, fmt, test_f, cover_f, config)
+            # FMADD: (+MaxNorm x ±MaxNorm) + 0
+            _emit(const.OP_FMADD, rm, mn_pos, mn, ZERO_PAD, fmt, test_f, cover_f, config)
+            # FMSUB: (+MaxNorm x ±MaxNorm) - 0
+            _emit(const.OP_FMSUB, rm, mn_pos, mn, ZERO_PAD, fmt, test_f, cover_f, config)
+            # FNMADD: -(+MaxNorm x ∓MaxNorm) - 0
+            _emit(const.OP_FNMADD, rm, mn_pos, mn_op, ZERO_PAD, fmt, test_f, cover_f, config)
+            # FNMSUB: -(+MaxNorm x ∓MaxNorm) + 0
+            _emit(const.OP_FNMSUB, rm, mn_pos, mn_op, ZERO_PAD, fmt, test_f, cover_f, config)
+
+
 # ---------------------------------------------------------------------------
 # Group 3: Exponent sweep [max_biased-3 .. max_biased+3]
 # ---------------------------------------------------------------------------
@@ -791,6 +880,8 @@ def generate_b4_tests_arithmetic(test_f: TextIO, cover_f: TextIO, config: Config
     _group1b_arithmetic(fmt, E, M, bias, test_f, cover_f, config)
     _group1b_mul_div(fmt, E, M, bias, test_f, cover_f, config)
     _group2_clear_overflow(fmt, E, M, bias, test_f, cover_f, config)
+    _group2_random_overflow(fmt, E, M, bias, test_f, cover_f, config)
+    _group2_far_overflow(fmt, E, M, bias, test_f, cover_f, config)
     _group3_exp_sweep(fmt, E, M, bias, test_f, cover_f, config)
 
 

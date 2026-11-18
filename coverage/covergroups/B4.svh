@@ -196,6 +196,33 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         bins exp_range[] = {[ BF16_MAXNORM_EXP - 3 : BF16_MAXNORM_EXP + 3 ]};
     }
 
+    // far overflow (B4-6)
+    F32_far_overflow: coverpoint CFI.intermX {
+        type_option.weight = 0;
+
+        bins far = {[ F32_MAXNORM_EXP + 4 : $ ]};
+    }
+    F64_far_overflow: coverpoint CFI.intermX {
+        type_option.weight = 0;
+
+        bins far = {[ F64_MAXNORM_EXP + 4 : $ ]};
+    }
+    F128_far_overflow: coverpoint CFI.intermX {
+        type_option.weight = 0;
+
+        bins far = {[ F128_MAXNORM_EXP + 4 : $ ]};
+    }
+    F16_far_overflow: coverpoint CFI.intermX {
+        type_option.weight = 0;
+
+        bins far = {[ F16_MAXNORM_EXP + 4 : $ ]};
+    }
+    BF16_far_overflow: coverpoint CFI.intermX {
+        type_option.weight = 0;
+
+        bins far = {[ BF16_MAXNORM_EXP + 4 : $ ]};
+    }
+
 
 
     /************************************************************************
@@ -211,12 +238,18 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F32_maxNorm_pm3_exp_range.exp_range) intersect {[F32_MAXNORM_EXP+2:F32_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F32_maxNorm_pm3_exp_range.exp_range) intersect {[F32_MAXNORM_EXP+2:F32_MAXNORM_EXP+3]});
         }
+        B4_F32_far_overflow: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F32_far_overflow, F32_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add);
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub);
+        }
+
 
         `ifdef COVER_F64
             B4_F32_from_F64_maxNorm_pm_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, F32_maxNorm_pm_3ulp, F32_result_fmt, F64_operand_fmt;
             B4_F32_from_F64_gt_maxNorm_p_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, F32_gt_maxNorm_p_3ulp, F32_result_fmt, F64_operand_fmt;
             B4_F32_from_F64_pm3_exp_range: cross FP_op_cff, rounding_mode_all, interm_sign, F32_maxNorm_pm3_exp_range, F32_result_fmt, F64_operand_fmt;
         `endif
+
 
         `ifdef COVER_F128
             B4_F32_from_F128_maxNorm_pm_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, F32_maxNorm_pm_3ulp, F32_result_fmt, F128_operand_fmt;
@@ -234,6 +267,11 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F64_maxNorm_pm3_exp_range.exp_range) intersect {[F64_MAXNORM_EXP+2:F64_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F64_maxNorm_pm3_exp_range.exp_range) intersect {[F64_MAXNORM_EXP+2:F64_MAXNORM_EXP+3]});
         }
+        B4_F64_far_overflow: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F64_far_overflow, F64_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add);
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub);
+        }
+
 
         `ifdef COVER_F128
             B4_F64_from_F128_maxNorm_pm_3ulp: cross FP_op_cff, rounding_mode_all, interm_sign, F64_maxNorm_pm_3ulp, F64_result_fmt, F128_operand_fmt;
@@ -251,6 +289,10 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F128_maxNorm_pm3_exp_range.exp_range) intersect {[F128_MAXNORM_EXP+2:F128_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F128_maxNorm_pm3_exp_range.exp_range) intersect {[F128_MAXNORM_EXP+2:F128_MAXNORM_EXP+3]});
         }
+        B4_F128_far_overflow: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F128_far_overflow, F128_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add);
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub);
+        }
     `endif
 
     `ifdef COVER_F16
@@ -262,6 +304,10 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         B4_F16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt {
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
+        }
+        B4_F16_far_overflow: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_far_overflow, F16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add);
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub);
         }
 
         `ifdef COVER_BF16
@@ -300,6 +346,10 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         B4_BF16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, BF16_maxNorm_pm3_exp_range, BF16_result_fmt {
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(BF16_maxNorm_pm3_exp_range.exp_range) intersect {[BF16_MAXNORM_EXP+2:BF16_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(BF16_maxNorm_pm3_exp_range.exp_range) intersect {[BF16_MAXNORM_EXP+2:BF16_MAXNORM_EXP+3]});
+        }
+        B4_BF16_far_overflow: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, BF16_far_overflow, BF16_result_fmt {
+            ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add);
+            ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub);
         }
 
         `ifdef COVER_F32
