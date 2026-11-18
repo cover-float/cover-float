@@ -27,7 +27,7 @@ build-dir = "build/{wheel_tag}"
 cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.{h,c,hpp,cpp}" }, { file = "**/CMakeLists.txt" }]
 
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11"]
+requires = ["scikit-build-core>=1.1", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [dependency-groups]
