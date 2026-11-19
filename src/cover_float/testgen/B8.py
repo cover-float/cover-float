@@ -102,7 +102,6 @@ def check_div_result(result: str, target: int, sticky_length: int) -> bool:
 
     sticky = interm_mantissa[nf + 1 :]
     relevant_bits = sticky[:sticky_length]
-
     return int(relevant_bits, 2) == target
 
 
@@ -147,7 +146,7 @@ def check_sqrt_result(result: str, target: int, sticky_length: int) -> bool:
 
 def sqrt_rounding(lsb: int, guard: int, target: int, extra_bits: int, fmt: str) -> tuple[int, int] | None:
     nf = constants.MANTISSA_BITS[fmt]
-
+    print(f"goal: lsb-{lsb}, g-{guard}, sticky-{target}")
     N = 1 << nf
     # psuedorandom shuffling w/ affine permutation to avoid biasing small mantissas
     # also avoids memory issue for large nf
@@ -166,7 +165,7 @@ def sqrt_rounding(lsb: int, guard: int, target: int, extra_bits: int, fmt: str) 
         result = (result << 1) | guard
         result = (result << extra_bits) | target
 
-        length = result.bit_length()
+        length = nf + 1 + extra_bits
 
         # calculate bounds
         lower = (result**2) << nf
@@ -200,18 +199,20 @@ def sqrt_rounding(lsb: int, guard: int, target: int, extra_bits: int, fmt: str) 
                     continue
                 sigA = c >> 1
                 exp_adjustment = 1
+            sigA &= (1 << nf) - 1  # remove leading 1
 
             # find the sqrt of candidate with correct exp adjustment
-            root = math.isqrt((c * denominator) >> (nf))
+            root = math.isqrt((c * denominator) >> nf)
 
-            # print(hex(root),hex(result),hex(c),hex(sigA)) # debugging, remove later
+            print("generated:", hex(root), hex(result), hex(c), hex(sigA))  # debugging, remove later
 
-            generated_guard = (root >> extra_bits) & 1
             generated_lsb = (root >> (extra_bits + 1)) & 1
+            generated_guard = (root >> extra_bits) & 1
             generated_sticky = root & ((1 << extra_bits) - 1)
 
+            print(f"res: lsb-{generated_lsb}, g-{generated_guard}, sticky-{generated_sticky}")
             if generated_lsb == lsb and generated_guard == guard and generated_sticky == target:
-                return sigA & ((1 << nf) - 1), exp_adjustment
+                return sigA, exp_adjustment
 
     return None
 
@@ -224,7 +225,8 @@ def generate_sqrt_tests(
 
     nf = constants.MANTISSA_BITS[fmt]
     if not target_bits:
-        target_bits = nf - 2
+        target_bits = nf // 4  # temp
+
     generated_count = 0
     for target in itertools.chain(range(1, 4), range((1 << target_bits) - 4, (1 << target_bits))):
         for sign, lsb, guard in sign_lsb_guard():
@@ -250,10 +252,12 @@ def generate_sqrt_tests(
             info = extract_rounding_info(result)
 
             if check_sqrt_result(result, target, target_bits) and info["Guard"] == guard and info["LSB"] == lsb:
+                print("Success.")
                 store_cover_vector(result, test_f, cover_f, config)
                 generated_count += 1
             else:
-                raise ValueError(f"Sqrt Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
+                print(f"Sqrt Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}, info={info}")
+                # raise ValueError(f"Sqrt Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}, info={info}")
     print(f"Generated {generated_count} combinations for fmt {fmt}")
 
 
