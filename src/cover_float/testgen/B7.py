@@ -95,7 +95,9 @@ def add_sub_tests(fmt: str, test_f: TextIO, cover_f: TextIO, config: Config) -> 
             # Only get the remaining rounding bits
             rounding_bits = rounding_bits[: nf + is_subtraction]
 
-            if int(rounding_bits, 2) != 1 << (nf - extra_bit - 1 + is_subtraction) and rounding_bits.count("1") == 1:
+            expected = 1 << (nf - extra_bit - 1 + is_subtraction)
+
+            if int(rounding_bits, 2) != expected or rounding_bits.count("1") != 1:
                 raise ValueError(f"Add Sub Generation Failed: extra_bit: {extra_bit}, op: {op}")
             else:
                 store_cover_vector(result, test_f, cover_f, config)
