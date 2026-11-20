@@ -40,6 +40,28 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         bins op_cff = { OP_CFF };
     }
 
+    FP_op_cif: coverpoint CFI.op {
+        type_option.weight = 0;
+
+        bins op_cif = { OP_CIF };
+    }
+    I32_operand_fmt: coverpoint (CFI.operandFmt == FMT_INT) {
+        type_option.weight = 0;
+        bins i32 = {1};
+    }
+    U32_operand_fmt: coverpoint (CFI.operandFmt == FMT_UINT) {
+        type_option.weight = 0;
+        bins u32 = {1};
+    }
+    I64_operand_fmt: coverpoint (CFI.operandFmt == FMT_LONG) {
+        type_option.weight = 0;
+        bins i64 = {1};
+    }
+    U64_operand_fmt: coverpoint (CFI.operandFmt == FMT_ULONG) {
+        type_option.weight = 0;
+        bins u64 = {1};
+    }
+
     rounding_mode_all: coverpoint CFI.rm {
         type_option.weight = 0;
         bins round_near_even   = {ROUND_NEAR_EVEN};
@@ -262,6 +284,35 @@ covergroup B4_cg (virtual coverfloat_interface CFI);
         B4_F16_maxNorm_pm3_exp_range: cross FP_arith_ops_no_sqrt, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt {
             ignore_bins impossible_add = binsof(FP_arith_ops_no_sqrt.op_add) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
             ignore_bins impossible_sub = binsof(FP_arith_ops_no_sqrt.op_sub) && (binsof(F16_maxNorm_pm3_exp_range.exp_range) intersect {[F16_MAXNORM_EXP+2:F16_MAXNORM_EXP+3]});
+        }
+
+
+        B4_F16_from_I32_maxNorm_pm_3ulp:   cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm_3ulp,      F16_result_fmt, I32_operand_fmt;
+        B4_F16_from_I32_gt_maxNorm_p_3ulp: cross FP_op_cif, rounding_mode_all, interm_sign, F16_gt_maxNorm_p_3ulp,    F16_result_fmt, I32_operand_fmt;
+        B4_F16_from_I32_pm3_exp_range:     cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt, I32_operand_fmt;
+
+        B4_F16_from_I64_maxNorm_pm_3ulp:   cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm_3ulp,      F16_result_fmt, I64_operand_fmt;
+        B4_F16_from_I64_gt_maxNorm_p_3ulp: cross FP_op_cif, rounding_mode_all, interm_sign, F16_gt_maxNorm_p_3ulp,    F16_result_fmt, I64_operand_fmt;
+        B4_F16_from_I64_pm3_exp_range:     cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt, I64_operand_fmt;
+
+        B4_F16_from_U32_maxNorm_pm_3ulp:   cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm_3ulp,      F16_result_fmt, U32_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
+        }
+        B4_F16_from_U32_gt_maxNorm_p_3ulp: cross FP_op_cif, rounding_mode_all, interm_sign, F16_gt_maxNorm_p_3ulp,    F16_result_fmt, U32_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
+        }
+        B4_F16_from_U32_pm3_exp_range:     cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt, U32_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
+        }
+
+        B4_F16_from_U64_maxNorm_pm_3ulp:   cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm_3ulp,      F16_result_fmt, U64_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
+        }
+        B4_F16_from_U64_gt_maxNorm_p_3ulp: cross FP_op_cif, rounding_mode_all, interm_sign, F16_gt_maxNorm_p_3ulp,    F16_result_fmt, U64_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
+        }
+        B4_F16_from_U64_pm3_exp_range:     cross FP_op_cif, rounding_mode_all, interm_sign, F16_maxNorm_pm3_exp_range, F16_result_fmt, U64_operand_fmt {
+            ignore_bins unsigned_no_negatives = binsof(interm_sign.neg);
         }
 
         `ifdef COVER_BF16
