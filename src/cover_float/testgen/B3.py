@@ -706,13 +706,21 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
                 goals = [goal for goal in goals if goal["Sign"] == 0]
 
             for _ in range(2000):
-                if random.random() < 0.5:
-                    # Generate a test for sticky = 0
-                    integer = (1 << common.INT_MAX_EXPS[target_fmt] - 1) | (
-                        random.getrandbits(common.MANTISSA_BITS[fmt] + 1) << (mantissa_diff - 1)
+                if common.INT_MAX_EXPS[target_fmt] > common.UNBIASED_EXP[fmt][1]:
+                    max_mantissa = (1 << (common.MANTISSA_BITS[fmt] + 1)) - 1
+                    max_exp = common.UNBIASED_EXP[fmt][1] - common.MANTISSA_BITS[fmt]
+                    integer = random.randint(
+                        0,
+                        max_mantissa << max_exp,
                     )
                 else:
                     integer = random.getrandbits(common.INT_MAX_EXPS[target_fmt])
+                if random.random() >= 0.5:
+                    # Generate a test for sticky = 0
+                    # -1 for the leading 1
+                    bits_to_mask = integer.bit_length() - (common.MANTISSA_BITS[fmt] + 1) - 1
+                    if bits_to_mask > 0:
+                        integer &= ~((1 << bits_to_mask) - 1)
 
                 if common.INT_SIGNED[target_fmt]:
                     integer *= (-1) ** (random.randint(0, 1))
