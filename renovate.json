@@ -73,6 +73,30 @@
             "schedule": [
                 "before 6am on monday"
             ]
+        },
+        {
+            "description": "Bump the scikit-build-core floor, because minimum-version uses it",
+            "matchDepNames": [
+                "scikit-build-core"
+            ],
+            "matchDepTypes": [
+                "build-system.requires"
+            ],
+            "rangeStrategy": "bump",
+            "automerge": false
+        },
+        {
+            "description": "Skip scikit-build-core patch releases, because they do not change the build defaults",
+            "matchDepNames": [
+                "scikit-build-core"
+            ],
+            "matchDepTypes": [
+                "build-system.requires"
+            ],
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "enabled": false
         }
     ]
 }
