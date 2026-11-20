@@ -118,13 +118,20 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git diff --exit-code -- reports/verilator.txt
 
+  # Build one wheel for each OS on PRs and in the merge queue. Build all wheels on main.
+  wheels:
+    name: Wheels
+    uses: ./.github/workflows/wheels.yml
+    with:
+      full: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+
   # Single required status check for branch protection and the merge queue.
   # Required checks cannot reference a matrix job by its ID.
   ci_pass:
     name: CI pass
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [lint, testgen, coverage]
+    needs: [lint, testgen, coverage, wheels]
     if: ${{ always() }}
     steps:
       - name: Job status check
