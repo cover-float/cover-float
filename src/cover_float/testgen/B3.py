@@ -660,8 +660,43 @@ def write_cvt_tests(test_f: TextIO, cover_f: TextIO, config: Config, fmt: str) -
             if target_fmt == fmt:
                 continue
             elif mantissa_diff <= 0:
-                # If fmt (target) has more precision than the other format, then this is not a narrowing conversion, so
-                # no rounding happens
+                minnorm_exp_diff = common.UNBIASED_EXP[target_fmt][0] - common.UNBIASED_EXP[fmt][0]
+                if minnorm_exp_diff >= 0:
+                    # If fmt (target) has more precision than the other format, then this is not
+                    # a narrowing conversion, so no rounding happens
+                    continue
+
+                # Otherwise, we are converting BF16->F16, which can have rounding cases in the subnormal range.
+                goals = targets[:]
+                mantissa_diff *= -1
+                for _ in range(1000):
+                    # We want the LSB of the BF16 mantissa to end up two or more bits beyond the F16 mantissa
+                    # after converting, but without underflow. We ignore exp = -25 and exp = -18 for simplicity.
+                    exp = random.randint(-24, -19)
+                    if random.random() < 0.5:
+                        # Generate a test where is going to be likely to be zero
+                        mantissa = random.getrandbits(mantissa_diff)
+                        mantissa = mantissa << (common.MANTISSA_BITS[target_fmt] - mantissa_diff)
+
+                        cvt_from = generate_float(random.randint(0, 1), exp, mantissa, target_fmt)
+                    else:
+                        cvt_from = generate_random_float(exp, target_fmt)
+
+                    tv = generate_test_vector(common.OP_CFF, cvt_from, 0, 0, target_fmt, fmt, mode)
+                    results = run_test_vector(tv)
+                    info = extract_rounding_info(results)
+
+                    if info in goals:
+                        goals.remove(info)
+                        store_cover_vector(results, test_f, cover_f, config)
+
+                        if len(goals) == 0:
+                            break
+                else:
+                    raise ValueError(
+                        f"CFF Generation Failed: fmt={fmt}, target_fmt={target_fmt}, mode={mode}, remaining_goals={goals}"
+                    )
+
                 continue
 
             goals = targets[:]
