@@ -83,10 +83,6 @@ def _fmt_params(fmt: str) -> tuple[int, int, int]:
     )
 
 
-def _format_params(fmt: str) -> tuple[int, bool]:
-    return (const.INT_MAX_EXPS[fmt], const.INT_SIGNED[fmt])
-
-
 # ---------------------------------------------------------------------------
 # Derived format constants
 # ---------------------------------------------------------------------------
@@ -832,6 +828,29 @@ def _group2_cif_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, co
             _emit_convert(const.OP_CIF, rm, a, source, fmt, test_f, cover_f, config)
 
 
+def _group3_cif_converts(fmt: str, E: int, M: int, bias: int, test_f: TextIO, cover_f: TextIO, config: Config) -> None:
+    # Integers with exponent in the range MaxNorm.Exp +- 3
+
+    for source in const.INT_FMTS:
+        if const.INT_MAX_EXPS[source] <= _unbiased_max(E, bias):
+            # Then the integer can never overflow this format
+            continue
+
+        for offset, sign, rm in itertools.product(range(-3, 4), (0, 1), ROUND_MODES):
+            if sign and not const.INT_SIGNED[source]:
+                continue
+
+            exp = _unbiased_max(E, bias) + offset
+            value = random.randint(1 << exp, (1 << (exp + 1)) - 1)  # leading one at bit position exp
+
+            if sign:
+                value = -value
+
+            a = f"{value & ((1 << const.INT_SIZES[source]) - 1):032x}"
+
+            _emit_convert(const.OP_CIF, rm, a, source, fmt, test_f, cover_f, config)
+
+
 # ---------------------------------------------------------------------------
 # Top-level
 # ---------------------------------------------------------------------------
@@ -853,6 +872,7 @@ def generate_b4_tests_converts(test_f: TextIO, cover_f: TextIO, config: Config, 
     _group3_converts(fmt, E, M, bias, test_f, cover_f, config)
     _group1_cif_converts(fmt, E, M, bias, test_f, cover_f, config)
     _group2_cif_converts(fmt, E, M, bias, test_f, cover_f, config)
+    _group3_cif_converts(fmt, E, M, bias, test_f, cover_f, config)
 
 
 @register_model("B4")
