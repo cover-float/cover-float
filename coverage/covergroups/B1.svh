@@ -338,7 +338,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
         B1_F64_result:     cross FP_result_ops, F64_result_basictypes,                                         F64_result_fmt {
             ignore_bins negative_sqrt = binsof(FP_result_ops.op_sqrt) && (
                    binsof(F64_result_basictypes.neg1)          || binsof(F64_result_basictypes.neg1p5)
-                || binsof(F64_result_basictypes.neg2)          // || binsof(F64_result_basictypes.negnorm)
+                || binsof(F64_result_basictypes.neg2)          || binsof(F64_result_basictypes.negnorm)
                 || binsof(F64_result_basictypes.negminnorm)    || binsof(F64_result_basictypes.negmaxnorm)
                 || binsof(F64_result_basictypes.neginfinity)   || binsof(F64_result_basictypes.negmin_subnorm)
                 || binsof(F64_result_basictypes.negmax_subnorm)
@@ -417,7 +417,7 @@ covergroup B1_cg (virtual coverfloat_interface CFI);
         B1_F128_result:     cross FP_result_ops, F128_result_basictypes,                                           F128_result_fmt {
             ignore_bins negative_sqrt = binsof(FP_result_ops.op_sqrt) && (
                     binsof(F128_result_basictypes.neg1)         || binsof(F128_result_basictypes.neg1p5)
-                || binsof(F128_result_basictypes.neg2)          // || binsof(F128_result_basictypes.negnorm)
+                || binsof(F128_result_basictypes.neg2)          || binsof(F128_result_basictypes.negnorm)
                 || binsof(F128_result_basictypes.negminnorm)    || binsof(F128_result_basictypes.negmaxnorm)
                 || binsof(F128_result_basictypes.neginfinity)   || binsof(F128_result_basictypes.negmin_subnorm)
                 || binsof(F128_result_basictypes.negmax_subnorm)

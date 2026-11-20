@@ -10,8 +10,8 @@
         bins negminnorm       = {64'h8010000000000000};
         bins posmaxnorm       = {64'h7FEFFFFFFFFFFFFF};
         bins negmaxnorm       = {64'hFFEFFFFFFFFFFFFF};
-        // bins posnorm          = {[64'h0010000000000001:64'h7FEFFFFFFFFFFFFE]};
-        // bins negnorm          = {[64'h8010000000000001:64'hFFEFFFFFFFFFFFFE]};
+        bins posnorm          = {[64'h0010000000000001:64'h7FEFFFFFFFFFFFFE]};
+        bins negnorm          = {[64'h8010000000000001:64'hFFEFFFFFFFFFFFFE]};
         bins posmax_subnorm   = {64'h000FFFFFFFFFFFFF};
         bins negmax_subnorm   = {64'h800FFFFFFFFFFFFF};
         // bins posmid_subnorm   = {64'h0008000000000000};
