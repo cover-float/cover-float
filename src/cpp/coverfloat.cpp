@@ -31,6 +31,10 @@
 #define TEST_DIV
 #endif
 
+#ifndef TEST_SQRT // add the undef later
+#define TEST_SQRT
+#endif
+
 #ifdef UNMODIFIED_SOFTFLOAT
 THREAD_LOCAL intermResult_t softfloat_intermediateResult;
 THREAD_LOCAL fmaFullShiftInfo_t softfloat_fmaAddShiftInfo;
@@ -1722,6 +1726,11 @@ std::pair<int, std::string> reference_model(
     }
 
     case OP_SQRT: {
+        mp::cpp_int sigA;
+        bool a_subnorm = false;
+        bool a_exp_even = false;
+        int nf;
+        int softfloat_undershift = (resultFmt == FMT_QUAD) ? 16 : 2;
 
         switch (operandFmt) {
         case FMT_SINGLE: {
@@ -1729,6 +1738,11 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT32(af, a);
             resultf = f32_sqrt(af);
             FLOAT32_TO_MP(result, resultf);
+
+            nf = 23;
+            sigA = fracF32UI(a);
+            a_subnorm = expF32UI(a) == 0;
+            a_exp_even = ((expF32UI(a) + F32_EXP_BIAS) & 1) == 0;
             break;
         }
 
@@ -1737,6 +1751,11 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT64(af, a);
             resultf = f64_sqrt(af);
             FLOAT64_TO_MP(result, resultf);
+
+            nf = 52;
+            sigA = fracF64UI(a);
+            a_subnorm = expF64UI(a) == 0;
+            a_exp_even = ((expF64UI(a) + F64_EXP_BIAS) & 1) == 0;
             break;
         }
 
@@ -1745,6 +1764,14 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT128(af, a);
             resultf = f128_sqrt(af);
             FLOAT128_TO_MP(result, resultf);
+
+            nf = 112;
+            sigA = fracF128UI64(a >> 64);
+            sigA <<= 64;
+            sigA |= static_cast<uint64_t>(a);
+            mp::cpp_int a_exp = expF128UI64(a >> 64);
+            a_subnorm = a_exp == 0;
+            a_exp_even = ((a_exp + F128_EXP_BIAS) & 1) == 0;
             break;
         }
 
@@ -1753,6 +1780,11 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT16(af, a);
             resultf = f16_sqrt(af);
             FLOAT16_TO_MP(result, resultf);
+
+            nf = 10;
+            sigA = fracF16UI(a);
+            a_subnorm = expF16UI(a) == 0;
+            a_exp_even = ((expF16UI(a) + F16_EXP_BIAS) & 1) == 0;
             break;
         }
 
@@ -1761,9 +1793,125 @@ std::pair<int, std::string> reference_model(
             MP_TO_FLOAT16(af, a);
             resultf = bf16_sqrt(af);
             FLOAT16_TO_MP(result, resultf);
+
+            nf = 7;
+            sigA = fracBF16UI(a);
+            a_subnorm = expBF16UI(a) == 0;
+            a_exp_even = ((expBF16UI(a) + BF16_EXP_BIAS) & 1) == 0;
             break;
         }
+
+        default: {
+            std::stringstream ss;
+            ss << "Bad Operand Format For Sqrt " << static_cast<uint16_t>(operandFmt);
+            return {EXIT_FAILURE, ss.str()};
         }
+        }
+
+        // If we have a trivial intermediate result
+        if (softfloat_intermediateResult.sig64 == 0 && softfloat_intermediateResult.sig0 == 0 &&
+            softfloat_intermediateResult.sigExtra64 == 0 && softfloat_intermediateResult.sigExtra0 == 0) {
+            break;
+        }
+
+        if (!a_subnorm) {
+            sigA |= (mp::cpp_int(1) << nf);
+        } else {
+            int align_shift = nf - safe_msb(sigA);
+            sigA <<= align_shift;
+        }
+
+        // even/odd parity
+        int extra_bits = nf + 4 + (nf % 2);
+        mp::cpp_int shifted_sigA = sigA << (nf + extra_bits + 100);
+        if (!a_exp_even) {
+            shifted_sigA <<= 1;
+        }
+
+        mp::cpp_int pre_rounding = sqrt(shifted_sigA);
+
+        if (pre_rounding * pre_rounding != shifted_sigA) {
+            pre_rounding |= 1;
+        }
+
+        // Now compare to the extracted bits
+        // msb is zero indexed, so this has the intended effect
+        int alignment_shift = 256 - mp::msb(pre_rounding) - softfloat_undershift;
+        if (alignment_shift > 0) {
+            pre_rounding <<= alignment_shift;
+        } else {
+            pre_rounding >>= -alignment_shift;
+        }
+
+#ifdef TEST_SQRT
+        mp::cpp_int softfloat_computed = 0;
+        softfloat_computed |= softfloat_intermediateResult.sig64;
+        softfloat_computed <<= 64;
+        softfloat_computed |= softfloat_intermediateResult.sig0;
+        softfloat_computed <<= 64;
+        softfloat_computed |= softfloat_intermediateResult.sigExtra64;
+        softfloat_computed <<= 64;
+        softfloat_computed |= softfloat_intermediateResult.sigExtra0;
+
+        // std::string pre_rounding_binary = pre_rounding.str(0, std::ios_base::binary);
+        // std::string softfloat_computed_binary = softfloat_computed.str(0, std::ios_base::binary);
+
+        bool only_zeros = true;
+        for (int i = 0; i < 256; i++) {
+            mp::cpp_int bit_mask = mp::cpp_int(1) << i;
+
+            bool softfloat_bit = (softfloat_computed & bit_mask) != 0;
+            bool pre_rounding_bit = (pre_rounding & bit_mask) != 0;
+
+            if (softfloat_bit != pre_rounding_bit) {
+                if (!only_zeros) {
+                    mp::cpp_int sig_mask = ((mp::cpp_int(1) << (nf + 1)) - 1);
+                    int align_shift = 256 - mp::msb(sig_mask) - softfloat_undershift;
+                    sig_mask <<= align_shift;
+
+                    mp::cpp_int guard_mask = mp::cpp_int(1) << (align_shift - 1);
+                    mp::cpp_int sticky_mask = sig_mask | guard_mask;
+
+                    bool dirty = ((pre_rounding & sig_mask) != (softfloat_computed & sig_mask)) ||
+                                 ((pre_rounding & guard_mask) != (softfloat_computed & guard_mask)) ||
+                                 (((pre_rounding & sticky_mask) != 0) ^ ((pre_rounding & sticky_mask) != 0));
+
+                    // Exact Sticky Bits are Wrong for Doubles, but overall correct (normally)
+                    std::stringstream msg;
+                    if (!(operandFmt == FMT_DOUBLE || operandFmt == FMT_QUAD) || dirty) {
+                        msg << "Square Root Prerounding Calculation Failed: Softfloat gave ";
+                        msg << std::hex << std::setfill('0') << std::setw(48) << softfloat_computed;
+                        msg << " We generated: " << std::setw(48) << pre_rounding << "\n";
+                    }
+
+                    if ((pre_rounding & sig_mask) != (softfloat_computed & sig_mask)) {
+                        msg << "Sigs Disagree" << "\n";
+                    }
+                    if ((pre_rounding & guard_mask) != (softfloat_computed & guard_mask)) {
+                        msg << "Guards Disagree" << "\n";
+                    }
+                    if (((pre_rounding & sticky_mask) != 0) ^ ((pre_rounding & sticky_mask) != 0)) {
+                        msg << "Stickies Disagree" << "\n";
+                    }
+
+                    if (dirty) {
+                        return {EXIT_FAILURE, msg.str()};
+                    }
+                }
+            }
+
+            if (only_zeros && softfloat_bit == 1) {
+                // Because of the way their sticky calculation works, we should let the last bit of
+                // softfloats sticky differ from ours
+                only_zeros = false;
+            }
+        }
+#endif
+
+        softfloat_intermediateResult.sig64 = static_cast<uint64_t>(pre_rounding >> 192);
+        softfloat_intermediateResult.sig0 = static_cast<uint64_t>(pre_rounding >> 128);
+        softfloat_intermediateResult.sigExtra64 = static_cast<uint64_t>(pre_rounding >> 64);
+        softfloat_intermediateResult.sigExtra0 = static_cast<uint64_t>(pre_rounding);
 
         break;
     }

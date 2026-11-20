@@ -231,6 +231,7 @@ covergroup B8_cg (virtual coverfloat_interface CFI);
         bins add = { OP_ADD };
     }
 
+    // to add: SQRT: min(nf - 3, SQRT_UPPER_BITS_LIMIT) bits
     // DIV: nf - 2 bits
     // MUL: nf bits
     // FMA: 2nf bits
