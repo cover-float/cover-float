@@ -14,8 +14,8 @@
 # and limitations under the License.
 
 # B8 (rwolk@hmc.edu)
-
 import itertools
+import math
 import random
 from typing import TextIO
 
@@ -30,7 +30,9 @@ from cover_float.common.util import (
     unpack_test_vector,
 )
 from cover_float.reference import run_and_store_test_vector, run_test_vector, store_cover_vector
-from cover_float.testgen.model import register_model
+from cover_float.testgen.model import get_model_logger, register_model
+
+SQRT_UPPER_BITS_LIMIT = 17
 
 
 def mul_sigs_with_trailing(target: int, bit_length: int, fmt: str) -> tuple[int, int]:
@@ -102,7 +104,6 @@ def check_div_result(result: str, target: int, sticky_length: int) -> bool:
 
     sticky = interm_mantissa[nf + 1 :]
     relevant_bits = sticky[:sticky_length]
-
     return int(relevant_bits, 2) == target
 
 
@@ -139,6 +140,120 @@ def generate_exponents(fmt: str, *, subtract: bool = False) -> tuple[int, int]:
         score = exp1 + exp2 if not subtract else exp1 - exp2
 
     return exp1, exp2
+
+
+def check_sqrt_result(result: str, target: int, sticky_length: int) -> bool:
+    return check_div_result(result, target, sticky_length)  # same check so reuse
+
+
+def sqrt_rounding(lsb: int, guard: int, target: int, extra_bits: int, fmt: str) -> tuple[int, int] | None:
+    nf = constants.MANTISSA_BITS[fmt]
+
+    N = 1 << nf
+    # affine permutation to avoid biasing small mantissas
+    # also avoids memory issue for large nf
+    a = random.randrange(1, N)
+    while math.gcd(a, N) != 1:
+        a = random.randrange(1, N)
+    b = random.randrange(N)
+
+    mantissa = b
+    for _ in range(N):
+        mantissa = (mantissa + a) & ((1 << nf) - 1)
+        if mantissa & 1 != lsb:
+            continue  # need to match lsb
+        # construct sqrt's mantissa with lsb, guard, extra bits, and target
+        result = mantissa | 1 << nf  # leading 1
+        result = (result << 1) | guard
+        result = (result << extra_bits) | target
+
+        length = nf + 1 + extra_bits
+
+        # find range of valid input mantissas
+        denominator = 1 << (2 * length)
+
+        lower = (result**2) << nf
+        upper = ((result + 1) ** 2) << nf
+        lower = (lower + denominator - 1) // denominator  # round up
+        upper = (upper - 1) // denominator  # exclusive upper range
+
+        # allow an extra bit for upper bound because it covers odd exponent case
+        lower = max(lower, 1 << nf)
+        upper = min(upper, (1 << (nf + 2)) - 1)
+        bound = (1 << (nf + 1)) - 1  # boundary beyond which we would have odd exp
+
+        if lower > upper:
+            continue
+
+        # shuffle to make sure it doesn't bias smaller candidates
+        candidates = list(range(lower, upper + 1))
+        random.shuffle(candidates)
+        for c in candidates:
+            sigA = c
+            exp_adjustment = 0
+            if c > bound:
+                if c & 1:
+                    # not a valid number since odd exponent nums should have 0 at the end
+                    # since we need to truncate them to fit in mantissa
+                    continue
+                # shift result and account for exponent offset
+                sigA = c >> 1
+                exp_adjustment = 1
+
+            sigA &= (1 << nf) - 1  # remove leading 1
+
+            # checking result to make sure it matches goals
+
+            # find the sqrt of candidate with correct exp adjustment
+            root = math.isqrt((c * denominator) >> nf)
+
+            generated_lsb = (root >> (extra_bits + 1)) & 1
+            generated_guard = (root >> extra_bits) & 1
+            generated_sticky = root & ((1 << extra_bits) - 1)
+
+            if generated_lsb == lsb and generated_guard == guard and generated_sticky == target:
+                return sigA, exp_adjustment
+            else:
+                raise ValueError(f"Sqrt Calculation Failure for lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
+
+    return None
+
+
+def generate_sqrt_tests(
+    fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, config: Config, target_bits: int | None = None
+) -> None:
+    seed = reproducible_hash(f"B8 SQRT {fmt} {rm}")
+    random.seed(seed)
+    nf = constants.MANTISSA_BITS[fmt]
+    if not target_bits:
+        target_bits = min(nf - 3, SQRT_UPPER_BITS_LIMIT)  # hard limit to prevent overcomputation
+    for target in itertools.chain(range(1, 4), range((1 << target_bits) - 4, (1 << target_bits))):
+        for sign, lsb, guard in sign_lsb_guard():
+            if sign == 1:
+                continue  # only do positive sqrt testcases
+            maybe_result = sqrt_rounding(lsb, guard, target, target_bits, fmt)
+            if not maybe_result:
+                raise ValueError(f"Sqrt Failure for lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}")
+
+            mantissa, parity = maybe_result
+
+            # generate exponent with correct parity
+            exp_min, exp_max = constants.BIASED_EXP[fmt]
+            exp_min -= constants.BIAS[fmt]
+            exp_max -= constants.BIAS[fmt]
+            exp = random.randrange(exp_min + ((parity - exp_min) % 2), exp_max + 1, 2)
+
+            f = generate_float(0, exp, mantissa & ((1 << nf) - 1), fmt)
+
+            tv = generate_test_vector(constants.OP_SQRT, f, 0, 0, fmt, fmt, rm)
+            result = run_test_vector(tv)
+            info = extract_rounding_info(result)
+            if check_sqrt_result(result, target, target_bits) and info["Guard"] == guard and info["LSB"] == lsb:
+                store_cover_vector(result, test_f, cover_f, config)
+            else:
+                raise ValueError(
+                    f"Sqrt Result Failure, lsb={lsb}, guard={guard}, sticky={target:b}, fmt={fmt}, info={info}"
+                )
 
 
 def generate_div_tests(
@@ -498,6 +613,8 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
 def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         for rm in constants.ROUNDING_MODES:
+            get_model_logger("B8").status(f"Generating {fmt} Tests: Rounding Mode {rm}")
+            generate_sqrt_tests(fmt, rm, test_f, cover_f, config)
             generate_div_tests(fmt, rm, test_f, cover_f, config)
             generate_mul_tests(fmt, rm, test_f, cover_f, config)
             generate_add_sub_tests(fmt, rm, test_f, cover_f, config)

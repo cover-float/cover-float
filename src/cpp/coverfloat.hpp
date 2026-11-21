@@ -65,6 +65,25 @@ extern THREAD_LOCAL fmaFullShiftInfo_t softfloat_fmaAddShiftInfo;
 #define BF16_IMPLICIT_ONE (1 << BF16_SIG_BITS)
 #endif
 
+#ifndef F32_EXP_BITS
+#define F32_EXP_BITS 8
+#endif
+
+#ifndef F32_EXP_BIAS
+#define F32_EXP_BIAS ((1 << (F32_EXP_BITS - 1)) - 1)
+#endif
+
+#ifndef BF16_EXP_BIAS
+#define BF16_EXP_BIAS F32_EXP_BIAS
+#endif
+
+#define F64_EXP_BITS 11
+#define F64_EXP_BIAS ((1 << (F64_EXP_BITS - 1)) - 1)
+#define F128_EXP_BITS 15
+#define F128_EXP_BIAS ((1 << (F128_EXP_BITS - 1)) - 1)
+#define F16_EXP_BITS 5
+#define F16_EXP_BIAS ((1 << (F16_EXP_BITS - 1)) - 1)
+
 #define TEST_VECTOR_WIDTH_BITS 576
 #define COVER_VECTOR_WIDTH_BITS 1208
 
