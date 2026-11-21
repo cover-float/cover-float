@@ -30,7 +30,7 @@ from cover_float.common.util import (
     unpack_test_vector,
 )
 from cover_float.reference import run_and_store_test_vector, run_test_vector, store_cover_vector
-from cover_float.testgen.model import register_model
+from cover_float.testgen.model import get_model_logger, register_model
 
 SQRT_UPPER_BITS_LIMIT = 17
 
@@ -613,6 +613,7 @@ def generate_convert_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
 def main(config: Config, test_f: TextIO, cover_f: TextIO) -> None:
     for fmt in constants.FLOAT_FMTS:
         for rm in constants.ROUNDING_MODES:
+            get_model_logger("B8").status(f"Generating {fmt} Tests: Rounding Mode {rm}")
             generate_sqrt_tests(fmt, rm, test_f, cover_f, config)
             generate_div_tests(fmt, rm, test_f, cover_f, config)
             generate_mul_tests(fmt, rm, test_f, cover_f, config)

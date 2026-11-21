@@ -1821,9 +1821,9 @@ std::pair<int, std::string> reference_model(
             sigA <<= align_shift;
         }
 
-        // even/odd parity
-        int extra_bits = nf + 4 + (nf % 2);
-        mp::cpp_int shifted_sigA = sigA << (nf + extra_bits + 100);
+        // even/odd parity, make sure enough extra bits are calculated
+        int extra_bits = nf * 2;
+        mp::cpp_int shifted_sigA = sigA << (nf + extra_bits);
         if (!a_exp_even) {
             shifted_sigA <<= 1;
         }
