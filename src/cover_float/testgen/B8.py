@@ -264,13 +264,13 @@ def generate_add_sub_tests(fmt: str, rm: str, test_f: TextIO, cover_f: TextIO, c
                     s1 += 4
 
                 expDiff = nf + (guard == 1) if op == constants.OP_ADD else nf + (guard == 0)
-                exp1 = 0
+                exp1 = random.randint(-expDiff - constants.UNBIASED_EXP[fmt][0], constants.UNBIASED_EXP[fmt][1])
                 exp2 = exp1 - expDiff
 
                 f1 = generate_float(sign, exp1, s1, fmt)
                 f2 = generate_float(sign, exp2, s2, fmt)
 
-                if random.random() < 1 and op == constants.OP_ADD:
+                if random.random() < 0.5 and op == constants.OP_ADD:
                     f1, f2 = f2, f1
 
                 tv = generate_test_vector(op, f1, f2, 0, fmt, fmt, rm)
